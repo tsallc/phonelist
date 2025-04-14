@@ -49,14 +49,19 @@ const OfficeFloorMap = () => {
     { id: 'solutions-lunch', name: 'Lunch Room', extension: '1103', floor: 'upstairs', location: 'solutions', type: 'common' },
     { id: 'solutions-tiller', name: 'Brian T.', extension: '1024', floor: 'upstairs', location: 'solutions', type: 'office' },
     
-    // TruTitle (example data)
-    { id: 'tru-reception', name: 'Reception', extension: '2000', floor: 'main', location: 'tru', type: 'common' },
-    { id: 'tru-conference', name: 'Conference Room', extension: '2100', floor: 'main', location: 'tru', type: 'meeting' },
-    { id: 'tru-processing', name: 'Processing', extension: '2050', floor: 'main', location: 'tru', type: 'office' },
-    { id: 'tru-manager', name: 'Manager Office', extension: '2001', floor: 'main', location: 'tru', type: 'office' },
-    { id: 'tru-break', name: 'Break Room', extension: '2200', floor: 'main', location: 'tru', type: 'common' },
-    { id: 'tru-copy', name: 'Copy Center', extension: '2150', floor: 'main', location: 'tru', type: 'common' },
-    { id: 'tru-it', name: 'IT Support', extension: '2099', floor: 'main', location: 'tru', type: 'office' },
+    // TruTitle
+    { id: 'tru-reception', name: 'Reception', extension: '2100', floor: 'main', location: 'tru', type: 'common' },
+    { id: 'tru-becca', name: 'Becca G.', extension: '2100', floor: 'main', location: 'tru', type: 'office' },
+    { id: 'tru-troy', name: 'Troy M.', extension: '2101', floor: 'main', location: 'tru', type: 'office' },
+
+    // Coastal Title Solutions
+    { id: 'coastal-chad', name: 'Chad Williams', extension: '2040', floor: 'main', location: 'coastal', type: 'office' },
+    { id: 'coastal-2027', name: '2027 - 2027', extension: '2027', floor: 'main', location: 'coastal', type: 'office' },
+    { id: 'coastal-ftdesk', name: 'Ft Desk 2020', extension: '2020', floor: 'main', location: 'coastal', type: 'office' },
+    { id: 'coastal-cts-harbour', name: 'CTS-Harbour', extension: '2050', floor: 'main', location: 'coastal', type: 'office' },
+    { id: 'coastal-cts-harbor2', name: 'CTS-Harbor 2', extension: '2051', floor: 'main', location: 'coastal', type: 'office' },
+    { id: 'coastal-andrea', name: 'Andrea', extension: '2026', floor: 'main', location: 'coastal', type: 'office' },
+
   ], []);
   
   // Update search results when searchTerm changes
