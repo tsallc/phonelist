@@ -11,8 +11,8 @@ const OfficeFloorMap = () => {
   const [showListView, setShowListView] = useState(false);
   // State for active location tab
   const [activeLocation, setActiveLocation] = useState('solutions');
-  // State for active floor tab
-  const [activeFloor, setActiveFloor] = useState('lobby');
+  // State for selected floors - array to allow multiple selections or no selection
+  const [selectedFloors, setSelectedFloors] = useState([]);
   
   // Combined office data from all locations and floors - memoized to prevent recreation on each render
   const officeData = useMemo(() => [
@@ -487,27 +487,38 @@ const OfficeFloorMap = () => {
     );
   };
 
-  // Get active floor rooms based on selected location and floor
+  // Get active floor rooms based on selected location and floors
   const getActiveFloorRooms = () => {
     return officeData.filter(
-      room => room.location === activeLocation &&
-             (activeLocation === 'solutions' ? room.floor === activeFloor : room.floor === 'main')
+      room => room.location === activeLocation && 
+             (activeLocation === 'solutions' 
+               ? (selectedFloors.length === 0 || selectedFloors.includes(room.floor))  // Show all when none selected
+               : room.floor === 'main')
     );
   };
 
-  // Render the correct floor layout based on active location and floor
+  // Render the correct floor layout(s) based on active location and selected floors
   const renderActiveFloor = () => {
     if (activeLocation === 'solutions') {
-      switch(activeFloor) {
-        case 'lobby':
-          return renderSolutionsFrontLobby();
-        case 'bullpen':
-          return renderSolutionsOfficeBullpen();
-        case 'upstairs':
-          return renderSolutions2ndFloor();
-        default:
-          return renderSolutionsFrontLobby();
+      // If no floors are selected, show all floors
+      if (selectedFloors.length === 0) {
+        return (
+          <>
+            {renderSolutionsFrontLobby()}
+            {renderSolutionsOfficeBullpen()}
+            {renderSolutions2ndFloor()}
+          </>
+        );
       }
+      
+      // Otherwise, show only selected floors
+      return (
+        <>
+          {selectedFloors.includes('lobby') && renderSolutionsFrontLobby()}
+          {selectedFloors.includes('bullpen') && renderSolutionsOfficeBullpen()}
+          {selectedFloors.includes('upstairs') && renderSolutions2ndFloor()}
+        </>
+      );
     } else if (activeLocation === 'coastal') {
       return renderCoastalMainFloor();
     } else {
@@ -589,21 +600,21 @@ const OfficeFloorMap = () => {
         {/* Location Tabs with improved design */}
         <div className="flex border-t border-blue-500 bg-blue-800">
           <button 
-            onClick={() => {setActiveLocation('solutions'); setActiveFloor('lobby');}}
+            onClick={() => {setActiveLocation('solutions'); setSelectedFloors([]);}}
             className={`flex-1 py-2 px-3 text-sm font-medium transition-colors duration-200 flex justify-center items-center ${activeLocation === 'solutions' ? 'bg-white text-blue-700' : 'text-blue-100 hover:bg-blue-700'}`}
           >
             <Home className="w-4 h-4 mr-1" />
             <span>Title Solutions</span>
           </button>
           <button 
-            onClick={() => {setActiveLocation('coastal'); setActiveFloor('main');}}
+            onClick={() => {setActiveLocation('coastal'); setSelectedFloors([]);}}
             className={`flex-1 py-2 px-3 text-sm font-medium transition-colors duration-200 flex justify-center items-center ${activeLocation === 'coastal' ? 'bg-white text-blue-700' : 'text-blue-100 hover:bg-blue-700'}`}
           >
             <Waves className="w-4 h-4 mr-1" />
             <span>Coastal Title</span>
           </button>
           <button 
-            onClick={() => {setActiveLocation('tru'); setActiveFloor('main');}}
+            onClick={() => {setActiveLocation('tru'); setSelectedFloors([]);}}
             className={`flex-1 py-2 px-3 text-sm font-medium transition-colors duration-200 flex justify-center items-center ${activeLocation === 'tru' ? 'bg-white text-blue-700' : 'text-blue-100 hover:bg-blue-700'}`}
           >
             <Home className="w-4 h-4 mr-1" />
@@ -617,10 +628,17 @@ const OfficeFloorMap = () => {
             {getAvailableFloors().map(floor => (
               <button 
                 key={floor}
-                onClick={() => setActiveFloor(floor)}
+                onClick={() => {
+                  // Toggle floor selection
+                  setSelectedFloors(prev => 
+                    prev.includes(floor) 
+                      ? prev.filter(f => f !== floor) // Remove if already selected
+                      : [...prev, floor] // Add if not selected
+                  );
+                }}
                 className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200 flex items-center
-                  ${activeFloor === floor 
-                    ? 'text-blue-700 border-b-2 border-blue-500' 
+                  ${selectedFloors.includes(floor) 
+                    ? 'text-blue-700 border-b-2 border-blue-500 bg-blue-50' 
                     : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}
               >
                 {getFloorIcon(floor)}
@@ -681,7 +699,7 @@ const OfficeFloorMap = () => {
           <div className="p-3 bg-gray-50 border-b border-gray-200 flex items-center">
             <MapPin className="w-5 h-5 text-blue-600 mr-2" />
             <h2 className="text-lg font-bold text-gray-800">
-              {getLocationName(activeLocation)} - {getFloorName(activeLocation === 'solutions' ? activeFloor : 'main')}
+              {getLocationName(activeLocation)} {selectedFloors.length > 0 ? `- ${selectedFloors.map(floor => getFloorName(floor)).join(', ')}` : '- All Floors'}
             </h2>
           </div>
           
