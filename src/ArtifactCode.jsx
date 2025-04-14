@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, MapPin, Phone, List, Grid, Users, Coffee, Printer, FileText, Home } from 'lucide-react';
+import { Search, MapPin, Phone, List, Grid, Users, Coffee, Printer, FileText, Home, Waves } from 'lucide-react';
 
 const OfficeFloorMap = () => {
   // State for managing active room (when clicked)
@@ -150,7 +150,9 @@ const OfficeFloorMap = () => {
   
   // Get location full name
   const getLocationName = (locationKey) => {
-    return locationKey === 'solutions' ? 'Title Solutions' : 'TruTitle';
+    if (locationKey === 'solutions') return 'Title Solutions';
+    if (locationKey === 'coastal') return 'Coastal Title';
+    return 'TruTitle';
   };
   
   // Render Solutions Front Lobby layout
@@ -358,54 +360,69 @@ const OfficeFloorMap = () => {
     
     return (
       <div className="grid grid-cols-3 gap-4 p-4">
+        {truMainFloorRooms.map(room => (
+          <div 
+            key={room.id}
+            className={getRoomStyle(room)}
+            onClick={() => handleRoomClick(room)}
+            style={{height: '80px'}}
+          >
+            {renderRoomDetails(room)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+  
+  // Render Coastal Title Main Floor layout
+  const renderCoastalMainFloor = () => {
+    const coastalMainFloorRooms = officeData.filter(
+      r => r.location === 'coastal' && r.floor === 'main'
+    );
+    
+    return (
+      <div className="grid grid-cols-3 gap-4 p-4">
         <div 
-          className={getRoomStyle(truMainFloorRooms.find(r => r.id === 'tru-reception'))}
-          onClick={() => handleRoomClick(truMainFloorRooms.find(r => r.id === 'tru-reception'))}
+          className={getRoomStyle(coastalMainFloorRooms.find(r => r.id === 'coastal-chad'))}
+          onClick={() => handleRoomClick(coastalMainFloorRooms.find(r => r.id === 'coastal-chad'))}
           style={{height: '80px'}}
         >
-          {renderRoomDetails(truMainFloorRooms.find(r => r.id === 'tru-reception'))}
+          {renderRoomDetails(coastalMainFloorRooms.find(r => r.id === 'coastal-chad'))}
         </div>
         <div 
-          className={getRoomStyle(truMainFloorRooms.find(r => r.id === 'tru-conference'))}
-          onClick={() => handleRoomClick(truMainFloorRooms.find(r => r.id === 'tru-conference'))}
+          className={getRoomStyle(coastalMainFloorRooms.find(r => r.id === 'coastal-2027'))}
+          onClick={() => handleRoomClick(coastalMainFloorRooms.find(r => r.id === 'coastal-2027'))}
           style={{height: '80px'}}
         >
-          {renderRoomDetails(truMainFloorRooms.find(r => r.id === 'tru-conference'))}
+          {renderRoomDetails(coastalMainFloorRooms.find(r => r.id === 'coastal-2027'))}
         </div>
         <div 
-          className={getRoomStyle(truMainFloorRooms.find(r => r.id === 'tru-processing'))}
-          onClick={() => handleRoomClick(truMainFloorRooms.find(r => r.id === 'tru-processing'))}
+          className={getRoomStyle(coastalMainFloorRooms.find(r => r.id === 'coastal-ftdesk'))}
+          onClick={() => handleRoomClick(coastalMainFloorRooms.find(r => r.id === 'coastal-ftdesk'))}
           style={{height: '80px'}}
         >
-          {renderRoomDetails(truMainFloorRooms.find(r => r.id === 'tru-processing'))}
+          {renderRoomDetails(coastalMainFloorRooms.find(r => r.id === 'coastal-ftdesk'))}
         </div>
         <div 
-          className={getRoomStyle(truMainFloorRooms.find(r => r.id === 'tru-manager'))}
-          onClick={() => handleRoomClick(truMainFloorRooms.find(r => r.id === 'tru-manager'))}
+          className={getRoomStyle(coastalMainFloorRooms.find(r => r.id === 'coastal-cts-harbour'))}
+          onClick={() => handleRoomClick(coastalMainFloorRooms.find(r => r.id === 'coastal-cts-harbour'))}
           style={{height: '80px'}}
         >
-          {renderRoomDetails(truMainFloorRooms.find(r => r.id === 'tru-manager'))}
+          {renderRoomDetails(coastalMainFloorRooms.find(r => r.id === 'coastal-cts-harbour'))}
         </div>
         <div 
-          className={getRoomStyle(truMainFloorRooms.find(r => r.id === 'tru-break'))}
-          onClick={() => handleRoomClick(truMainFloorRooms.find(r => r.id === 'tru-break'))}
+          className={getRoomStyle(coastalMainFloorRooms.find(r => r.id === 'coastal-cts-harbor2'))}
+          onClick={() => handleRoomClick(coastalMainFloorRooms.find(r => r.id === 'coastal-cts-harbor2'))}
           style={{height: '80px'}}
         >
-          {renderRoomDetails(truMainFloorRooms.find(r => r.id === 'tru-break'))}
+          {renderRoomDetails(coastalMainFloorRooms.find(r => r.id === 'coastal-cts-harbor2'))}
         </div>
         <div 
-          className={getRoomStyle(truMainFloorRooms.find(r => r.id === 'tru-copy'))}
-          onClick={() => handleRoomClick(truMainFloorRooms.find(r => r.id === 'tru-copy'))}
+          className={getRoomStyle(coastalMainFloorRooms.find(r => r.id === 'coastal-andrea'))}
+          onClick={() => handleRoomClick(coastalMainFloorRooms.find(r => r.id === 'coastal-andrea'))}
           style={{height: '80px'}}
         >
-          {renderRoomDetails(truMainFloorRooms.find(r => r.id === 'tru-copy'))}
-        </div>
-        <div 
-          className={getRoomStyle(truMainFloorRooms.find(r => r.id === 'tru-it'))}
-          onClick={() => handleRoomClick(truMainFloorRooms.find(r => r.id === 'tru-it'))}
-          style={{height: '80px'}}
-        >
-          {renderRoomDetails(truMainFloorRooms.find(r => r.id === 'tru-it'))}
+          {renderRoomDetails(coastalMainFloorRooms.find(r => r.id === 'coastal-andrea'))}
         </div>
       </div>
     );
@@ -486,11 +503,13 @@ const OfficeFloorMap = () => {
           return renderSolutionsFrontLobby();
         case 'bullpen':
           return renderSolutionsOfficeBullpen();
-        case '2nd':
+        case 'upstairs':
           return renderSolutions2ndFloor();
         default:
           return renderSolutionsFrontLobby();
       }
+    } else if (activeLocation === 'coastal') {
+      return renderCoastalMainFloor();
     } else {
       return renderTruMainFloor();
     }
@@ -575,6 +594,13 @@ const OfficeFloorMap = () => {
           >
             <Home className="w-4 h-4 mr-1" />
             <span>Title Solutions</span>
+          </button>
+          <button 
+            onClick={() => {setActiveLocation('coastal'); setActiveFloor('main');}}
+            className={`flex-1 py-2 px-3 text-sm font-medium transition-colors duration-200 flex justify-center items-center ${activeLocation === 'coastal' ? 'bg-white text-blue-700' : 'text-blue-100 hover:bg-blue-700'}`}
+          >
+            <Waves className="w-4 h-4 mr-1" />
+            <span>Coastal Title</span>
           </button>
           <button 
             onClick={() => {setActiveLocation('tru'); setActiveFloor('main');}}
