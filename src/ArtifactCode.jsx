@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useReducer, createContext, useContext } from 'react';
+import React, { useState, useEffect, useMemo, useReducer, createContext, useContext, useRef } from 'react';
 import { Search, MapPin, Phone, List, Grid, Users, Coffee, Printer, FileText, Home, Waves } from 'lucide-react';
 
 // Room type styles - separated from render logic
@@ -442,6 +442,12 @@ const RAW_OFFICE_DATA = [
 
 // Room component with explicit dependencies (no more global state)
 const Room = ({ roomId, roomMap, active, onSelect, className = "", size = "h-[75px]" }) => {
+  const [showQuote, setShowQuote] = useState(false);
+  const [currentQuote, setCurrentQuote] = useState("");
+  const [isHovering, setIsHovering] = useState(false);
+  const [epicnessActivated, setEpicnessActivated] = useState(false);
+  const timerRef = useRef(null);
+  
   if (!roomId) return <div className={`${className} ${size} invisible`}></div>;
   
   const room = roomMap[roomId];
@@ -450,35 +456,446 @@ const Room = ({ roomId, roomMap, active, onSelect, className = "", size = "h-[75
   const typeInfo = ROOM_TYPES[room.type] || ROOM_TYPES.office;
   const isInactive = room.status === 'inactive';
   
-  let baseStyle = `${className} ${size} relative cursor-pointer transition-all duration-200 border-2 rounded-lg flex items-center justify-center text-center shadow-sm hover:shadow-md ${typeInfo.bg} ${typeInfo.border}`;
+  // Check if this is Will's office with extension 1030
+  const isWillsOffice = room.name === 'Will' && room.extension === '1030';
+  
+  // Uplifting quotes for the easter egg
+  const upliftingQuotes = [
+    "The real voyage of discovery consists not in seeking new landscapes, but in having new eyes. — Marcel Proust",
+    "We must learn to reawaken and keep ourselves awake, not by mechanical aids, but by an infinite expectation of the dawn. — Henry David Thoreau",
+    "You want to change the world? You will have to do it in secret. And then nothing will have changed—except you. — Rebecca Solnit (modified)",
+    "Those who were seen dancing were thought to be insane by those who could not hear the music. — Nietzsche (attributed)",
+    "Civilization advances by extending the number of important operations we can perform without thinking about them. — Alfred North Whitehead"
+  ];
+  
+  
+  // Custom styling for Will's office - now with conditional styling based on epicness activation
+  let baseStyle = isWillsOffice 
+    ? epicnessActivated 
+      ? `${className} ${size} relative cursor-pointer transition-all duration-300 
+         bg-gradient-to-r from-purple-400 via-pink-400 to-yellow-300
+         border-2 border-transparent hover:border-white
+         rounded-lg flex items-center justify-center text-center 
+         shadow-lg hover:shadow-xl will-office-card
+         hover:scale-110 hover:z-20` 
+      : `${className} ${size} relative cursor-pointer transition-all duration-200 
+         border-2 rounded-lg flex items-center justify-center text-center 
+         shadow-sm hover:shadow-md ${typeInfo.bg} ${typeInfo.border} subtle-will-office`
+    : `${className} ${size} relative cursor-pointer transition-all duration-200 border-2 rounded-lg flex items-center justify-center text-center shadow-sm hover:shadow-md ${typeInfo.bg} ${typeInfo.border}`;
   
   // Highlight if active
   if (active) {
-    baseStyle += " ring-4 ring-blue-500 z-10 transform scale-105";
+    baseStyle += isWillsOffice && epicnessActivated
+      ? " ring-4 ring-pink-500 z-10 transform scale-105" 
+      : " ring-4 ring-blue-500 z-10 transform scale-105";
   }
   
+  // Start timer for hover and clear it when done
+  const handleMouseEnter = () => {
+    setIsHovering(true);
+    if (isWillsOffice && !epicnessActivated) {
+      timerRef.current = setTimeout(() => {
+        setEpicnessActivated(true);
+      }, 1000); // 1 second delay
+    }
+  };
+  
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+  
+  // Handle Will's office click for easter egg and epicness activation
+  const handleClick = () => {
+    if (isWillsOffice) {
+      // Start timer for epicness activation if not already active
+      if (!epicnessActivated) {
+        timerRef.current = setTimeout(() => {
+          setEpicnessActivated(true);
+        }, 1000); // 1 second delay
+      }
+      
+      // Only show quote and sprinkles if epicness is activated
+      if (epicnessActivated) {
+        // Show a random quote
+        const randomQuote = upliftingQuotes[Math.floor(Math.random() * upliftingQuotes.length)];
+        setCurrentQuote(randomQuote);
+        setShowQuote(true);
+        
+        // Create and add the candy sprinkle animation
+        const sprinkleContainer = document.createElement('div');
+        sprinkleContainer.className = 'candy-sprinkles';
+        document.body.appendChild(sprinkleContainer);
+        
+        // Add 20 random candy sprinkles
+        for (let i = 0; i < 20; i++) {
+          const sprinkle = document.createElement('div');
+          sprinkle.className = 'candy-sprinkle';
+          sprinkle.style.left = `${Math.random() * 100}%`;
+          sprinkle.style.backgroundColor = [
+            '#FF69B4', // Hot Pink
+            '#00FFFF', // Cyan
+            '#FF00FF', // Magenta
+            '#FFFF00', // Yellow
+            '#FF9900'  // Orange
+          ][Math.floor(Math.random() * 5)];
+          sprinkle.style.animationDelay = `${Math.random() * 0.5}s`;
+          sprinkleContainer.appendChild(sprinkle);
+        }
+        
+        // Hide after 8 seconds (increased from 3) and remove sprinkle animation
+        setTimeout(() => {
+          setShowQuote(false);
+          if (document.body.contains(sprinkleContainer)) {
+            document.body.removeChild(sprinkleContainer);
+          }
+        }, 8000); // Increased from 3000 to 8000 milliseconds
+      }
+    }
+    
+    // Call the original onSelect function
+    onSelect(roomId);
+  };
+  
+  // Add Will's office CSS styles
+  React.useEffect(() => {
+    if (isWillsOffice) {
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes sparkle {
+          0%, 100% { opacity: 0; transform: scale(0); }
+          50% { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes subtleSparkle {
+          0%, 100% { opacity: 0; transform: scale(0); }
+          50% { opacity: 0.15; transform: scale(0.5); }
+        }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+        
+        @keyframes rainbow-border {
+          0% { border-color: #ff00ff; }
+          16.6% { border-color: #ff00ff; }
+          33.3% { border-color: #00ffff; }
+          50% { border-color: #ffff00; }
+          66.6% { border-color: #ff9900; }
+          83.3% { border-color: #ff69b4; }
+          100% { border-color: #ff00ff; }
+        }
+        
+        @keyframes glitter {
+          0% { opacity: 0; transform: translate(0, 0); }
+          25% { opacity: 1; transform: translate(2px, 2px); }
+          50% { opacity: 0.5; transform: translate(-2px, -2px); }
+          75% { opacity: 1; transform: translate(-2px, 2px); }
+          100% { opacity: 0; transform: translate(0, 0); }
+        }
+        
+        @keyframes fall {
+          0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+        
+        @keyframes bubble {
+          0% { transform: translateY(0) scale(0.5); opacity: 0; }
+          50% { transform: translateY(-15px) scale(1); opacity: 0.7; }
+          100% { transform: translateY(-30px) scale(0.8); opacity: 0; }
+        }
+        
+        @keyframes rainbow-text {
+          0% { color: #ff00ff; }
+          20% { color: #ff69b4; }
+          40% { color: #ff9900; }
+          60% { color: #ffff00; }
+          80% { color: #00ffff; }
+          100% { color: #ff00ff; }
+        }
+        
+        @keyframes quote-appear {
+          0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+          30% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+          100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(255, 105, 180, 0.5); }
+          50% { box-shadow: 0 0 35px rgba(255, 105, 180, 0.8), 0 0 50px rgba(0, 255, 255, 0.4); }
+        }
+        
+        /* Subtle sparkling effect for initial state */
+        .subtle-will-office {
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .subtle-sparkle {
+          position: absolute;
+          width: 2px;
+          height: 2px;
+          border-radius: 50%;
+          background-color: white;
+          opacity: 0.1;
+          z-index: 2;
+          pointer-events: none;
+          animation: subtleSparkle 3s infinite;
+        }
+        
+        /* Full epic styling */
+        .will-office-card {
+          overflow: hidden;
+          position: relative;
+        }
+        
+        .will-office-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(45deg, 
+            rgba(255,255,255,0.2) 0%, 
+            rgba(255,255,255,0.5) 25%, 
+            rgba(255,255,255,0.2) 50%, 
+            rgba(255,255,255,0.5) 75%, 
+            rgba(255,255,255,0.2) 100%);
+          background-size: 200% 200%;
+          animation: shimmer 3s linear infinite;
+          pointer-events: none;
+          z-index: 1;
+        }
+        
+        @keyframes shimmer {
+          0% { background-position: 0% 0%; }
+          100% { background-position: 200% 200%; }
+        }
+        
+        .will-office-card:hover {
+          border: 2px solid transparent;
+          animation: rainbow-border 2s linear infinite;
+          box-shadow: 0 0 20px rgba(255, 105, 180, 0.7), 
+                      0 0 40px rgba(0, 255, 255, 0.4),
+                      0 0 60px rgba(255, 255, 0, 0.2);
+        }
+        
+        .will-sparkle {
+          position: absolute;
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background-color: white;
+          box-shadow: 0 0 5px #fff, 0 0 10px #fff;
+          z-index: 2;
+          pointer-events: none;
+          animation: sparkle 1.5s infinite;
+        }
+        
+        .star {
+          position: absolute;
+          color: #ffff00;
+          font-size: 12px;
+          text-shadow: 0 0 5px rgba(255, 255, 0, 0.8);
+          animation: float 2s infinite;
+          z-index: 2;
+        }
+        
+        .quote-bubble {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: linear-gradient(45deg, #ff69b4, #ff00ff, #9933ff);
+          padding: 20px 25px;
+          border-radius: 15px;
+          box-shadow: 0 0 20px rgba(255, 105, 180, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.3);
+          color: white;
+          font-family: 'Comic Sans MS', cursive, sans-serif;
+          max-width: 400px;
+          text-align: center;
+          z-index: 1000;
+          animation: quote-appear 0.5s ease-out forwards, float 4s ease-in-out infinite, pulse-glow 3s infinite;
+          border: 2px solid rgba(255, 255, 255, 0.5);
+          letter-spacing: 0.5px;
+          line-height: 1.6;
+        }
+        
+        .quote-bubble::before {
+          content: """;
+          position: absolute;
+          top: 0;
+          left: 10px;
+          font-size: 60px;
+          color: rgba(255, 255, 255, 0.3);
+          line-height: 1;
+        }
+        
+        .quote-bubble::after {
+          content: """;
+          position: absolute;
+          bottom: -20px;
+          right: 10px;
+          font-size: 60px;
+          color: rgba(255, 255, 255, 0.3);
+          line-height: 1;
+        }
+        
+        .quote-text {
+          position: relative;
+          z-index: 2;
+          font-weight: 500;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .quote-author {
+          display: block;
+          margin-top: 10px;
+          font-style: italic;
+          font-size: 0.9em;
+          text-align: right;
+          opacity: 0.9;
+          color: #ffff99;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .candy-sprinkles {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 0;
+          overflow: visible;
+          pointer-events: none;
+          z-index: 999;
+        }
+        
+        .candy-sprinkle {
+          position: absolute;
+          top: 0;
+          width: 8px;
+          height: 3px;
+          border-radius: 2px;
+          animation: fall 3s linear forwards;
+        }
+        
+        .bubble {
+          position: absolute;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(255, 105, 180, 0.4));
+          box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+          animation: bubble 3s ease-in-out infinite;
+          z-index: 2;
+          pointer-events: none;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        document.head.removeChild(style);
+      };
+    }
+  }, [isWillsOffice]);
+  
   return (
-    <div 
-      className={baseStyle}
-      onClick={() => onSelect(roomId)}
-    >
-      <div className={`p-1 text-xs md:text-sm flex flex-col h-full justify-center items-center relative ${isInactive ? 'opacity-60' : ''}`}>
-        {isInactive && (
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="text-red-500 font-bold text-xl transform rotate-12">X</div>
+    <>
+      <div 
+        className={baseStyle}
+        onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {isWillsOffice ? (
+          epicnessActivated ? (
+            // Epic activated styling
+            <>
+              {/* Sparkles for Will's office */}
+              <div className="will-sparkle" style={{ top: '20%', left: '30%', animationDelay: '0.1s' }}></div>
+              <div className="will-sparkle" style={{ top: '70%', left: '20%', animationDelay: '0.5s' }}></div>
+              <div className="will-sparkle" style={{ top: '40%', left: '60%', animationDelay: '0.8s' }}></div>
+              <div className="will-sparkle" style={{ top: '30%', left: '70%', animationDelay: '0.3s' }}></div>
+              
+              {/* Stars */}
+              <div className="star" style={{ top: '15%', left: '20%', animationDelay: '0.2s' }}>★</div>
+              <div className="star" style={{ top: '60%', left: '80%', animationDelay: '0.7s' }}>★</div>
+              
+              {/* Floating bubbles - only show when hovering */}
+              {isHovering && (
+                <>
+                  <div className="bubble" style={{ bottom: '10%', left: '10%', animationDelay: '0s', width: '6px', height: '6px' }}></div>
+                  <div className="bubble" style={{ bottom: '10%', left: '40%', animationDelay: '0.5s', width: '8px', height: '8px' }}></div>
+                  <div className="bubble" style={{ bottom: '10%', left: '70%', animationDelay: '1s', width: '10px', height: '10px' }}></div>
+                  <div className="bubble" style={{ bottom: '10%', left: '20%', animationDelay: '1.5s', width: '7px', height: '7px' }}></div>
+                  <div className="bubble" style={{ bottom: '10%', left: '60%', animationDelay: '0.8s', width: '9px', height: '9px' }}></div>
+                </>
+              )}
+              
+              <div className="p-1 flex flex-col h-full justify-center items-center relative z-10">
+                <div className="font-bold text-white text-md" style={{
+                  fontFamily: "'Comic Sans MS', cursive, sans-serif",
+                  textShadow: "0 0 5px #ff00ff, 0 0 10px #00ffff",
+                  transform: "rotate(-2deg)"
+                }}>WillieP</div>
+                <div className="mt-1 flex items-center">
+                  <Phone className="w-3 h-3 mr-1 text-white" />
+                  <span className="text-white font-bold" style={{
+                    fontFamily: "'Comic Sans MS', cursive, sans-serif",
+                  }}>1030</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            // Subtle initial styling
+            <>
+              {/* Subtle sparkles */}
+              <div className="subtle-sparkle" style={{ top: '30%', left: '40%', animationDelay: '0.2s' }}></div>
+              <div className="subtle-sparkle" style={{ top: '70%', left: '60%', animationDelay: '1.5s' }}></div>
+              <div className="subtle-sparkle" style={{ top: '40%', left: '20%', animationDelay: '0.8s' }}></div>
+              
+              <div className={`p-1 text-xs md:text-sm flex flex-col h-full justify-center items-center relative ${isInactive ? 'opacity-60' : ''}`}>
+                <div className="font-bold">{room.name}</div>
+                {room.extension && <div className="mt-1 flex items-center"><Phone className="w-3 h-3 mr-1 text-gray-500" />{room.extension}</div>}
+              </div>
+            </>
+          )
+        ) : (
+          <div className={`p-1 text-xs md:text-sm flex flex-col h-full justify-center items-center relative ${isInactive ? 'opacity-60' : ''}`}>
+            {isInactive && (
+              <div className="absolute inset-0 flex items-center justify-center z-10">
+                <div className="text-red-500 font-bold text-xl transform rotate-12">X</div>
+              </div>
+            )}
+            {room.warning && (
+              <div className="absolute top-0 right-0 m-1">
+                <div className="bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center" title={room.warning}>
+                  !
+                </div>
+              </div>
+            )}
+            <div className="font-bold">{room.name}</div>
+            {room.extension && <div className="mt-1 flex items-center"><Phone className="w-3 h-3 mr-1 text-gray-500" />{room.extension}</div>}
           </div>
         )}
-        {room.warning && (
-          <div className="absolute top-0 right-0 m-1">
-            <div className="bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center" title={room.warning}>
-              !
-            </div>
-          </div>
-        )}
-        <div className="font-bold">{room.name}</div>
-        {room.extension && <div className="mt-1 flex items-center"><Phone className="w-3 h-3 mr-1 text-gray-500" />{room.extension}</div>}
       </div>
-    </div>
+      
+      {/* Quote bubble */}
+      {showQuote && (
+        <div className="quote-bubble">
+          {currentQuote.includes('—') ? (
+            <>
+              <div className="quote-text">{currentQuote.split('—')[0].trim()}</div>
+              <div className="quote-author">— {currentQuote.split('—')[1].trim()}</div>
+            </>
+          ) : (
+            <div className="quote-text">{currentQuote}</div>
+          )}
+        </div>
+      )}
+    </>
   );
 };
 
