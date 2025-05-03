@@ -1315,6 +1315,7 @@ const OfficeMapDisplay = () => {
             roomMap={roomMap}
             getPositionRoomId={getPositionRoomId}
             showValidation={showValidation && canAdminister()}
+            className="mb-0"
           />
         ))}
       </>
@@ -1340,7 +1341,7 @@ const OfficeMapDisplay = () => {
   // Render the type legend
   const renderLegend = () => {
     return (
-      <div className="flex flex-wrap justify-center gap-2 px-4 py-2 bg-white shadow-sm text-xs border-b border-gray-200">
+      <div className="flex flex-wrap justify-center gap-2 px-4 py-2 bg-white shadow-sm text-xs border-b border-gray-200 w-full">
         {Object.entries(ROOM_TYPE_STYLES).map(([key, type]) => (
           <div key={key} className={`${type.bg} px-3 py-1 rounded-full text-${key === 'empty' ? 'gray' : key}-800 flex items-center`}>
             <div className={`w-2 h-2 rounded-full ${type.dot} mr-1`}></div>
@@ -1406,7 +1407,7 @@ const OfficeMapDisplay = () => {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto bg-gray-100 min-h-screen">
+    <div className="w-full max-w-none mx-0 bg-gray-100 min-h-screen" style={{ margin: 0, padding: 0 }}>
       {/* Role indicator for admins and editors */}
       {(canAdminister() || canEdit()) && (
         <div className="bg-gray-800 text-white px-4 py-1 text-xs flex justify-between items-center">
@@ -1427,9 +1428,9 @@ const OfficeMapDisplay = () => {
       )}
       
       {/* Header with design improvements */}
-      <div className="bg-gradient-to-r from-blue-700 to-blue-600 shadow-lg">
+      <div className="w-full bg-gradient-to-r from-blue-700 to-blue-600 shadow-lg" style={{ margin: 0, padding: 0 }}>
         {/* Main Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-blue-500">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-blue-500 w-full">
           <h1 className="text-xl font-bold text-white flex items-center">
             <Phone className="w-5 h-5 mr-2" />
             Office Phone Directory
@@ -1442,7 +1443,7 @@ const OfficeMapDisplay = () => {
         </div>
         
         {/* Search & Controls Row */}
-        <div className="flex items-center px-4 py-3">
+        <div className="flex items-center px-4 py-3 w-full">
           {/* Search Bar */}
           <div className="flex-1 relative mr-2">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -1490,7 +1491,7 @@ const OfficeMapDisplay = () => {
         </div>
         
         {/* Location Tabs */}
-        <div className="flex border-t border-blue-500 bg-blue-800">
+        <div className="flex border-t border-blue-500 bg-blue-800 w-full">
           {Object.entries(LOCATIONS).map(([key, location]) => {
             const LocationIcon = location.icon;
             return (
@@ -1508,7 +1509,7 @@ const OfficeMapDisplay = () => {
         
         {/* Floor tabs - only shown for active location when relevant */}
         {!showListView && searchResults.length === 0 && getAvailableFloors().length > 1 && featureFlags.enableMultiFloorView && (
-          <div className="flex bg-white border-b border-gray-200 shadow-sm overflow-x-auto">
+          <div className="flex bg-white border-b border-gray-200 shadow-sm overflow-x-auto w-full">
             {getAvailableFloors().map(floor => {
               const floorInfo = FLOORS[floor] || { name: floor, icon: MapPin };
               const FloorIcon = floorInfo.icon;
@@ -1531,7 +1532,7 @@ const OfficeMapDisplay = () => {
       </div>
       
       {/* Legend */}
-      {renderLegend()}
+      <div className="w-full">{renderLegend()}</div>
       
       {/* Validation Errors for Admins */}
       {renderValidationErrors()}
@@ -1557,7 +1558,7 @@ const OfficeMapDisplay = () => {
       
       {/* Main Content */}
       {!showListView && searchResults.length === 0 ? (
-        <div className="bg-white shadow-md rounded-lg m-0 sm:m-4 overflow-hidden">
+        <div className="bg-white shadow-md rounded-0 sm:rounded-lg m-0 p-0 overflow-hidden">
           {/* Floor heading */}
           <div className="p-3 bg-gray-50 border-b border-gray-200 flex items-center">
             <MapPin className="w-5 h-5 text-blue-600 mr-2" />
@@ -1570,13 +1571,13 @@ const OfficeMapDisplay = () => {
           </div>
           
           {/* Floor map */}
-          <div className="p-2">
+          <div className="p-0 sm:p-2">
             {renderFloorLayout()}
           </div>
         </div>
       ) : (
         searchResults.length === 0 && (
-          <div className="bg-white shadow-md rounded-lg m-0 sm:m-4 overflow-hidden">
+          <div className="bg-white shadow-md rounded-0 sm:rounded-lg m-0 p-0 overflow-hidden">
             <div className="p-3 bg-gray-50 border-b border-gray-200 flex items-center">
               <List className="w-5 h-5 text-blue-600 mr-2" />
               <h2 className="text-lg font-bold text-gray-800">Directory Listing</h2>
@@ -1614,9 +1615,37 @@ const OfficeMapDisplay = () => {
 
 // Main component that wraps the display with the provider
 const OfficeFloorMap = ({ initialVersion = 'default' }) => {
+  // Add styles to override the root element padding
+  React.useEffect(() => {
+    // Create a style element to override the root padding
+    const style = document.createElement('style');
+    style.textContent = `
+      @media (max-width: 768px) {
+        #root {
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100% !important;
+          width: 100% !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Cleanup function
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   return (
     <OfficeMapProvider initialVersion={initialVersion}>
-      <div className="p-0 overflow-hidden">
+      <div className="p-0 m-0 w-full overflow-hidden" style={{ 
+        maxWidth: '100%', 
+        margin: 0, 
+        padding: 0,
+        border: 'none',
+        borderRadius: 0
+      }}>
         <OfficeMapDisplay />
       </div>
     </OfficeMapProvider>
