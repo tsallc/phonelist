@@ -1144,8 +1144,9 @@ const OfficeMapProvider = ({
     
     const termLower = term.toLowerCase();
     let results = RAW_OFFICE_DATA.filter(room => 
-      room.name.toLowerCase().includes(termLower) || 
-      room.extension.includes(termLower)
+      (room.name.toLowerCase().includes(termLower) || 
+       room.extension.includes(termLower)) &&
+      room.type !== 'empty'
     );
     
     // Sort results to prioritize active location and selected floors
@@ -1267,7 +1268,9 @@ const OfficeMapProvider = ({
     featureFlags,
     validationResults,
     getAvailableFloors: () => Object.keys(LAYOUT_CONFIG[state.activeLocation] || {}),
-    getActiveLocationRooms: () => RAW_OFFICE_DATA.filter(room => room.location === state.activeLocation)
+    getActiveLocationRooms: () => RAW_OFFICE_DATA.filter(room => 
+      room.location === state.activeLocation && room.type !== 'empty'
+    )
   };
   
   return (
