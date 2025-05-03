@@ -1,150 +1,168 @@
-# Refactoring Plan: Contact Directory V2
+# Refactoring Plan: Contact Directory V2 - Operational Graph Model
 
 **1. Vision & Goals:**
 
-*   **Truth-First Data Model:** Structure data based on real-world entities (people, locations, roles, contact methods) independent of UI presentation.
-*   **Scalability & Maintainability:** Design a schema and components that easily adapt to new locations, roles, people, and data sources (like Azure Entra).
-*   **Operational Efficiency:** Create a UI optimized for speed, density, and common tasks (lookup, contact initiation, filtering). Prioritize action over static display.
-*   **Interactivity & Responsiveness:** Implement modern UI patterns: search, filtering, hover states, click-to-action, adaptive layouts.
-*   **Azure Entra Readiness:** Design the internal data model and architecture to facilitate straightforward integration with Azure Entra ID as the primary source for staff information in the future.
+*   **Truth-First Data Model:** Model the directory as a dynamic graph of entities, operational roles, contact points, and their relationships over time, independent of specific UI views. Prioritize semantic accuracy and operational reality.
+*   **Scalability & Maintainability:** Design a schema that handles complexity (multi-role, multi-site, shared resources, temporal changes) and integrates smoothly with authoritative sources like Azure Entra.
+*   **Operational Efficiency & Intent Resolution:** Create a UI and underlying logic optimized for action, complex lookups, and resolving contact *intent* (e.g., "find backup", "escalate issue") beyond simple name/number retrieval.
+*   **Interactivity, Responsiveness & Access Control:** Implement a modern, dense UI with robust filtering, search, click-to-action, adaptive layouts, and appropriate visibility controls based on user context/role.
+*   **Azure Entra Readiness & Presence Integration:** Design the internal model to map cleanly to Entra attributes and include hooks for real-time presence information.
 
 **2. Phased Approach:**
 
-This will be a multi-phase refactor to manage complexity:
+*   **Phase 1: Foundational Graph Schema & Temporal Logic:** Define the core, unified schemas (`ContactEntity`, `Role`, `ContactPoint`, `Location`) incorporating operational semantics, relationships, temporal validity, and visibility. Refactor initial data.
+*   **Phase 2: Service Layer & Resolution Logic:** Implement the service layer to load, process, resolve, and filter data based on time, priority, visibility, and basic intent. Refactor core components to consume resolved data.
+*   **Phase 3: Advanced UI/UX & Interactivity:** Build out the interactive UI (search, filters, adaptive layout, actions) leveraging the resolved data and service layer capabilities.
+*   **Phase 4: Azure Entra Integration & Presence:** Implement Entra data fetching, transformation, merging, and display real-time presence information.
 
-*   **Phase 1: Data Model & Schema Overhaul:** Establish the correct, normalized data structure.
-*   **Phase 2: Core Component Refactor & Dynamic Rendering:** Rebuild UI components to consume and render the new data model dynamically.
-*   **Phase 3: UI/UX Enhancement & Interactivity:** Implement advanced features like search, filtering, improved layout density, and actions.
-*   **Phase 4: Azure Entra Integration Strategy & Prep:** Define mapping and prepare service layers for external data fetching.
+**3. Phase 1: Foundational Graph Schema & Temporal Logic (`src/schemas/`, `src/data/`)**
 
-**3. Phase 1: Data Model & Schema Overhaul (`src/schemas/`, `src/data/`)**
-
-*   **3.1. Define Core Schemas (`src/schemas/directorySchemas.js`):**
-    *   **`Person` Schema:**
-        *   `id`: Unique identifier (e.g., `sydney_williams` or future UPN/ObjectID from Entra).
-        *   `fullName`: Official full name.
-        *   `displayName`: Preferred display name (e.g., "Sydney").
-        *   `roles`: Array of `Role` objects.
-        *   `contactMethods`: Array of `ContactMethod` objects.
-        *   `source`: Indicator ('manual', 'entra'). *[Future]*
-    *   **`Role` Schema:**
-        *   `title`: Job title (e.g., "Operations", "Executive", "IT Support").
-        *   `locationId`: Reference to a `Location` ID (e.g., `plymouth`, `ft_lauderdale`).
-        *   *Optional:* `department`, `managerId`, etc. (consider Entra fields).
-    *   **`ContactMethod` Schema:**
-        *   `id`: Unique ID for the method.
-        *   `type`: Enum/string ('Extension', 'Cell', 'Direct', 'Email').
-        *   `value`: The actual number or email address.
-        *   `locationId`: *Optional* reference to `Location` ID (for site-specific extensions/numbers).
-        *   `tags`: Array of strings ('primary', 'after-hours', 'desk', 'mobile').
-        *   `isPublic`: Boolean (for filtering sensitive numbers). *[Optional]*
+*   **3.1. Define Core Schemas (`src/schemas/directorySchemas.js`):** *(Major Overhaul)*
+    *   **`ContactEntity` Schema:** (Unified)
+        *   `id`: Unique identifier (system-generated UUID, UPN/ObjectID from Entra, or manual ID).
+        *   `entityType`: Enum/string ('person', 'organization', 'system_resource').
+        *   `source`: Enum/string ('manual', 'entra', 'vendor_api', 'system_defined').
+        *   `tags`: Array of strings (e.g., 'internal', 'external', 'vendor', 'department:Finance', 'critical_partner').
+        *   `names`: Array of `Name` objects (legal, display, alias).
+        *   `roleAssignments`: Array of `RoleAssignment` objects (linking Entity to Role + temporal/priority info).
+        *   `contactPointAssignments`: Array of `ContactPointAssignment` objects (linking Entity/Role to ContactPoint + temporal/usage info).
+        *   `presence`: Object { `status`, `lastSeen`, `provider` }. *[Placeholder for Phase 4]*
+        *   `audit`: Object { `created`, `modified` }.
+        *   `validFrom`, `validTo`: Timestamps for entity validity.
+    *   **`Name` Schema:**
+        *   `type`: Enum/string ('legal', 'display', 'alias').
+        *   `value`: The name string.
+    *   **`Role` Schema:** (Operational Definition)
+        *   `id`: Unique ID for the operational role definition (e.g., 'closer_mi', 'exec_primary', 'it_support_tier1').
+        *   `function`: Primary operational function (e.g., 'Closing', 'Executive Management', 'IT Support', 'Abstracting', 'Finance Approval').
+        *   `jurisdiction`: Geographic/legal region primary focus (e.g., 'MI', 'FL', 'OaklandCounty', 'Federal'). *Optional.*
+        *   `coverage`: Array of jurisdictions/areas supported (e.g., ['MI', 'FL', 'National']).
+        *   `title`: Common display title (e.g., "Closer", "CEO", "IT Helpdesk"). *[Display Aid]*
+        *   `tags`: Array of strings ('executive', 'support-tier1', 'customer-facing', 'approval-required').
+        *   `fallbackRoleId`: *Optional* ID of the role to escalate/route to.
+        *   `validFrom`, `validTo`: Timestamps for role definition validity.
+    *   **`RoleAssignment` Schema:** (Connects Entity to Role)
+        *   `assignmentId`: Unique ID for this specific assignment instance.
+        *   `entityId`: Reference to `ContactEntity.id`.
+        *   `roleId`: Reference to `Role.id`.
+        *   `physicalLocationId`: *Optional* Reference to `Location.id`.
+        *   `priority`: Number indicating rank among the entity's roles (lower is higher).
+        *   `isPrimary`: Boolean marker for the main role.
+        *   `validFrom`, `validTo`: Timestamps for role assignment validity.
+    *   **`ContactPoint` Schema:** (Reusable Contact Assets)
+        *   `id`: Unique ID for the contact point asset.
+        *   `type`: Enum/string ('Extension', 'Cell', 'Direct', 'Email', 'SharedLine', 'RoleEmail', 'Voicemail').
+        *   `value`: The actual number, email address, or identifier.
+        *   `description`: *Optional* user-friendly description (e.g., "Main Closing Line - MI", "Support Queue Voicemail").
+        *   `locationId`: *Optional* Reference to `Location.id`.
+        *   `isShared`: Boolean.
+        *   `visibilityScope`: Enum/string ('public', 'internal', 'admin', 'role:exec', 'function:closing').
+        *   `tags`: Array of strings ('primary', 'after-hours', 'desk', 'mobile', 'urgent').
+        *   `validFrom`, `validTo`: Timestamps for contact point validity.
+    *   **`ContactPointAssignment` Schema:** (Connects Entity/Role to ContactPoint)
+        *   `assignmentId`: Unique ID for this specific assignment instance.
+        *   `contactPointId`: Reference to `ContactPoint.id`.
+        *   `assignedToEntityId`: *Optional* Reference to `ContactEntity.id`.
+        *   `assignedToRoleAssignmentId`: *Optional* Reference to `RoleAssignment.assignmentId` (links contact point usage to a specific role instance for the entity).
+        *   `usageType`: Enum/string ('primary', 'secondary', 'after-hours', 'backup', 'notification').
+        *   `validFrom`, `validTo`: Timestamps for assignment validity.
     *   **`Location` Schema:**
-        *   `id`: Unique ID (e.g., `plymouth`, `ft_lauderdale`, `tampa_reo`).
-        *   `name`: Display name (e.g., "Michigan Office", "Florida Office").
-        *   `address`: Full address details.
-        *   `mainPhone`, `mainFax`: *Optional* office-level numbers.
-    *   **`ExternalContact` Schema:** (Separate for now, potential merge later)
-        *   `id`, `name`, `contactMethods` (simplified), `purpose`, `usageScope`, `tags`.
+        *   `id`, `name`, `address`, `mainPhone`, `mainFax`, `tags` (e.g., 'physical', 'virtual', 'hq').
+        *   `validFrom`, `validTo`: Timestamps for location validity.
 
-*   **3.2. Refactor Data Source (`src/data/seedData.js` or similar):**
-    *   Populate this file with data conforming to the *new* schemas.
-    *   **Crucially:** Represent Sydney Williams as *one* `Person` entity with two `Role` entries (one for MI, one for FL) and two `ContactMethod` entries (one Ext for MI, one Ext for FL).
+*   **3.2. Refactor Data Source (`src/data/seedData.js`):**
+    *   Populate according to the *new unified `ContactEntity`* and related schemas.
+    *   Represent Sydney Williams as *one* `ContactEntity` (`entityType: 'person'`) with two `RoleAssignment` entries (linking her entity ID to the 'closer_mi' and 'closer_fl' `Role` definitions, each with its own assignment validity). Create separate `ContactPoint` assets for the MI and FL extensions. Create `ContactPointAssignment` entries linking Sydney's *role assignments* (or entity ID for personal points) to the relevant `ContactPoint` IDs, specifying usage and validity.
+    *   Define `Role` definitions (operational functions/scopes) separately.
     *   Define `Location` data separately.
-    *   Map existing staff and external contacts to these new structures. Remove `sydney_mi`, `sydney_fl`. Explicitly define `locationId` where applicable.
+    *   Define shared/role-based `ContactPoint` assets explicitly.
+    *   Represent external orgs (Wayne County) as `ContactEntity` (`entityType: 'organization'`).
+    *   Set `validFrom`/`validTo` appropriately (e.g., `validFrom: now`, `validTo: null` for current).
 
-*   **3.3. Implement Data Processing Logic (`src/hooks/useProcessedDirectoryData.js` or `src/services/directoryService.js`):**
-    *   Create functions to:
-        *   Load the raw seed data.
-        *   *Derive* display groupings dynamically (e.g., group by primary role title, or allow dynamic filtering/grouping later). Do *not* hardcode groups like `OPS_MI`.
-        *   Provide functions to filter/search the normalized data based on various criteria (name, role, location, tag).
+*   **3.3. Prepare Service Layer Stubs (`src/services/directoryService.js`):**
+    *   Define function signatures for loading, resolving, filtering based on time, roles, visibility, etc. Implementation deferred to Phase 2.
+    *   Define how intent queries might look (e.g., `resolveContact({ intent: 'escalate', fromRole: 'support-tier1', jurisdiction: 'MI' })`).
 
-**4. Phase 2: Core Component Refactor & Dynamic Rendering (`src/components/`)**
+**4. Phase 2: Service Layer & Resolution Logic**
 
-*   **4.1. Refactor `ContactDirectory` Component:**
-    *   Consume data from the new processing logic (hook/service).
-    *   Remove static group rendering logic. Implement rendering based on the *dynamically derived* groups or a flat, filterable list initially.
-    *   Integrate a new `ContactCard` component.
+*   **4.1. Implement `directoryService.js`:**
+    *   Load raw seed data (Entities, Roles, Locations, ContactPoints, Assignments).
+    *   Implement **temporal filtering:** Core logic to return only currently valid entities, roles, points, and assignments.
+    *   Implement **resolution logic:** Functions to take an entity ID or an intent query and return resolved, context-aware contact information, considering:
+        *   Role priorities (`isPrimary`, `priority`).
+        *   Contact point usage (`usageType`).
+        *   Temporal validity of all linked objects.
+        *   Visibility scope based on assumed user context (initially 'internal').
+        *   Basic fallback logic using `fallbackRoleId`.
+    *   Implement filtering/searching functions operating on the *resolved* data state.
 
-*   **4.2. Create `ContactCard` Component (`src/components/ContactCard.jsx`):**
-    *   Accepts a single `Person` or `ExternalContact` object.
-    *   Displays `displayName` prominently.
-    *   Displays `Role`(s) and `Location`(s) concisely (e.g., using badges: "Sydney Williams `[Ops: MI, FL]`").
-    *   Renders `ContactMethod`s:
-        *   Use appropriate icons per `type`.
-        *   Clearly label `value`.
-        *   Indicate `locationId` if relevant (e.g., a small MI/FL flag icon).
-        *   Show `purpose`/`scope` for external contacts.
-    *   Implement basic hover states.
+*   **4.2. Refactor `ContactDirectory` & `ContactCard` Components:**
+    *   Consume *resolved* data from `directoryService.js` (via a hook like `useDirectoryResolver`).
+    *   `ContactCard` displays resolved roles (e.g., "Closer [MI, FL]"), primary contact points based on context, respecting visibility. May need UI to toggle between roles or view all assigned points.
+    *   Rendering logic adapts to the resolved, unified `ContactEntity`.
 
-*   **4.3. Refactor `App.jsx` & Surrounding Structure:**
-    *   Consolidate top info bar (Email, Intercom) for better space usage.
-    *   Re-evaluate the `Locations` section – potentially make it an accordion or a denser grid.
+*   **4.3. Refactor `App.jsx` & Surroundings:**
+    *   Implement recommendations for info bar consolidation and denser location display (accordion, interactive grid).
 
-**5. Phase 3: UI/UX Enhancement & Interactivity**
+**5. Phase 3: Advanced UI/UX & Interactivity**
 
-*   **5.1. Implement Search & Filtering:**
-    *   Add a prominent search bar.
-    *   Use a library like `Fuse.js` for fuzzy searching on names, roles, locations, purposes.
-    *   Add filter controls (dropdowns, buttons) for location, role/department, tags (e.g., 'after-hours').
-    *   Ensure the `useProcessedDirectoryData` logic supports efficient filtering.
+*   **5.1. Implement Rich Search & Filtering:**
+    *   Leverage `directoryService.js` for efficient backend filtering.
+    *   Search across names, resolved roles (`function`, `jurisdiction`, `title`), locations, entity types, tags.
+    *   Filter controls for operational roles, locations, entity types, availability (when added).
 
-*   **5.2. Optimize Layout & Density:**
-    *   Implement adaptive grid layout for contact cards (e.g., 3-col wide, 2-col medium, 1-col mobile).
-    *   Reduce padding/margins where appropriate.
-    *   Consider collapsing contact methods behind an icon menu or "show more" toggle for density.
+*   **5.2. Optimize Layout & Interaction:**
+    *   Implement adaptive grid/list layout.
+    *   Use interactive elements (menus, tooltips) to manage contact point density.
+    *   Add click-to-copy, `tel:`, `mailto:`.
+    *   Implement keyboard navigation.
+    *   *Advanced:* Visualize role fallbacks or coverage areas on hover/selection.
 
-*   **5.3. Add Actions & Interactivity:**
-    *   Implement click-to-copy for numbers/emails.
-    *   Add `tel:` and `mailto:` links.
-    *   *Advanced:* Explore deep links to internal tools (e.g., Qualia user profile if possible).
-    *   Add clear visual feedback on hover/click.
+*   **5.3. Integrate Access Control:**
+    *   Pass user context (role/permissions) to `directoryService.js`.
+    *   Ensure service layer filters results based on `visibilityScope`.
+    *   UI adapts to hide/show elements based on resolved visibility.
 
-*   **5.4. Enhance Visual Cues:**
-    *   Refine icon usage – focus on differentiation (type, location flag) rather than repetition.
-    *   Use subtle visual cues for hierarchy (e.g., exec cards slightly different background?).
-    *   *Advanced:* Integrate presence indicators (if available from Teams/Entra later).
+**6. Phase 4: Azure Entra Integration & Presence**
 
-**6. Phase 4: Azure Entra Integration Strategy & Prep**
+*   **6.1. Implement `entraService.js`:**
+    *   Fetch data from Graph API.
+    *   Transform Entra attributes (UPN, jobTitle, officeLocation, etc.) into the internal `ContactEntity`, `RoleAssignment`, and potentially seed `ContactPoint` schemas (using `source: 'entra'`).
 
-*   **6.1. Define Entra ID Attribute Mapping:**
-    *   Identify relevant Entra fields: `userPrincipalName` (for `id`), `displayName`, `givenName`, `surname`, `jobTitle`, `department`, `officeLocation`, `mobilePhone`, `businessPhones`, custom extension attributes if used.
-    *   Map these to the internal `Person`, `Role`, `ContactMethod` schemas. Define fallback logic for missing fields.
+*   **6.2. Integrate Entra Data:**
+    *   `directoryService.js` merges Entra data with manual data, respecting `source` and potentially defining override rules.
+    *   Handle mapping Entra groups/roles to internal operational `Role` definitions.
 
-*   **6.2. Develop Data Fetching Service (`src/services/entraService.js`):**
-    *   Use `MSAL.js` for authentication (acquire token for Microsoft Graph).
-    *   Use Microsoft Graph API (`/users` endpoint with `$select`, `$filter`) to fetch relevant user data.
-    *   Implement logic to transform the fetched Graph data into the internal application schema.
+*   **6.3. Implement Presence:**
+    *   Fetch presence data (e.g., via Graph presence API).
+    *   Update the `presence` field in the resolved `ContactEntity` state.
+    *   `ContactCard` displays presence indicators.
 
-*   **6.3. Integration Strategy:**
-    *   Determine how Entra data merges with manually maintained `externalContacts`. (Use the `source` flag?).
-    *   Define data refresh/caching strategy (fetch on load? background sync?).
-    *   Modify `useProcessedDirectoryData` or main data loading logic to prioritize/merge Entra data when available.
+**7. Technology Considerations:** (Mostly unchanged, but service layer importance increases)
 
-**7. Technology Considerations:**
+*   State Management: Crucial for managing resolved state, filters, user context. Zustand/Redux recommended.
+*   Service Layer: Needs careful design for performance and testability.
 
-*   React, Tailwind CSS, Lucide Icons (Existing)
-*   State Management: Consider Zustand or Redux Toolkit for managing complex filter/search state.
-*   Fuzzy Search: Fuse.js
-*   Azure Auth/API: MSAL.js (@azure/msal-react), Microsoft Graph SDK (optional, or direct fetch).
-
-**8. Potential File Structure Adjustments:**
+**8. Potential File Structure:** (Schema/Service layer becomes more critical)
 
 ```
 src/
 ├── components/
 │   ├── ContactCard.jsx
 │   ├── ContactDirectory.jsx
-│   ├── Filters.jsx
-│   └── SearchBar.jsx
+│   └── ... (Filters, SearchBar, Layout components)
 ├── data/
-│   └── seedData.js        # Manual/initial data
+│   └── seedData.js
 ├── hooks/
-│   └── useProcessedDirectoryData.js
+│   └── useDirectoryResolver.js # Hook to interact with service
 ├── schemas/
 │   └── directorySchemas.js
 ├── services/
-│   ├── directoryService.js # Logic layer over data
-│   └── entraService.js     # Future Entra fetching
+│   ├── directoryService.js     # Core logic: loading, resolving, filtering
+│   ├── entraService.js         # Phase 4
+│   └── aclService.js           # Access control logic (optional breakout)
 ├── App.jsx
-└── index.js
-``` 
+└── ...
+```
+
+This revised plan directly addresses the critiques by embedding operational semantics, temporal awareness, relationship modeling, and access control into the core schema design from Phase 1, setting a much stronger foundation for the subsequent phases. 
