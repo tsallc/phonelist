@@ -13,6 +13,11 @@ const OfficeFloorMap = () => {
   const [activeLocation, setActiveLocation] = useState('solutions');
   // State for selected floors - array to allow multiple selections or no selection
   const [selectedFloors, setSelectedFloors] = useState([]);
+  // Version state to force refresh
+  const [version, setVersion] = useState(1);
+  
+  // Force refresh function
+  const forceRefresh = () => setVersion(prev => prev + 1);
   
   // Combined office data from all locations and floors - memoized to prevent recreation on each render
   const officeData = useMemo(() => [
@@ -21,28 +26,27 @@ const OfficeFloorMap = () => {
     { id: 'solutions-front-desk', name: 'Front Desk', extension: '1000', floor: 'lobby', location: 'solutions', type: 'common' },
     { id: 'solutions-copy-room', name: 'Copy Room', extension: '1100', floor: 'lobby', location: 'solutions', type: 'common' },
     { id: 'solutions-closers', name: 'Closers', extension: '1018', floor: 'lobby', location: 'solutions', type: 'office' },
+    { id: 'solutions-pam', name: 'Pam', extension: '1018', floor: 'lobby', location: 'solutions', type: 'office' },
+    { id: 'solutions-tina', name: 'Tina', extension: '1027', floor: 'lobby', location: 'solutions', type: 'office' },
     { id: 'solutions-conf-1', name: 'Conference Room 1', extension: '1200', floor: 'lobby', location: 'solutions', type: 'meeting' },
     { id: 'solutions-conf-2', name: 'Conference Room 2', extension: '1201', floor: 'lobby', location: 'solutions', type: 'meeting' },
     
     // Office Bullpen
-    { id: 'solutions-tina', name: 'Tina', extension: '1087', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-pa', name: 'Pam', extension: '1016', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-amber', name: 'Amber Y', extension: '1011', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-empty-1', name: 'Empty Desk 1', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty' },
-    { id: 'solutions-empty-2', name: 'Sydney', extension: '1008', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-empty-3', name: '', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty' },
-    { id: 'solutions-empty-4', name: 'Empty Desk 4', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty' },
-    { id: 'solutions-empty-5', name: '1015', extension: '', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-andrew', name: 'Andrew I.', extension: '1006', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-empty-7', name: 'Empty Desk 7', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty' },
-    { id: 'solutions-jesse', name: 'Jesse I', extension: '1010', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-robin', name: 'Robin N', extension: '1013', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-katie', name: 'Katie C', extension: '1012', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-kathy', name: 'Kathy', extension: '1007', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-megan-l', name: 'Megan L', extension: '1009', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-grace', name: 'Grace', extension: '1003', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-heather', name: 'Heather', extension: '1001', floor: 'bullpen', location: 'solutions', type: 'office' },
-    { id: 'solutions-syd', name: 'Syd', extension: '1002', floor: 'bullpen', location: 'solutions', type: 'office' },
+    { id: 'solutions-bullpen-r1c1', name: 'Empty', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty' }, // Amber now empty
+    { id: 'solutions-bullpen-r1c2', name: 'Jesse', extension: '1010', floor: 'bullpen', location: 'solutions', type: 'office' },
+    { id: 'solutions-bullpen-r1c3', name: 'Kathy', extension: '1007', floor: 'bullpen', location: 'solutions', type: 'office' },
+    { id: 'solutions-bullpen-r1c4', name: 'Empty', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty' },
+    { id: 'solutions-bullpen-r1c5', name: 'Empty', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty' }, // Heather now empty
+    { id: 'solutions-bullpen-r2c1', name: 'Will', extension: '1030', floor: 'bullpen', location: 'solutions', type: 'office' },
+    { id: 'solutions-bullpen-r2c2', name: 'Robin', extension: '1013', floor: 'bullpen', location: 'solutions', type: 'office' },
+    { id: 'solutions-bullpen-r2c3', name: 'Sydney', extension: '1008', floor: 'bullpen', location: 'solutions', type: 'office' },
+    { id: 'solutions-bullpen-r2c4', name: 'Empty', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty' },
+    { id: 'solutions-bullpen-r2c5', name: 'Empty', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty' },
+    { id: 'solutions-bullpen-r3c1', name: 'Empty', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty' }, // Tina spot now empty
+    { id: 'solutions-bullpen-r3c2', name: 'Katie', extension: '1012', floor: 'bullpen', location: 'solutions', type: 'office' },
+    { id: 'solutions-bullpen-r3c3', name: 'Tina', extension: '1009', floor: 'bullpen', location: 'solutions', type: 'office' }, // Megan L now Tina
+    { id: 'solutions-bullpen-r3c4', name: 'Andrew', extension: '1006', floor: 'bullpen', location: 'solutions', type: 'office' },
+    { id: 'solutions-bullpen-r3c5', name: 'Grace', extension: '1003', floor: 'bullpen', location: 'solutions', type: 'office' },
     
     // 2nd Floor
     { id: 'solutions-training', name: 'Training Room', extension: '1100', floor: 'upstairs', location: 'solutions', type: 'training' },
@@ -79,6 +83,11 @@ const OfficeFloorMap = () => {
     setSearchResults(filteredResults);
   }, [officeData, searchTerm]);
   
+  // Force refresh on component mount
+  useEffect(() => {
+    forceRefresh();
+  }, []);
+  
   // Handle room click
   const handleRoomClick = (room) => {
     setActiveRoom(room.id === activeRoom ? null : room.id);
@@ -111,10 +120,30 @@ const OfficeFloorMap = () => {
     return baseStyle;
   };
 
-  // Render room details
+  // Add a function to check if a desk is marked as empty in the image
+  const isEmptyMarkedDesk = (id) => {
+    const emptyMarkedDesks = [
+      'solutions-bullpen-r1c1', 'solutions-bullpen-r1c5', 
+      'solutions-bullpen-r3c1', 'solutions-bullpen-r2c4',
+      'solutions-bullpen-r1c4', 'solutions-bullpen-r2c5'
+    ];
+    return emptyMarkedDesks.includes(id);
+  };
+
+  // Update the renderRoomDetails function to show a visual indicator for empty desks
   const renderRoomDetails = (room) => {
+    if (!room) return null;
+    
+    // Check if this desk is one of the ones marked with red X
+    const isMarkedEmpty = isEmptyMarkedDesk(room.id);
+    
     return (
-      <div className="p-1 text-xs md:text-sm flex flex-col h-full justify-center items-center">
+      <div className={`p-1 text-xs md:text-sm flex flex-col h-full justify-center items-center relative ${isMarkedEmpty ? 'opacity-60' : ''}`}>
+        {isMarkedEmpty && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div className="text-red-500 font-bold text-xl transform rotate-12">X</div>
+          </div>
+        )}
         <div className="font-bold">{room.name}</div>
         {room.extension && <div className="mt-1 flex items-center"><Phone className="w-3 h-3 mr-1 text-gray-500" />{room.extension}</div>}
       </div>
@@ -162,45 +191,68 @@ const OfficeFloorMap = () => {
     );
     
     return (
-      <div className="grid grid-cols-2 gap-4 p-4 mb-4">
-        <div className="grid grid-cols-1 gap-4">
-          <div 
-            className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-front-desk'))}
-            onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-front-desk'))}
-            style={{height: '80px'}}
-          >
-            {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-front-desk'))}
+      <div className="grid grid-cols-1 gap-4 p-4 mb-4">
+        <div className="grid grid-cols-2 gap-4">
+          {/* Column 1 */}
+          <div className="grid grid-rows-3 gap-4">
+            <div 
+              className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-front-desk'))}
+              onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-front-desk'))}
+              style={{height: '80px'}}
+            >
+              {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-front-desk'))}
+            </div>
+            <div 
+              className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-copy-room'))}
+              onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-copy-room'))}
+              style={{height: '80px'}}
+            >
+              {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-copy-room'))}
+            </div>
+            <div 
+              className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-closers'))}
+              onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-closers'))}
+              style={{height: '80px'}}
+            >
+              {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-closers'))}
+            </div>
           </div>
-          <div 
-            className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-copy-room'))}
-            onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-copy-room'))}
-            style={{height: '80px'}}
-          >
-            {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-copy-room'))}
-          </div>
-          <div 
-            className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-closers'))}
-            onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-closers'))}
-            style={{height: '80px'}}
-          >
-            {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-closers'))}
+          
+          {/* Column 2 */}
+          <div className="grid grid-rows-3 gap-4">
+            <div 
+              className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-conf-2'))}
+              onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-conf-2'))}
+              style={{height: '80px'}}
+            >
+              {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-conf-2'))}
+            </div>
+            <div 
+              className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-pam'))}
+              onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-pam'))}
+              style={{height: '80px'}}
+            >
+              {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-pam'))}
+            </div>
+            <div 
+              className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-conf-1'))}
+              onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-conf-1'))}
+              style={{height: '80px'}}
+            >
+              {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-conf-1'))}
+            </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-4">
-          <div 
-            className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-conf-2'))}
-            onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-conf-2'))}
-            style={{height: '80px'}}
-          >
-            {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-conf-2'))}
-          </div>
+        
+        {/* Bottom row for Tina */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="h-16"></div>
           <div 
-            className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-conf-1'))}
-            onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-conf-1'))}
+            className={getRoomStyle(frontLobbyRooms.find(r => r.id === 'solutions-tina'))}
+            onClick={() => handleRoomClick(frontLobbyRooms.find(r => r.id === 'solutions-tina'))}
             style={{height: '80px'}}
           >
-            {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-conf-1'))}
+            {renderRoomDetails(frontLobbyRooms.find(r => r.id === 'solutions-tina'))}
           </div>
         </div>
       </div>
@@ -216,100 +268,85 @@ const OfficeFloorMap = () => {
     // Define a consistent room size class
     const roomSizeClass = "h-[75px] flex items-center justify-center";
     
-    // Create a 6x3 grid (6 columns by 3 rows)
+    // Create a 4x3 grid (4 columns by 3 rows) matching the image
     return (
-      <div className="grid grid-cols-6 gap-3 p-4 mb-4">
+      <div className="grid grid-cols-5 gap-3 p-4 mb-4">
         {/* Row 1 */}
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-pa'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-pa'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-pa'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c1'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c1'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c1'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-amber'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-amber'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-amber'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c2'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c2'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c2'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-jesse'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-jesse'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-jesse'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c3'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c3'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c3'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-kathy'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-kathy'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-kathy'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c4'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c4'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c4'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-jesse'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-jesse'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-jesse'))}
-        </div>
-        
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-heather'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-heather'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-heather'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c5'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c5'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r1c5'))}
         </div>
 
         {/* Row 2 */}
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-empty-3'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-empty-3'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-empty-3'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c1'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c1'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c1'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-empty-1'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-empty-1'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-empty-1'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c2'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c2'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c2'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-robin'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-robin'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-robin'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c3'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c3'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c3'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-empty-2'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-empty-2'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-empty-2'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c4'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c4'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c4'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-empty-4'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-empty-4'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-empty-4'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c5'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c5'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r2c5'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-syd'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-syd'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-syd'))}
-        </div>
-
         {/* Row 3 */}
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-tina'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-tina'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-tina'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c1'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c1'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c1'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-empty-5'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-empty-5'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-empty-5'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c2'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c2'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c2'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-katie'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-katie'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-katie'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c3'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c3'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c3'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-megan-l'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-megan-l'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-megan-l'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c4'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c4'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c4'))}
         </div>
         
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-andrew'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-andrew'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-andrew'))}
-        </div>
-                
-        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-grace'))} ${roomSizeClass}`}
-          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-grace'))}>
-          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-grace'))}
+        <div className={`${getRoomStyle(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c5'))} ${roomSizeClass}`}
+          onClick={() => handleRoomClick(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c5'))}>
+          {renderRoomDetails(officeBullpenRooms.find(r => r.id === 'solutions-bullpen-r3c5'))}
         </div>
       </div>
     );
@@ -729,10 +766,12 @@ const OfficeFloorMap = () => {
               <div>
                 <h2 className="text-xl font-bold text-gray-800">{officeData.find(r => r.id === activeRoom)?.name}</h2>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
-                    <Phone className="w-4 h-4 mr-1" />
-                    Extension: {officeData.find(r => r.id === activeRoom)?.extension || 'N/A'}
-                  </div>
+                  {officeData.find(r => r.id === activeRoom)?.extension && (
+                    <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                      <Phone className="w-4 h-4 mr-1" />
+                      Extension: {officeData.find(r => r.id === activeRoom)?.extension}
+                    </div>
+                  )}
                   <div className="text-sm text-gray-600 flex items-center">
                     <MapPin className="w-4 h-4 mr-1" />
                     {officeData.find(r => r.id === activeRoom)?.location === 'solutions' ? 'Title Solutions' : 'TruTitle'} - {getFloorName(officeData.find(r => r.id === activeRoom)?.floor)}
@@ -749,30 +788,32 @@ const OfficeFloorMap = () => {
               </button>
             </div>
             
-            {/* Additional room details could be placed here */}
-            <div className="mt-4 bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
-              <div className="flex items-start">
-                <div className="bg-blue-100 p-2 rounded-full mr-3">
-                  {officeData.find(r => r.id === activeRoom)?.type === 'office' ? (
-                    <Users className="w-5 h-5 text-blue-600" />
-                  ) : officeData.find(r => r.id === activeRoom)?.type === 'common' ? (
-                    <Printer className="w-5 h-5 text-blue-600" />
-                  ) : officeData.find(r => r.id === activeRoom)?.type === 'meeting' ? (
-                    <FileText className="w-5 h-5 text-blue-600" />
-                  ) : officeData.find(r => r.id === activeRoom)?.type === 'training' ? (
-                    <Users className="w-5 h-5 text-blue-600" />
-                  ) : (
-                    <Home className="w-5 h-5 text-blue-600" />
-                  )}
-                </div>
-                <div>
-                  <div className="font-medium mb-1">Room Type</div>
-                  <div className="capitalize">{officeData.find(r => r.id === activeRoom)?.type}</div>
+            {/* Only show room type info if not empty */}
+            {officeData.find(r => r.id === activeRoom)?.type !== 'empty' && (
+              <div className="mt-4 bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
+                <div className="flex items-start">
+                  <div className="bg-blue-100 p-2 rounded-full mr-3">
+                    {officeData.find(r => r.id === activeRoom)?.type === 'office' ? (
+                      <Users className="w-5 h-5 text-blue-600" />
+                    ) : officeData.find(r => r.id === activeRoom)?.type === 'common' ? (
+                      <Printer className="w-5 h-5 text-blue-600" />
+                    ) : officeData.find(r => r.id === activeRoom)?.type === 'meeting' ? (
+                      <FileText className="w-5 h-5 text-blue-600" />
+                    ) : officeData.find(r => r.id === activeRoom)?.type === 'training' ? (
+                      <Users className="w-5 h-5 text-blue-600" />
+                    ) : (
+                      <Home className="w-5 h-5 text-blue-600" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-medium mb-1">Room Type</div>
+                    <div className="capitalize">{officeData.find(r => r.id === activeRoom)?.type}</div>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
             
-            {/* Call button */}
+            {/* Call button only for rooms with extensions */}
             {officeData.find(r => r.id === activeRoom)?.extension && (
               <button className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center transition-colors duration-200">
                 <Phone className="w-5 h-5 mr-2" />
