@@ -63,17 +63,23 @@ const ContactDirectory = () => {
             PAGE / INTERCOM
           </h3>
           <div className="px-2">
-            <div className="flex">
-              <div className="w-24 text-xs font-medium text-gray-600">Downstairs</div>
-              <div className="w-16 text-primary font-bold text-sm">500</div>
-              <div className="w-24 text-xs font-medium text-gray-600">Upstairs</div>
-              <div className="text-primary font-bold text-sm">501</div>
-            </div>
-            <div className="flex">
-              <div className="w-24 text-xs font-medium text-gray-600">Both Floors</div>
-              <div className="w-16 text-primary font-bold text-sm">510</div>
-              <div className="w-24 text-xs font-medium text-gray-600">Cordless</div>
-              <div className="text-primary font-bold text-sm">1110</div>
+            <div className="flex space-x-4 items-center">
+              <div className="flex items-center">
+                <span className="text-xs font-medium text-gray-600 mr-1">Downstairs:</span>
+                <span className="text-primary font-bold text-sm">500</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-xs font-medium text-gray-600 mr-1">Upstairs:</span>
+                <span className="text-primary font-bold text-sm">501</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-xs font-medium text-gray-600 mr-1">Both Floors:</span>
+                <span className="text-primary font-bold text-sm">510</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-xs font-medium text-gray-600 mr-1">Cordless:</span>
+                <span className="text-primary font-bold text-sm">1110</span>
+              </div>
             </div>
           </div>
         </div>
@@ -182,41 +188,41 @@ const ContactDirectory = () => {
             Michigan Extensions
           </h4>
           <div className="px-2">
-            <div className="directory-grid">
-              <div className="contact-label">Andrew</div>
-              <div className="contact-value">1006</div>
-              <div className="contact-label">Becca</div>
-              <div className="contact-value">2100</div>
+            <div className="directory-grid grid grid-cols-4 gap-x-4 gap-y-1">
+              <div className="text-sm text-gray-600">Andrew</div>
+              <div className="text-sm font-semibold text-primary">1006</div>
+              <div className="text-sm text-gray-600">Becca</div>
+              <div className="text-sm font-semibold text-primary">2100</div>
               
-              <div className="contact-label">Brian</div>
-              <div className="contact-value">1014</div>
-              <div className="contact-label">Georgia</div>
-              <div className="contact-value">1015</div>
+              <div className="text-sm text-gray-600">Brian</div>
+              <div className="text-sm font-semibold text-primary">1014</div>
+              <div className="text-sm text-gray-600">Georgia</div>
+              <div className="text-sm font-semibold text-primary">1015</div>
               
-              <div className="contact-label">Grace</div>
-              <div className="contact-value">1003</div>
-              <div className="contact-label">Jessie</div>
-              <div className="contact-value">1010</div>
+              <div className="text-sm text-gray-600">Grace</div>
+              <div className="text-sm font-semibold text-primary">1003</div>
+              <div className="text-sm text-gray-600">Jessie</div>
+              <div className="text-sm font-semibold text-primary">1010</div>
               
-              <div className="contact-label">Kathy</div>
-              <div className="contact-value">1007</div>
-              <div className="contact-label">Katie</div>
-              <div className="contact-value">1012</div>
+              <div className="text-sm text-gray-600">Kathy</div>
+              <div className="text-sm font-semibold text-primary">1007</div>
+              <div className="text-sm text-gray-600">Katie</div>
+              <div className="text-sm font-semibold text-primary">1012</div>
               
-              <div className="contact-label">Pam</div>
-              <div className="contact-value">1016</div>
-              <div className="contact-label">Robin</div>
-              <div className="contact-value">1013</div>
+              <div className="text-sm text-gray-600">Pam</div>
+              <div className="text-sm font-semibold text-primary">1016</div>
+              <div className="text-sm text-gray-600">Robin</div>
+              <div className="text-sm font-semibold text-primary">1013</div>
               
-              <div className="contact-label">Sarah</div>
-              <div className="contact-value">1000</div>
-              <div className="contact-label">Sydney</div>
-              <div className="contact-value">1008</div>
+              <div className="text-sm text-gray-600">Sarah</div>
+              <div className="text-sm font-semibold text-primary">1000</div>
+              <div className="text-sm text-gray-600">Sydney</div>
+              <div className="text-sm font-semibold text-primary">1008</div>
               
-              <div className="contact-label">Tina</div>
-              <div className="contact-value">1027</div>
-              <div className="contact-label">Troy</div>
-              <div className="contact-value">2101</div>
+              <div className="text-sm text-gray-600">Tina</div>
+              <div className="text-sm font-semibold text-primary">1027</div>
+              <div className="text-sm text-gray-600">Troy</div>
+              <div className="text-sm font-semibold text-primary">2101</div>
             </div>
           </div>
         </div>
@@ -228,16 +234,16 @@ const ContactDirectory = () => {
             Florida Extensions
           </h4>
           <div className="px-2">
-            <div className="directory-grid">
-              <div className="contact-label">Andrea</div>
-              <div className="contact-value">2026</div>
-              <div className="contact-label">Brian</div>
-              <div className="contact-value">2024</div>
+            <div className="directory-grid grid grid-cols-4 gap-x-4 gap-y-1">
+              <div className="text-sm text-gray-600">Andrea</div>
+              <div className="text-sm font-semibold text-primary">2026</div>
+              <div className="text-sm text-gray-600">Brian</div>
+              <div className="text-sm font-semibold text-primary">2024</div>
               
-              <div className="contact-label">Sydney</div>
-              <div className="contact-value">2020</div>
-              <div className="contact-label">Tina</div>
-              <div className="contact-value">2027</div>
+              <div className="text-sm text-gray-600">Sydney</div>
+              <div className="text-sm font-semibold text-primary">2020</div>
+              <div className="text-sm text-gray-600">Tina</div>
+              <div className="text-sm font-semibold text-primary">2027</div>
             </div>
           </div>
         </div>
@@ -249,9 +255,9 @@ const ContactDirectory = () => {
             IT Department
           </h4>
           <div className="px-2">
-            <div className="flex">
-              <div className="contact-label w-24">Will</div>
-              <div className="contact-value !text-left">248-619-4535</div>
+            <div className="directory-grid grid grid-cols-4 gap-x-4 gap-y-1">
+              <div className="text-sm text-gray-600">Will</div>
+              <div className="text-sm font-semibold text-primary">248-619-4535</div>
             </div>
           </div>
         </div>
@@ -263,21 +269,21 @@ const ContactDirectory = () => {
             Cell Phone Numbers
           </h4>
           <div className="px-2">
-            <div className="directory-grid">
-              <div className="contact-label">Brian Tiller</div>
-              <div className="contact-value">248-563-1443</div>
-              <div className="contact-label">Colin Fabian</div>
-              <div className="contact-value">248-497-6052</div>
+            <div className="directory-grid grid grid-cols-4 gap-x-4 gap-y-1">
+              <div className="text-sm text-gray-600">Brian Tiller</div>
+              <div className="text-sm font-semibold text-primary">248-563-1443</div>
+              <div className="text-sm text-gray-600">Colin Fabian</div>
+              <div className="text-sm font-semibold text-primary">248-497-6052</div>
               
-              <div className="contact-label">Curt White</div>
-              <div className="contact-value">734-717-5700</div>
-              <div className="contact-label">Kyle Smith</div>
-              <div className="contact-value">586-675-3300</div>
+              <div className="text-sm text-gray-600">Curt White</div>
+              <div className="text-sm font-semibold text-primary">734-717-5700</div>
+              <div className="text-sm text-gray-600">Kyle Smith</div>
+              <div className="text-sm font-semibold text-primary">586-675-3300</div>
               
-              <div className="contact-label">Peter Joelson</div>
-              <div className="contact-value">248-961-4201</div>
-              <div className="contact-label">Tina Tiller</div>
-              <div className="contact-value">248-563-1266</div>
+              <div className="text-sm text-gray-600">Peter Joelson</div>
+              <div className="text-sm font-semibold text-primary">248-961-4201</div>
+              <div className="text-sm text-gray-600">Tina Tiller</div>
+              <div className="text-sm font-semibold text-primary">248-563-1266</div>
             </div>
           </div>
         </div>
@@ -289,21 +295,21 @@ const ContactDirectory = () => {
             Treasurers / Additional Numbers
           </h4>
           <div className="px-2">
-            <div className="directory-grid">
-              <div className="contact-label">Wayne County</div>
-              <div className="contact-value">313-224-5990</div>
-              <div className="contact-label">Oakland County</div>
-              <div className="contact-value">888-600-3773</div>
+            <div className="directory-grid grid grid-cols-4 gap-x-4 gap-y-1">
+              <div className="text-sm text-gray-600">Wayne County</div>
+              <div className="text-sm font-semibold text-primary">313-224-5990</div>
+              <div className="text-sm text-gray-600">Oakland County</div>
+              <div className="text-sm font-semibold text-primary">888-600-3773</div>
               
-              <div className="contact-label">Oakland DELQ</div>
-              <div className="contact-value">248-858-0611</div>
-              <div className="contact-label">Bankruptcy</div>
-              <div className="contact-value">866-222-8029</div>
+              <div className="text-sm text-gray-600">Oakland DELQ</div>
+              <div className="text-sm font-semibold text-primary">248-858-0611</div>
+              <div className="text-sm text-gray-600">Bankruptcy</div>
+              <div className="text-sm font-semibold text-primary">866-222-8029</div>
               
-              <div className="contact-label">Peter's Office</div>
-              <div className="contact-value">248-626-9966</div>
-              <div className="contact-label">Qualia</div>
-              <div className="contact-value">855-677-7533</div>
+              <div className="text-sm text-gray-600">Peter's Office</div>
+              <div className="text-sm font-semibold text-primary">248-626-9966</div>
+              <div className="text-sm text-gray-600">Qualia</div>
+              <div className="text-sm font-semibold text-primary">855-677-7533</div>
             </div>
           </div>
         </div>
