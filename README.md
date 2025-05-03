@@ -1,17 +1,24 @@
 # TSA Phone List & Contact Directory
 
-This project contains the web application for the Title Solutions Agency (TSA) phone list and contact directory, along with supporting tools for data management.
+This project contains the Title Solutions Agency (TSA) phone list React web application and a supporting Node.js utility script for managing contact data.
 
 ## Project Overview
 
-The main application (`tsa-phone-list`) is a React web application built with Vite, shadcn/ui, and Tailwind CSS. It currently provides:
+This repository houses two main parts:
 
-1.  **Contact Directory:** Displays contact information for personnel across related entities (TSA, Coastal Title, TruTitle).
-2.  **Office Map:** An interactive floor plan visualization.
+1.  **`tsa-phone-list` (React Application):** A web application (built with Vite, React, shadcn/ui, Tailwind) intended to display contact information and an interactive office map. It is currently undergoing a major refactoring effort (see [REFACTOR_PLAN.md](REFACTOR_PLAN.md)).
+2.  **`phonelist-canonicalizer` (Node.js Utility Script):** A command-line tool (located in `lib/`, `scripts/`) designed as a **stop-gap measure** to help synchronize contact data between the canonical JSON data file used by this project and Office 365/Entra ID via CSV export/import.
 
-**Current Status:** The application is undergoing a significant refactoring effort (see [REFACTOR_PLAN.md](REFACTOR_PLAN.md)) to move away from hardcoded data towards a robust, scalable, data-driven architecture. The canonical source of truth for contact data is now managed in `src/data/canonicalContactData.json`.
+**Data Source of Truth:**
+
+*   **`src/data/canonicalContactData.json`**: This is the **LIVE, MUTABLE** source of truth for the application. It contains merged contact data derived historically from Office 365 and older application code (`App.jsx`, `ArtifactCode.jsx`). It should be modified directly or via the `--update-from-csv` feature (when implemented) of the canonicalizer script.
+*   **`src/data/reference_example.json`**: This is a **READ-ONLY, STATIC** copy representing the initial, correctly merged data state. It serves as a reference and was used to initialize `canonicalContactData.json`.
+
+---
 
 ## 1. React Application (`tsa-phone-list`)
+
+Displays contact directory and office map.
 
 ### Technology Stack
 
@@ -22,106 +29,105 @@ The main application (`tsa-phone-list`) is a React web application built with Vi
 *   **Styling:** Tailwind CSS
 *   **Deployment:** GitHub Pages (`gh-pages`)
 
+### Status
+
+*   **Refactoring Required:** The application requires significant refactoring as outlined in [REFACTOR_PLAN.md](REFACTOR_PLAN.md).
+*   **Data Source:** Currently uses deprecated hardcoded data in `App.jsx` and `ArtifactCode.jsx`. Phase 1 of the refactor involves updating components to read from `src/data/canonicalContactData.json`.
+*   **See:** [PROJECT_STATE.md](PROJECT_STATE.md) for detailed progress.
+
 ### Setup & Running
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd tsa-phone-list
-    ```
-2.  **Install dependencies:**
-    ```bash
-    pnpm install
-    ```
-3.  **Run the development server:**
-    ```bash
-    pnpm run dev
-    ```
-    This will start the Vite development server, typically available at `http://localhost:5173`.
+1.  **Clone:** `git clone <repository-url>`
+2.  **Install:** `pnpm install`
+3.  **Run Dev Server:** `pnpm run dev` (typically `http://localhost:5173`)
 
 ### Building & Deployment
 
-*   **Build for production:**
-    ```bash
-    pnpm run build
-    ```
-    This creates an optimized build in the `dist/` directory.
-*   **Deploy to GitHub Pages:**
-    ```bash
-    pnpm run deploy
-    ```
-    This script uses `gh-pages` to push the contents of the `dist/` directory to the `gh-pages` branch.
-
-### Refactoring Status
-
-As mentioned, the React application is being refactored. Key components like `App.jsx` and `ArtifactCode.jsx` still contain deprecated data structures and logic. Phase 1 of the refactor, which involves reading from the canonical data file (`src/data/canonicalContactData.json`), is pending completion of the canonicalizer tool (see below).
-
-See [REFACTOR_PLAN.md](REFACTOR_PLAN.md) for the detailed refactoring strategy and [PROJECT_STATE.md](PROJECT_STATE.md) for the current progress.
+*   **Build:** `pnpm run build` (outputs to `dist/`)
+*   **Deploy:** `pnpm run deploy` (uses `gh-pages`)
 
 ---
 
-## 2. Data Canonicalizer Script (`phonelist-canonicalizer`)
+## 2. Data Canonicalizer Utility (`phonelist-canonicalizer`)
 
-This is a supporting Node.js/TypeScript tool located within the `lib/` and `scripts/` directories of this project. Its primary purpose is to process various data sources (starting with Office365 CSV exports) and generate the validated, canonical `src/data/canonicalContactData.json` file, which serves as the single source of truth for the main React application.
+This CLI script (**located in `lib/` and `scripts/`**) provides helper functions for managing the live data file (`src/data/canonicalContactData.json`) and syncing with O365 via CSV.
 
-This script is essential for Phase 1 of the refactoring plan.
+**Current Purpose (Stop-Gap):**
+
+1.  **Validate:** Read and validate the structure and integrity of `src/data/canonicalContactData.json` against the defined schema (`lib/schema.ts`).
+2.  **Export:** Generate an O365-compatible CSV file from the data in `src/data/canonicalContactData.json`, suitable for manual import/update into O365/Entra.
+3.  **(Future)** Selectively update `src/data/canonicalContactData.json` with specific fields from a fresh O365 CSV export (e.g., mobile phone numbers, titles) while preserving existing merged data (desk extensions, locations).
+
+**Note:** This script *does not* generate the merged `canonicalContactData.json` from scratch; it operates on the existing live file which was initialized from `reference_example.json`.
 
 ### Technology Stack
 
 *   **Runtime:** Node.js
 *   **Language:** TypeScript
-*   **Core Libraries:**
-    *   `zod`: Schema definition and validation.
-    *   `fast-csv`: CSV parsing.
-    *   `slugify`: Generating URL-friendly IDs.
+*   **Core Libraries:** `zod`, `fast-csv`, `commander`, `fs-extra`, `vitest`, `execa`
 
-### Purpose & Workflow
+### Setup
 
-1.  **Input:** Takes data sources like `users.csv` (Office365 export).
-2.  **Processing:**
-    *   Parses the input data.
-    *   Transforms data into the canonical schema defined in `lib/schema.ts`.
-    *   Generates unique IDs (slug or hash-based).
-    *   Validates the output against the Zod schema.
-    *   Compares the output against the previous version (`src/data/canonicalContactData.json`) using hashing and ID-based diffing.
-    *   Computes a SHA-256 hash for integrity checking.
-3.  **Output:**
-    *   Overwrites `src/data/canonicalContactData.json` with the latest validated data.
-    *   Outputs diff logs (`logs/diff-YYYY-MM-DD.json`).
-    *   (Optional) Generates a reverse-exported CSV (`exported_users.csv`).
+Dependencies are shared with the main project. Ensure you have run `pnpm install` in the root directory.
+
+### Building the Script
+
+*   Run: `pnpm run build:canon`
+*   Output: Compiles TypeScript to JavaScript in `dist/canon/` using `tsconfig.canon.json`.
 
 ### Running the Script
 
-*(Note: The script's CLI interface (`scripts/canonicalize.ts`) is currently under development. The following commands assume its completion based on the planned structure.)*
+It's recommended to run the compiled script directly with `node`.
 
-Ensure dependencies are installed (`pnpm install`).
+**Default Mode (Validate Live JSON):**
+```bash
+node dist/canon/scripts/canonicalize.js 
+# OR specify a different live file:
+node dist/canon/scripts/canonicalize.js --json path/to/other_live_data.json 
+```
+*   Reads the JSON file specified by `--json` (defaults to `src/data/canonicalContactData.json`).
+*   Validates its structure against `lib/schema.ts`.
+*   Reports success or validation errors.
 
-*   **Run using ts-node (development):**
-    ```bash
-    # Example: Process users.csv and output to default location
-    pnpm run dev:canon -- --input path/to/users.csv
+**Export Mode (Live JSON -> O365 CSV):**
+```bash
+node dist/canon/scripts/canonicalize.js --export-csv path/to/output_for_o365.csv
+# OR using a specific live file as source:
+node dist/canon/scripts/canonicalize.js --json path/to/live_data.json --export-csv path/to/output_for_o365.csv
+```
+*   Reads the live JSON (default or specified by `--json`).
+*   Validates the JSON (but proceeds with warning on failure).
+*   Generates a CSV file at the `--export-csv` path with columns suitable for O365 import (Display Name, Mobile Phone, UPN, Title, etc.).
 
-    # Example: Dry run (validate and diff, but don't write)
-    pnpm run dev:canon -- --input path/to/users.csv --dry-run
+**Update Mode (O365 CSV -> Live JSON - *Placeholder Logic Only*):**
+```bash
+node dist/canon/scripts/canonicalize.js --update-from-csv path/to/new_o365_export.csv
+# OR specifying different input/output JSON files:
+node dist/canon/scripts/canonicalize.js --json path/to/live_data.json --update-from-csv path/to/new_o365_export.csv --out path/to/updated_live_data.json 
+```
+*   **Warning:** The core update logic (`lib/updateFromJson.ts`) is **not yet implemented**. This command currently reads the files but does not modify the target JSON.
+*   Reads the live JSON (`--json`).
+*   Reads the new O365 CSV (`--update-from-csv`).
+*   (Placeholder) Skips actual data merging.
+*   Validates the (unmodified) data.
+*   Compares hashes (will report no changes).
+*   Does **not** write the output JSON (`--out`) unless changes were hypothetically detected.
+*   Use `--dry-run` to simulate without writing, `--fail-on-diff` to exit with error if changes were detected.
 
-    # Example: Export to CSV as well
-    pnpm run dev:canon -- --input path/to/users.csv --export-csv path/to/exported_users.csv
-    ```
-    *(Note the `--` which separates pnpm arguments from script arguments)*
+**Other Options:**
+*   `--verbose` or `-v`: Enable detailed debug logging.
+*   `--help`: Display help message with all options.
 
-*   **Build the script:**
-    ```bash
-    pnpm run build:canon
-    ```
-    This compiles the TypeScript code to JavaScript in the `dist/` directory (requires `tsconfig.canon.json` to be configured).
+### Testing
 
-*   **Run the compiled script:**
-    ```bash
-    # Example: Process users.csv
-    pnpm run start:canon -- --input path/to/users.csv
-    ```
-
-See the script's CLI help (once implemented) for all available options (`pnpm run dev:canon -- --help`).
+Unit and Integration tests (using `vitest`) are located in `lib/tests/` and `scripts/tests/`. Run them using:
+```bash
+pnpm test
+# OR run specific test files
+pnpm test lib/tests/validateCanonical.test.ts
+pnpm test scripts/tests/canonicalize.integration.test.ts
+```
+All tests for implemented features (validation, export) are currently passing.
 
 ---
 

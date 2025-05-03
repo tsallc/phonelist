@@ -1,25 +1,18 @@
 # Codebase Audit Report
 
-**Audit Date:** 2025-05-03
+**Audit Date:** 2025-05-03 (Updated reflecting canonicalizer development)
 
 ## 1. Project Overview
 
 *   **Name:** `tsa-phone-list`
-*   **Purpose:** React web application displaying contact directory and interactive office map for Title Solutions Agency, LLC and related entities (Coastal Title, TruTitle).
+*   **Purpose:** React web application displaying contact directory and interactive office map. Also includes a supporting Node.js script (`phonelist-canonicalizer`) for data management.
 *   **Current Views:** Tabs for "Contact Directory" and "Office Map".
-*   **Goal:** Refactor based on `REFACTOR_PLAN.md` towards a robust, data-driven application.
+*   **Goal:** Refactor React app based on `REFACTOR_PLAN.md`. Canonicalizer script serves as stop-gap O365 CSV utility.
 
 ## 2. Technology Stack
 
-*   **Framework:** React 18
-*   **Build Tool:** Vite
-*   **Package Manager:** PNPM
-*   **UI Library:** shadcn/ui (Radix UI + Tailwind CSS)
-*   **Styling:** Tailwind CSS
-*   **Icons:** lucide-react
-*   **Utilities:** clsx, tailwind-merge, tailwindcss-animate
-*   **Linting:** ESLint
-*   **Deployment:** gh-pages (GitHub Pages)
+*   **React App:** React 18, Vite, PNPM, shadcn/ui, Tailwind CSS, gh-pages.
+*   **Canonicalizer Script:** Node.js, TypeScript, Zod, fast-csv, commander, fs-extra, vitest, execa.
 
 ## 3. Project Structure
 
@@ -27,24 +20,39 @@
 .
 ├── .git/
 ├── dist/
+│   └── canon/      # Compiled canonicalizer script output
+├── lib/            # Canonicalizer library modules
+│   ├── tests/      # Unit tests for canonicalizer libs
+│   ├── schema.ts
+│   ├── types.ts
+│   ├── parseCsv.ts
+│   ├── toCanonical.ts # (Logic primarily for initial CSV->JSON, less relevant now)
+│   ├── validate.ts
+│   ├── hash.ts
+│   ├── diff.ts
+│   ├── exportCsv.ts
+│   └── updateFromJson.ts # (Placeholder for update logic)
+├── logs/           # Diff logs from canonicalizer
 ├── node_modules/
 ├── public/
+├── scripts/
+│   ├── tests/      # Integration tests for canonicalizer CLI
+│   └── canonicalize.ts # Canonicalizer CLI script
 ├── src/
-│   ├── assets/         # Empty
+│   ├── assets/
 │   ├── components/
-│   │   └── ui/         # shadcn/ui components
+│   │   └── ui/       # shadcn/ui components
 │   ├── data/
-│   │   └── canonicalContactData.json # Source of Truth (Uses contactPoints array)
-│   ├── lib/
-│   │   ├── utils.js    # cn utility, style mapping (React App)
-│   │   ├── schema.ts   # Zod schemas (Canonicalizer Script)
-│   │   └── canonicalizer lib files ...
-│   ├── schemas/        # (To be created for React App Schemas)
+│   │   ├── canonicalContactData.json # LIVE, MUTABLE source of truth (merged)
+│   │   ├── reference_example.json  # Read-only reference of merged data
+│   │   └── users_*.csv             # O365 CSV exports (input for updates)
+│   ├── lib/          # React App specific utils (e.g., utils.js)
+│   ├── schemas/      # (To be created for React App Schemas)
 │   ├── App.css
-│   ├── App.jsx         # Root component, Tabs (Data Deprecated)
-│   ├── ArtifactCode.jsx# Office map component (Data Deprecated)
-│   ├── index.css       # Tailwind base styles
-│   └── main.jsx        # Entry point
+│   ├── App.jsx       # Root component, Tabs (Data Deprecated)
+│   ├── ArtifactCode.jsx # Office map component (Data Deprecated)
+│   ├── index.css
+│   └── main.jsx
 ├── .eslintrc.cjs
 ├── .gitignore
 ├── claude-artifacts-react.code-workspace
@@ -58,70 +66,42 @@
 ├── PROJECT_STATE.md    # LLM State tracking
 ├── README.md
 ├── REFACTOR_PLAN.md    # Refactoring plan
+├── tsconfig.canon.json # TSConfig for canonicalizer script
 └── vite.config.js
 ```
 
-*   **Layout:** Standard React (`src`, `public`). Includes `lib` and `scripts` for canonicalizer.
-*   **Components:** `shadcn/ui` in `src/components/ui/`; Custom components (`App.jsx`, `ArtifactCode.jsx`) in `src/`.
-*   **Data:** **Canonical data established in `src/data/canonicalContactData.json` (Uses `contactPoints` array). Hardcoded data in `App.jsx`/`ArtifactCode.jsx` is now deprecated.**
+*   **Layout:** Standard React structure (`src`, `public`) alongside dedicated `lib`, `scripts`, and `logs` for the canonicalizer tool.
+*   **Data:**
+    *   **Live Source of Truth:** `src/data/canonicalContactData.json` (initialized from `reference_example.json`, contains merged data).
+    *   **Static Reference:** `src/data/reference_example.json`.
+    *   **O365 Exports:** `src/data/users_*.csv` serve as input for potential updates.
+    *   **Deprecated:** Data in `App.jsx`/`ArtifactCode.jsx`.
 
 ## 4. Core Components & Functionality
 
-*   **`src/main.jsx`:** Renders `<App />`.
-*   **`src/App.jsx`:**
-    *   Handles Tabs switching (`ContactDirectory`, `Office Map`).
-    *   Contains `ContactDirectory` component **(Data Deprecated)**.
-    *   Renders `ArtifactCode` for map view **(Data Deprecated)**.
-*   **`src/ArtifactCode.jsx` (`OfficeFloorMap`):**
-    *   Large component (>2000 lines) for the interactive office map **(Data Deprecated)**.
-    *   Uses React Context (`OfficeMapContext`) for internal state.
-    *   Features: search, list view, selection, details drawer, layout validation, easter egg.
-*   **`src/components/ui/`:** Standard `shadcn/ui` components.
-*   **`src/lib/utils.js`:** `cn` function, `roomTypeStyleMapping`.
-
-## 5. Styling Approach
-
-*   **Primary:** Tailwind CSS utility classes.
-*   **Theming:** `shadcn/ui` conventions (CSS variables in `src/index.css`).
-*   **Global:** `src/index.css`.
-*   **Component:** `src/App.css` (`@apply`).
-*   **Embedded:** `<style>` tags in `ArtifactCode.jsx` for easter egg.
-*   **Helpers:** `cn` function (`clsx`, `tailwind-merge`).
+*   **React App:** (See previous audit - functionality unchanged, but data source deprecated).
+*   **Canonicalizer Script (`scripts/canonicalize.ts`):**
+    *   CLI tool to validate, export (to O365 CSV), and potentially update (`--update-from-csv` placeholder) the live `canonicalContactData.json`.
+    *   Uses helper modules in `lib/` for parsing, validation, hashing, diffing, etc.
 
 ## 6. Data Management (Current State)
 
-*   **Status:** **Canonical source of truth established in `src/data/canonicalContactData.json` (Uses `contactPoints` array).** Data previously hardcoded in components (`App.jsx`, `ArtifactCode.jsx`) is now deprecated.
-*   **State:** `App.jsx` uses simple `useState`; `ArtifactCode.jsx` uses React Context internally.
-*   **Schema:** Defined by `canonicalContactData.json` structure. Explicit schema implementation (`src/schemas/`) is pending for the React app refactor. Canonicalizer script uses `lib/schema.ts`.
-*   **Refactor Target:** Proceeding with Phase 1 based on the canonical data.
-
-## 7. Build & Configuration
-
-*   **Vite (`vite.config.js`):** Dev server, build tool, React plugin, path aliases (`@/`), GitHub Pages base path (`/phonelist/`).
-*   **Tailwind (`tailwind.config.js`):** Content paths, theme extensions, plugins.
-*   **shadcn/ui (`components.json`):** UI component configuration.
-*   **ESLint (`.eslintrc.cjs`):** Linting rules.
-*   **Deployment (`package.json`):** `deploy` script uses `gh-pages`.
-
-## 8. Identified Issues / Improvement Areas
-
-*   **Data Hardcoding:** **Resolved** by extracting to `canonicalContactData.json`.
-*   **Component Size:** `ArtifactCode.jsx` remains large; refactoring needed in later phases.
-*   **Separation of Concerns:** Data is now separated. Layout/rendering logic still coupled in `ArtifactCode.jsx`.
-*   **Scalability:** New data structure is scalable.
-*   **Maintainability:** Data updates now centralized in `canonicalContactData.json`.
-*   **Styling:** Minor inconsistencies (`@apply`, embedded styles) remain.
-*   **Data Validation:** Next step is to implement schema validation.
+*   **Status:** Live source of truth is `src/data/canonicalContactData.json`, containing merged data. The `phonelist-canonicalizer` script interacts with this file for validation and O365 CSV export.
+*   **Schema:** Canonical schema matching the merged data is defined in `lib/schema.ts` using Zod. Schema implementation for the React app is pending.
+*   **Refactor Target:** React app refactor (Phase 1) will consume `src/data/canonicalContactData.json`.
 
 ## 9. Refactor Plan Adherence
 
-*   **Status:** Canonical data extraction complete. Canonicalizer script (Phases 1-3) built to process CSV into this format. React app refactor Phase 1 (Schema Implementation) is pending.
-*   **Planning Docs:** `REFACTOR_PLAN.md`, `PROJECT_STATE.md`, `CODEBASE_AUDIT.md` updated.
-*   **Implementation:** `src/data/canonicalContactData.json` created/updated. `lib/*.ts` and `scripts/*.ts` (pending) created for canonicalizer.
+*   **Status:** Canonical data file (`canonicalContactData.json`) established with merged data. Supporting utility script (`phonelist-canonicalizer`) built and tested for validation/export modes. React app refactor Phase 1 pending.
+*   **Planning Docs:** `REFACTOR_PLAN.md`, `PROJECT_STATE.md`, `CODEBASE_AUDIT.md` updated to reflect current state and script purpose.
+*   **Implementation:** `src/data/canonicalContactData.json` initialized. `lib/`, `scripts/`, `lib/tests/`, `scripts/tests/` created/populated for canonicalizer.
 
 ## 10. Conclusion
 
-The project is a functional React app using Vite, Tailwind, and shadcn/ui. The primary weakness (hardcoded data) has been addressed by establishing a canonical source of truth in `src/data/canonicalContactData.json`. `ArtifactCode.jsx` still needs refactoring. A supporting canonicalizer script is being built to manage the canonical data. The project is ready to proceed with implementing schema validation *within the React app* based on the canonical data (Phase 1 of refactor) once the canonicalizer script is complete.
+The project contains the `tsa-phone-list` React app (pending refactor) and the `phonelist-canonicalizer` utility script. The canonical source of truth is `src/data/canonicalContactData.json` (merged data). The canonicalizer script is functionally complete and tested for its role as a validator and O365 CSV exporter for this live data file, serving as a stop-gap for maintaining O365 sync. The `--update-from-csv` feature is not yet implemented. The project is ready for final documentation review or implementation of the update feature, before proceeding with the React app refactor.
+
+**Next Action (Canonicalizer):** Decide whether to implement update logic or proceed to React refactor.
+**Next Action (React App Refactor):** Begin Phase 1 (Schemas, Data Loading) based on `canonicalContactData.json`.
 
 **Next Action (Canonicalizer):** Implement Phase 4 (Output Gen) & Phase 5 (CLI).
 **Next Action (React App Refactor):** Create `src/schemas/` directory and implement schemas matching `canonicalContactData.json`. 
