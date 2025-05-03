@@ -157,7 +157,7 @@ const ContactDirectory = () => {
         </h3>
 
         {/* Michigan Extensions */}
-        <div className="mb-3">
+        <div className="mb-1.5">
           <h4 className="section-subheader">
             <MapPin className="icon-sm" />
             Michigan Extensions
@@ -203,7 +203,7 @@ const ContactDirectory = () => {
         </div>
 
         {/* Florida Extensions */}
-        <div className="mb-3">
+        <div className="mb-1.5">
           <h4 className="section-subheader">
             <MapPin className="icon-sm" />
             Florida Extensions
@@ -224,7 +224,7 @@ const ContactDirectory = () => {
         </div>
 
         {/* IT Department */}
-        <div className="mb-3">
+        <div className="mb-1.5">
           <h4 className="section-subheader">
             <User className="icon-sm" />
             IT Department
@@ -238,7 +238,7 @@ const ContactDirectory = () => {
         </div>
 
         {/* Cell Phone Numbers */}
-        <div className="mb-3">
+        <div className="mb-1.5">
           <h4 className="section-subheader">
             <Phone className="icon-sm" />
             Cell Phone Numbers
@@ -264,7 +264,7 @@ const ContactDirectory = () => {
         </div>
 
         {/* Treasurers / Additional Numbers */}
-        <div>
+        <div className="pb-1">
           <h4 className="section-subheader">
             <Building className="icon-sm" />
             Treasurers / Additional Numbers

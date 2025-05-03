@@ -7,7 +7,7 @@
 
 /* App Container */
 .app-container {
-  @apply bg-background rounded-md shadow-sm overflow-hidden;
+  @apply bg-background shadow-sm overflow-hidden;
 }
 
 /* App Header */

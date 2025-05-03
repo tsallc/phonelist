@@ -86,7 +86,7 @@
 @layer components {
   /* Section Headers */
   .section-header {
-    @apply text-sm font-bold text-primary flex items-center py-1 px-2;
+    @apply text-sm font-semibold text-primary flex items-center py-1 px-2 mb-1;
   }
   
   /* Section Sub-Headers */
@@ -96,22 +96,22 @@
   
   /* Icon with Text */
   .icon-text {
-    @apply flex items-center;
+    @apply flex items-center text-xs leading-tight;
   }
   
   /* Contact Entry */
   .contact-entry {
-    @apply text-xs;
+    @apply text-xs leading-tight;
   }
   
   /* Contact Entry Label */
   .contact-label {
-    @apply text-muted-foreground text-xs;
+    @apply text-muted-foreground text-xs leading-tight;
   }
   
   /* Contact Entry Value */
   .contact-value {
-    @apply text-primary text-xs font-medium text-right;
+    @apply text-foreground text-xs font-medium text-right leading-tight;
   }
   
   /* Location Card */
@@ -121,31 +121,31 @@
   
   /* Location Name */
   .location-name {
-    @apply text-sm font-bold text-foreground flex items-center;
+    @apply text-sm font-semibold text-foreground flex items-center mb-0.5;
   }
   
   /* Contact Info */
   .contact-info {
-    @apply ml-5 space-y-0.5 text-xs text-muted-foreground;
+    @apply ml-4 space-y-0 text-xs text-muted-foreground;
   }
   
   /* Email Section */
   .email-section {
-    @apply grid grid-cols-1 md:grid-cols-3 gap-2;
+    @apply grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-0.5;
   }
   
   /* Email Category */
   .email-category {
-    @apply text-xs font-medium text-muted-foreground;
+    @apply text-xs font-medium text-muted-foreground mb-0;
   }
   
   /* Email Link */
   .email-link {
-    @apply text-primary text-sm hover:underline;
+    @apply text-primary text-sm hover:underline leading-tight;
   }
   
   /* Contact Directory Grid */
   .directory-grid {
-    @apply grid grid-cols-4 gap-x-4 gap-y-1;
+    @apply grid grid-cols-4 gap-x-4 gap-y-0.5;
   }
 }
