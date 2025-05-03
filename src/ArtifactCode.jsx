@@ -225,12 +225,88 @@ const createRoomTypeRegistry = (styles = ROOM_TYPE_STYLES, renderers = ROOM_TYPE
 // Create the room type registry
 const ROOM_TYPES = createRoomTypeRegistry();
 
+// Custom plugins for specific floor layouts
+const FtLauderdalePlugin = {
+  preprocessLayout: (layoutConfig, meta) => {
+    // Keep the original layout
+    return layoutConfig;
+  },
+  
+  modifyCellClass: (cellClass, meta) => {
+    const { positionId } = meta;
+    
+    // Add custom positioning classes for specific positions
+    if (positionId === 'pos_0_1') {
+      return `${cellClass} ft-lauderdale-reception`;
+    } else if (positionId === 'pos_0_2') {
+      return `${cellClass} ft-lauderdale-manager`;
+    } else if (positionId === 'pos_1_3') {
+      return `${cellClass} ft-lauderdale-corner-office`;
+    } else if (positionId === 'pos_2_0') {
+      return `${cellClass} ft-lauderdale-break`;
+    } else if (positionId === 'pos_2_1') {
+      return `${cellClass} ft-lauderdale-storage`;
+    }
+    
+    return cellClass;
+  },
+  
+  afterRenderRow: (rowElement, rowProps) => {
+    const { rowIndex } = rowProps;
+    
+    // Add custom styles to specific rows
+    if (rowIndex === 0) {
+      return React.cloneElement(rowElement, {
+        className: `${rowElement.props.className} ft-lauderdale-top-row`
+      });
+    } else if (rowIndex === 2) {
+      return React.cloneElement(rowElement, {
+        className: `${rowElement.props.className} ft-lauderdale-bottom-row`
+      });
+    }
+    
+    return rowElement;
+  },
+  
+  onMountRow: (rowRef, rowMeta) => {
+    // Add custom styles to the row after it's mounted
+    if (rowRef.current) {
+      if (rowMeta.rowIndex === 0) {
+        // Add custom classes or styles for top row
+        rowRef.current.style.borderTopLeftRadius = '30px';
+        rowRef.current.style.borderTopRightRadius = '30px';
+      } else if (rowMeta.rowIndex === 2) {
+        // Add custom classes or styles for bottom row
+        rowRef.current.style.borderBottomLeftRadius = '30px';
+      }
+    }
+  },
+  
+  injectOverlay: (positionId, meta) => {
+    // Add decorative elements for certain positions
+    if (positionId === 'pos_1_0') {
+      return (
+        <div className="absolute -left-2 top-1/2 w-4 h-20 bg-blue-200 -translate-y-1/2 rounded-l-lg z-0"></div>
+      );
+    } else if (positionId === 'pos_1_3') {
+      return (
+        <div className="absolute -right-2 top-1/2 w-4 h-20 bg-blue-200 -translate-y-1/2 rounded-r-lg z-0"></div>
+      );
+    }
+    
+    return null;
+  }
+};
+
 // Floor metadata with names and icons
 const FLOORS = {
   'lobby': { name: 'Front Lobby', icon: Users },
   'bullpen': { name: 'Office Bullpen', icon: Grid },
   'upstairs': { name: 'Upstairs', icon: Coffee },
-  'main': { name: 'Main Floor', icon: Home }
+  'main': { name: 'Main Floor', icon: Home },
+  'ftlauderdale': { name: 'Ft Lauderdale', icon: Waves },
+  'tampareo': { name: 'Tampa REO', icon: Home },
+  'tampadowntown': { name: 'Tampa Downtown', icon: Coffee }
 };
 
 // Location metadata
@@ -297,6 +373,33 @@ const LAYOUT_CONFIG = {
           ['pos_1_0', 'pos_1_1', 'pos_1_2']
         ]
       ]
+    },
+    ftlauderdale: {
+      columns: 4,
+      layout: [
+        [
+          [null, 'pos_0_1', 'pos_0_2', null],
+          ['pos_1_0', 'pos_1_1', 'pos_1_2', 'pos_1_3'],
+          ['pos_2_0', 'pos_2_1', null, null]
+        ]
+      ]
+    },
+    tampareo: {
+      columns: 3,
+      layout: [
+        [
+          ['pos_0_0', 'pos_0_1', 'pos_0_2']
+        ]
+      ]
+    },
+    tampadowntown: {
+      columns: 2,
+      layout: [
+        [
+          ['pos_0_0', 'pos_0_1'],
+          ['pos_1_0', 'pos_1_1']
+        ]
+      ]
     }
   }
 };
@@ -351,6 +454,27 @@ const ROOM_ASSIGNMENTS = {
       'pos_1_0': 'coastal-cts-harbour',
       'pos_1_1': 'coastal-cts-harbor2',
       'pos_1_2': 'coastal-andrea'
+    },
+    ftlauderdale: {
+      'pos_0_1': 'coastal-ft-reception',
+      'pos_0_2': 'coastal-ft-manager',
+      'pos_1_0': 'coastal-ft-office1',
+      'pos_1_1': 'coastal-ft-conference',
+      'pos_1_2': 'coastal-ft-office2',
+      'pos_1_3': 'coastal-ft-office3',
+      'pos_2_0': 'coastal-ft-break',
+      'pos_2_1': 'coastal-ft-storage'
+    },
+    tampareo: {
+      'pos_0_0': 'coastal-tampareoa',
+      'pos_0_1': 'coastal-tampareob',
+      'pos_0_2': 'coastal-tampareoc'
+    },
+    tampadowntown: {
+      'pos_0_0': 'coastal-tampa-reception',
+      'pos_0_1': 'coastal-tampa-office1',
+      'pos_1_0': 'coastal-tampa-conference',
+      'pos_1_1': 'coastal-tampa-office2'
     }
   }
 };
@@ -400,6 +524,27 @@ const RAW_OFFICE_DATA = [
   { id: 'coastal-cts-harbour', name: 'CTS-Harbour', extension: '2050', floor: 'main', location: 'coastal', type: 'office', status: 'active' },
   { id: 'coastal-cts-harbor2', name: 'CTS-Harbor 2', extension: '2051', floor: 'main', location: 'coastal', type: 'office', status: 'active' },
   { id: 'coastal-andrea', name: 'Andrea', extension: '2026', floor: 'main', location: 'coastal', type: 'office', status: 'active' },
+  
+  // Coastal Title - Ft Lauderdale
+  { id: 'coastal-ft-reception', name: 'Reception', extension: '3000', floor: 'ftlauderdale', location: 'coastal', type: 'common', status: 'active' },
+  { id: 'coastal-ft-manager', name: 'Manager Office', extension: '3001', floor: 'ftlauderdale', location: 'coastal', type: 'office', status: 'active' },
+  { id: 'coastal-ft-office1', name: 'Office 1', extension: '3002', floor: 'ftlauderdale', location: 'coastal', type: 'office', status: 'active' },
+  { id: 'coastal-ft-conference', name: 'Conference Room', extension: '3010', floor: 'ftlauderdale', location: 'coastal', type: 'meeting', status: 'active' },
+  { id: 'coastal-ft-office2', name: 'Office 2', extension: '3003', floor: 'ftlauderdale', location: 'coastal', type: 'office', status: 'active' },
+  { id: 'coastal-ft-office3', name: 'Office 3', extension: '3004', floor: 'ftlauderdale', location: 'coastal', type: 'office', status: 'active' },
+  { id: 'coastal-ft-break', name: 'Break Room', extension: '3020', floor: 'ftlauderdale', location: 'coastal', type: 'common', status: 'active' },
+  { id: 'coastal-ft-storage', name: 'Storage', extension: '', floor: 'ftlauderdale', location: 'coastal', type: 'common', status: 'active' },
+  
+  // Coastal Title - Tampa REO
+  { id: 'coastal-tampareoa', name: 'REO Office A', extension: '4001', floor: 'tampareo', location: 'coastal', type: 'office', status: 'active' },
+  { id: 'coastal-tampareob', name: 'REO Office B', extension: '4002', floor: 'tampareo', location: 'coastal', type: 'office', status: 'active' },
+  { id: 'coastal-tampareoc', name: 'REO Office C', extension: '4003', floor: 'tampareo', location: 'coastal', type: 'office', status: 'active' },
+  
+  // Coastal Title - Tampa Downtown
+  { id: 'coastal-tampa-reception', name: 'Tampa Reception', extension: '5000', floor: 'tampadowntown', location: 'coastal', type: 'common', status: 'active' },
+  { id: 'coastal-tampa-office1', name: 'Tampa Office 1', extension: '5001', floor: 'tampadowntown', location: 'coastal', type: 'office', status: 'active' },
+  { id: 'coastal-tampa-conference', name: 'Tampa Conference', extension: '5010', floor: 'tampadowntown', location: 'coastal', type: 'meeting', status: 'active' },
+  { id: 'coastal-tampa-office2', name: 'Tampa Office 2', extension: '5002', floor: 'tampadowntown', location: 'coastal', type: 'office', status: 'active' },
 ];
 
 // Room component with explicit dependencies (no more global state)
@@ -1331,20 +1476,54 @@ const OfficeMapDisplay = () => {
     
     return (
       <>
-        {floors.map(floor => (
-          <FloorSection
-            key={`${activeLocation}-${floor}`}
-            location={activeLocation}
-            floor={floor}
-            activeRoom={activeRoom}
-            onRoomSelect={setActiveRoom}
-            searchResults={searchResultIds}
-            roomMap={roomMap}
-            getPositionRoomId={getPositionRoomId}
-            showValidation={showValidation && canAdminister()}
-            className="mb-0"
-          />
-        ))}
+        {floors.map(floor => {
+          // Apply custom plugins for specific floors
+          let layoutPlugins = DEFAULT_LAYOUT_PLUGINS;
+          
+          // Use the Ft Lauderdale plugin for that specific floor
+          if (activeLocation === 'coastal' && floor === 'ftlauderdale') {
+            layoutPlugins = {
+              ...DEFAULT_LAYOUT_PLUGINS,
+              ...FtLauderdalePlugin
+            };
+            
+            // Add special container for Ft Lauderdale
+            return (
+              <div key={`${activeLocation}-${floor}`} className="mb-4 relative">
+                <div className="absolute inset-0 bg-blue-50 -m-2 rounded-3xl z-0"></div>
+                <FloorSection
+                  location={activeLocation}
+                  floor={floor}
+                  activeRoom={activeRoom}
+                  onRoomSelect={setActiveRoom}
+                  searchResults={searchResultIds}
+                  roomMap={roomMap}
+                  getPositionRoomId={getPositionRoomId}
+                  showValidation={showValidation && canAdminister()}
+                  className="mb-0 relative z-10"
+                  layoutPlugins={layoutPlugins}
+                />
+              </div>
+            );
+          }
+          
+          // Default rendering for other floors
+          return (
+            <FloorSection
+              key={`${activeLocation}-${floor}`}
+              location={activeLocation}
+              floor={floor}
+              activeRoom={activeRoom}
+              onRoomSelect={setActiveRoom}
+              searchResults={searchResultIds}
+              roomMap={roomMap}
+              getPositionRoomId={getPositionRoomId}
+              showValidation={showValidation && canAdminister()}
+              className="mb-0"
+              layoutPlugins={layoutPlugins}
+            />
+          );
+        })}
       </>
     );
   };
@@ -1654,6 +1833,41 @@ const OfficeFloorMap = ({ initialVersion = 'default' }) => {
           max-width: 100% !important;
           width: 100% !important;
         }
+      }
+      
+      /* Custom styles for Ft Lauderdale layout */
+      .ft-lauderdale-top-row {
+        padding-top: 12px;
+      }
+      
+      .ft-lauderdale-bottom-row {
+        padding-bottom: 12px;
+      }
+      
+      .ft-lauderdale-reception {
+        position: relative;
+        transform: translateX(15%);
+      }
+      
+      .ft-lauderdale-manager {
+        position: relative;
+        transform: translateX(-15%);
+      }
+      
+      .ft-lauderdale-corner-office {
+        position: relative;
+        border-top-right-radius: 30px !important;
+        border-bottom-right-radius: 30px !important;
+      }
+      
+      .ft-lauderdale-break {
+        position: relative;
+        border-bottom-left-radius: 30px !important;
+      }
+      
+      .ft-lauderdale-storage {
+        position: relative;
+        transform: translateX(10%);
       }
     `;
     document.head.appendChild(style);
