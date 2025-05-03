@@ -81,70 +81,91 @@ const ContactDirectory = () => {
 
       {/* Locations Section */}
       <div className="directory-section">
-        <h3 className="section-header">
-          <MapPin className="icon-md" />
-          Office Locations
-        </h3>
+        <h3 className="section-header">Office Locations</h3>
 
-        <div className="grid-container">
-          <div className="location-card">
-            <h4 className="location-name">
-              <Building className="icon-sm text-primary" />
-              Michigan Office
-            </h4>
-            <div className="contact-info">
-              <p>41486 Wilcox Rd., Suite 2</p>
-              <p>Plymouth, MI 48170</p>
-              <div className="icon-text">
-                <Phone className="icon-sm text-muted-foreground" />
-                <span>734-259-7130</span>
-              </div>
-              <div className="icon-text">
-                <Printer className="icon-sm text-muted-foreground" />
-                <span>Fax: 734-259-7131 & 734-259-7132</span>
-              </div>
-            </div>
+        <div className="grid-container pt-4">
+          {/* Michigan Office Card - Final Polish */}
+          <div className="location-card relative p-4 border rounded shadow-sm mb-4 hover:shadow-md transition-shadow pb-8">
+            {/* Clickable Address Block */}
+            <a href="https://www.google.com/maps/search/?api=1&query=41486+Wilcox+Rd,+Suite+2,+Plymouth,+MI+48170" target="_blank" rel="noopener noreferrer" className="block hover:text-primary transition-colors mb-2">
+              <p className="text-base font-semibold">41486 Wilcox Rd., Suite 2</p>
+              <p className="text-base">Plymouth, MI 48170</p>
+            </a>
+            {/* Single Line Phone/Fax */}
+            <p className="text-sm text-gray-700">
+              <a href="tel:734-259-7130" className="hover:text-primary transition-colors">
+                Phone: 734-259-7130
+              </a>
+              <span className="ml-4">
+                Fax: 734-259-7131, -7132
+              </span>
+              {/* Location Label (Absolutely Positioned) */}
+              <span className="absolute bottom-3 right-4 text-xs text-gray-500">
+                Michigan Office
+              </span>
+            </p>
           </div>
 
-          <div className="location-card">
-            <h4 className="location-name">
-              <Building className="icon-sm text-primary" />
-              Florida Office
-            </h4>
-            <div className="contact-info">
-              <p>333 Las Olas Way CU315</p>
-              <p>Ft. Lauderdale, FL 33301</p>
-              <div className="icon-text">
-                <Phone className="icon-sm text-muted-foreground" />
-                <span>954-519-2477</span>
-              </div>
-              <div className="icon-text">
-                <Printer className="icon-sm text-muted-foreground" />
-                <span>Fax: 954-246-4670</span>
-              </div>
-            </div>
+          {/* Florida Office Card - Final Polish */}
+          <div className="location-card relative p-4 border rounded shadow-sm mb-4 hover:shadow-md transition-shadow pb-8">
+            {/* Clickable Address Block */}
+            <a href="https://www.google.com/maps/search/?api=1&query=333+Las+Olas+Way+CU315,+Ft.+Lauderdale,+FL+33301" target="_blank" rel="noopener noreferrer" className="block hover:text-primary transition-colors mb-2">
+              <p className="text-base font-semibold">333 Las Olas Way CU315</p>
+              <p className="text-base">Ft. Lauderdale, FL 33301</p>
+            </a>
+            {/* Single Line Phone/Fax */}
+            <p className="text-sm text-gray-700">
+              <a href="tel:954-519-2477" className="hover:text-primary transition-colors">
+                Phone: 954-519-2477
+              </a>
+              <span className="ml-4">
+                Fax: 954-246-4670
+              </span>
+               {/* Location Label (Absolutely Positioned) */}
+              <span className="absolute bottom-3 right-4 text-xs text-gray-500">
+                Florida Office
+              </span>
+            </p>
           </div>
 
-          <div className="location-card">
-            <h4 className="location-name">
-              <Building className="icon-sm text-primary" />
-              Downtown – Coastal Title Solutions
-            </h4>
-            <div className="contact-info">
-              <p>601 S Harbour Island Blvd., Ste 133</p>
-              <p>Tampa, FL 33602</p>
-            </div>
+          {/* Downtown Office Card - Final Polish */}
+          <div className="location-card relative p-4 border rounded shadow-sm mb-4 hover:shadow-md transition-shadow pb-8">
+            {/* Clickable Address Block */}
+            <a href="https://www.google.com/maps/search/?api=1&query=601+S+Harbour+Island+Blvd,+Ste+133,+Tampa,+FL+33602" target="_blank" rel="noopener noreferrer" className="block hover:text-primary transition-colors mb-2">
+              <p className="text-base font-semibold">601 S Harbour Island Blvd., Ste 133</p>
+              <p className="text-base">Tampa, FL 33602</p>
+            </a>
+            {/* Single Line Phone/Fax - Refined Placeholders */}
+            <p className="text-sm text-gray-700">
+              <span className="text-gray-400 italic">Phone: —</span> 
+              <span className="ml-4 text-gray-400 italic">
+                Fax: N/A
+              </span>
+               {/* Location Label (Absolutely Positioned) */}
+              <span className="absolute bottom-3 right-4 text-xs text-gray-500">
+                Downtown – Coastal Title Solutions
+              </span>
+            </p>
           </div>
 
-          <div className="location-card">
-            <h4 className="location-name">
-              <Building className="icon-sm text-primary" />
-              REO – Coastal Title Solutions
-            </h4>
-            <div className="contact-info">
-              <p>550 N Reo Street., Ste 300</p>
-              <p>Tampa, FL 33609</p>
-            </div>
+          {/* REO Office Card - Final Polish */}
+          <div className="location-card relative p-4 border rounded shadow-sm mb-4 hover:shadow-md transition-shadow pb-8">
+            {/* Clickable Address Block */}
+            <a href="https://www.google.com/maps/search/?api=1&query=550+N+Reo+Street,+Ste+300,+Tampa,+FL+33609" target="_blank" rel="noopener noreferrer" className="block hover:text-primary transition-colors mb-2">
+              <p className="text-base font-semibold">550 N Reo Street, Ste 300</p> 
+              <p className="text-base">Tampa, FL 33609</p>
+            </a>
+            {/* Single Line Phone/Fax - Refined Placeholders */}
+            <p className="text-sm text-gray-700">
+              <span className="text-gray-400 italic">Phone: —</span> 
+              <span className="ml-4 text-gray-400 italic">
+                Fax: N/A
+              </span>
+               {/* Location Label (Absolutely Positioned) */}
+              <span className="absolute bottom-3 right-4 text-xs text-gray-500">
+                REO – Coastal Title Solutions
+              </span>
+            </p>
           </div>
         </div>
       </div>
