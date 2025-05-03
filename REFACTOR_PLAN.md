@@ -165,4 +165,33 @@ src/
 └── ...
 ```
 
-This revised plan directly addresses the critiques by embedding operational semantics, temporal awareness, relationship modeling, and access control into the core schema design from Phase 1, setting a much stronger foundation for the subsequent phases. 
+This revised plan directly addresses the critiques by embedding operational semantics, temporal awareness, relationship modeling, and access control into the core schema design from Phase 1, setting a much stronger foundation for the subsequent phases.
+
+---
+
+## Conversation Summary & Evolution (Context for Plan)
+
+This plan evolved through several stages of analysis and critique:
+
+1.  **Initial State:** The process began with analyzing a static image of the original contact directory, which was organized into simple categories (Michigan Extensions, Florida Extensions, IT, Cell Phones, Treasurers/Additional). This revealed data fragmentation (e.g., Brian Tiller's info split across MI Ext, FL Ext, and Cell sections).
+
+2.  **First Refactor Proposal (Person-Centric List):** A proposal was made to restructure the data into a person-centric format, consolidating contact methods under each individual (e.g., listing all of Brian Tiller's numbers together). This aimed to improve lookup speed and clarity.
+
+3.  **First Critique & Data Structure Refinement:** This proposal was critiqued for making static assumptions (e.g., inferring 'Sydney' in MI and FL were the same without explicit modeling), lacking contextual modifiers (role, priority, availability), maintaining a flat visual hierarchy, missing interactivity (search/filter), and lacking purpose descriptors for external contacts. This led to the *first implementation attempt*, separating data into `src/data/directoryData.js`, introducing role groups (EXEC, OPS_MI, OPS_FL, etc.), and rendering a hierarchically grouped list. This addressed some issues but still baked display logic into the data structure (`OPS_MI` group) and used naming hacks (`sydney_mi`, `sydney_fl`) to handle multi-location presence.
+
+4.  **Second Critique (Operational Reality & Deeper Flaws):** A more thorough critique revealed this implementation, while cleaner, was still fundamentally flawed:
+    *   It treated multi-site presence as separate identities (`sydney_mi`/`sydney_fl`).
+    *   It used composite type labels (`EXT_MI`) instead of separating type and site.
+    *   Role groups were hardcoded display logic, not relational.
+    *   It lacked temporal logic (validity periods), role priority/conflict resolution, a unified entity model (splitting Person/ExternalContact too early), an abstraction for shared contact points (like desk phones or role emails), access control/visibility logic, design for intent resolution (routing/escalation), and hooks for presence/availability.
+    *   It was described as optimizing for readable display ("digital placemat") rather than operational function or a dynamic graph.
+
+5.  **Final Plan (Operational Graph Model):** The current plan was formulated in direct response to the second critique. It adopts a "truth-first" approach, modeling the directory as a graph with:
+    *   Unified `ContactEntity`.
+    *   Operationally defined `Role` objects (function, jurisdiction, coverage).
+    *   Abstracted `ContactPoint` assets.
+    *   Relationship objects (`RoleAssignment`, `ContactPointAssignment`) with temporal validity (`validFrom`/`validTo`).
+    *   Placeholders for priority, visibility (`visibilityScope`), presence, and intent resolution.
+    *   A focus on a service layer (`directoryService.js`) to handle complex resolution and filtering based on time, context, and intent.
+
+This iterative process, moving from simple display analysis to deep structural critique, led to the comprehensive, graph-based model outlined in this document, aiming for a truly scalable, maintainable, and operationally useful system prepared for future integrations like Azure Entra. 
