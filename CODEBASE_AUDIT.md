@@ -33,12 +33,14 @@
 │   ├── assets/         # Empty
 │   ├── components/
 │   │   └── ui/         # shadcn/ui components
-│   ├── data/           # Empty (Planned for refactor)
+│   ├── data/
+│   │   └── canonicalContactData.json # Source of Truth (Flattened Schema)
 │   ├── lib/
 │   │   └── utils.js    # cn utility, style mapping
+│   ├── schemas/        # (To be created)
 │   ├── App.css
-│   ├── App.jsx         # Root component, Tabs
-│   ├── ArtifactCode.jsx# Office map component
+│   ├── App.jsx         # Root component, Tabs (Data Deprecated)
+│   ├── ArtifactCode.jsx# Office map component (Data Deprecated)
 │   ├── index.css       # Tailwind base styles
 │   └── main.jsx        # Entry point
 ├── .eslintrc.cjs
@@ -59,18 +61,17 @@
 
 *   **Layout:** Standard React (`src`, `public`).
 *   **Components:** `shadcn/ui` in `src/components/ui/`; Custom components (`App.jsx`, `ArtifactCode.jsx`) in `src/`.
-*   **Data:** No central data source; hardcoded in components.
+*   **Data:** **Canonical data extracted to `src/data/canonicalContactData.json` (Flattened Schema). Hardcoded data in `App.jsx`/`ArtifactCode.jsx` is now deprecated.**
 
 ## 4. Core Components & Functionality
 
 *   **`src/main.jsx`:** Renders `<App />`.
 *   **`src/App.jsx`:**
     *   Handles Tabs switching (`ContactDirectory`, `Office Map`).
-    *   Contains `ContactDirectory` component with hardcoded contact data.
-    *   Renders `ArtifactCode` for map view.
+    *   Contains `ContactDirectory` component **(Data Deprecated)**.
+    *   Renders `ArtifactCode` for map view **(Data Deprecated)**.
 *   **`src/ArtifactCode.jsx` (`OfficeFloorMap`):**
-    *   Large component (>2000 lines) for the interactive office map.
-    *   Hardcoded room data, layout config, assignments, styles.
+    *   Large component (>2000 lines) for the interactive office map **(Data Deprecated)**.
     *   Uses React Context (`OfficeMapContext`) for internal state.
     *   Features: search, list view, selection, details drawer, layout validation, easter egg.
 *   **`src/components/ui/`:** Standard `shadcn/ui` components.
@@ -87,10 +88,10 @@
 
 ## 6. Data Management (Current State)
 
-*   **Status:** Decentralized, Hardcoded within components (`App.jsx`, `ArtifactCode.jsx`).
+*   **Status:** **Canonical source of truth established in `src/data/canonicalContactData.json` (Flattened Schema).** Data previously hardcoded in components (`App.jsx`, `ArtifactCode.jsx`) is now deprecated.
 *   **State:** `App.jsx` uses simple `useState`; `ArtifactCode.jsx` uses React Context internally.
-*   **Schema:** Implicit, not formally defined.
-*   **Refactor Target:** Primary focus of **Phase 1** in `REFACTOR_PLAN.md`.
+*   **Schema:** Defined implicitly by `canonicalContactData.json`. Explicit schema implementation (`src/schemas/`) is the next step.
+*   **Refactor Target:** Proceeding with Phase 1 based on the canonical data.
 
 ## 7. Build & Configuration
 
@@ -102,22 +103,22 @@
 
 ## 8. Identified Issues / Improvement Areas
 
-*   **Data Hardcoding:** Main issue; limits scalability and maintainability.
-*   **Component Size:** `ArtifactCode.jsx` is excessively large.
-*   **Separation of Concerns:** Data, layout, rendering logic are tightly coupled.
-*   **Scalability:** Current approach doesn't scale well.
-*   **Maintainability:** Updates require direct code changes in components.
-*   **Styling:** Minor inconsistencies (`@apply`, embedded styles).
-*   **Data Validation:** Lacking due to implicit schemas.
+*   **Data Hardcoding:** **Resolved** by extracting to `canonicalContactData.json`.
+*   **Component Size:** `ArtifactCode.jsx` remains large; refactoring needed in later phases.
+*   **Separation of Concerns:** Data is now separated. Layout/rendering logic still coupled in `ArtifactCode.jsx`.
+*   **Scalability:** New data structure is scalable.
+*   **Maintainability:** Data updates now centralized in `canonicalContactData.json`.
+*   **Styling:** Minor inconsistencies (`@apply`, embedded styles) remain.
+*   **Data Validation:** Next step is to implement schema validation.
 
 ## 9. Refactor Plan Adherence
 
-*   **Status:** Pre-refactor state.
-*   **Planning Docs:** `REFACTOR_PLAN.md`, `PROJECT_STATE.md` exist.
-*   **Implementation:** No refactor code implemented yet.
+*   **Status:** Canonical data extraction complete (Flattened Schema). Ready for Phase 1 schema implementation.
+*   **Planning Docs:** `REFACTOR_PLAN.md`, `PROJECT_STATE.md`, `CODEBASE_AUDIT.md` updated.
+*   **Implementation:** `src/data/canonicalContactData.json` created/updated.
 
 ## 10. Conclusion
 
-The project is a functional React app using Vite, Tailwind, and shadcn/ui. Its primary weakness is hardcoded data, making it difficult to maintain and scale. `ArtifactCode.jsx` needs significant refactoring. The `REFACTOR_PLAN.md` accurately addresses these issues. The project is ready to begin Phase 1 implementation as outlined in `PROJECT_STATE.md`.
+The project is a functional React app using Vite, Tailwind, and shadcn/ui. The primary weakness (hardcoded data) has been addressed by extracting a canonical source of truth to `src/data/canonicalContactData.json` (using a flattened schema). `ArtifactCode.jsx` still needs refactoring. The project is ready to proceed with implementing schema validation based on the canonical data.
 
 **Next Action:** Create `src/schemas/` directory. 

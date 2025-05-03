@@ -5,7 +5,7 @@
 ## Current Focus
 
 - Begin implementation of **Phase 1: Foundational Graph Schema & Temporal Logic** from `REFACTOR_PLAN.md`.
-- Create the necessary directories and files for the new schemas, informed by data audit.
+- Implement core data schemas based on the **flattened** canonical data extraction.
 
 ## Overall Progress
 
@@ -15,24 +15,25 @@
     - Project analysis and refactoring plan creation (`REFACTOR_PLAN.md`).
     - LLM state tracking file creation (`PROJECT_STATE.md`).
     - Full codebase audit (`CODEBASE_AUDIT.md`).
-    - Detailed audit of hardcoded data vs. M365 export (`users_5_3_2025 7_00_43 PM.csv`).
-    - Creation of consolidated data file (`MERGED_USER_DATA.csv`).
+    - Detailed audit & reconciliation of hardcoded data (`App.jsx`, `ArtifactCode.jsx`) vs. M365 export (`users_*.csv`).
+    - **Canonical data extraction to `src/data/canonicalContactData.json` (Source of Truth, Flattened Schema).**
 - **Milestones Pending (Current Phase):**
-    - Define Core Schemas (`src/schemas/directorySchemas.js`).
-    - Refactor Data Source (`src/data/seedData.js` - using merged data).
+    - Implement Core Schemas (`src/schemas/directorySchemas.js`) using Zod or similar, reflecting the **flattened** `canonicalContactData.json` structure.
+    - Refactor Data Source (`src/data/seedData.js`) to load and validate `canonicalContactData.json`.
     - Prepare Service Layer Stubs (`src/services/directoryService.js`).
+    - **Delete `App.jsx` and `ArtifactCode.jsx` after data migration is confirmed.**
 
 ## Recent Activity
 
 - Created `PROJECT_STATE.md`.
-- Performed a full codebase audit and generated `CODEBASE_AUDIT.md`.
-- Audited hardcoded data (`App.jsx`, `ArtifactCode.jsx`) against M365 user export (`users_5_3_2025 7_00_43 PM.csv`).
-- Created `MERGED_USER_DATA.csv` consolidating user/contact data, prioritizing hardcoded info (like extensions) where available.
-- Identified service/system accounts to filter out (listed below).
-- Confirmed alignment between UI data needs and merged dataset.
-- Confirmed readiness to proceed with Phase 1 schema definition.
+- Performed codebase audit (`CODEBASE_AUDIT.md`).
+- Audited and reconciled disparate data sources.
+- **Executed one-time canonical data extraction into `src/data/canonicalContactData.json`.**
+- **Refined canonical data structure: Flattened `ContactPoints` by inlining into `ContactEntities`.**
+- Confirmed readiness to proceed with Phase 1 schema implementation.
+- Deleted intermediate `MERGED_USER_DATA.csv`.
 
-## Filtered UPNs (Excluded from MERGED_USER_DATA.csv)
+## Filtered UPNs (Excluded during canonical extraction)
 
 - admin@titlesolutionsllc.com
 - cciotti@titlesolutionsllc.com
@@ -54,9 +55,9 @@
 
 ## Next Steps
 
-1.  **Create the directory `src/schemas/`.**
+1.  Create the directory `src/schemas/`.
 2.  Create the file `src/schemas/directorySchemas.js`.
-3.  Define the `ContactEntity` schema within `src/schemas/directorySchemas.js` according to `REFACTOR_PLAN.md` (Section 3.1) and informed by the data audit/merge.
+3.  Implement Zod (or similar TS-based) schemas in `directorySchemas.js` that precisely match the **flattened** structure of `src/data/canonicalContactData.json`.
 
 ## Blockers/Issues
 
@@ -67,15 +68,16 @@
 - `REFACTOR_PLAN.md`: Guiding refactoring document.
 - `CODEBASE_AUDIT.md`: Detailed analysis of codebase state pre-refactor.
 - `PROJECT_STATE.md`: This file.
-- `users_5_3_2025 7_00_43 PM.csv`: Original M365 user export.
-- `MERGED_USER_DATA.csv`: Consolidated user/contact data for refactoring.
-- `App.jsx`, `ArtifactCode.jsx`: Source of hardcoded UI data (contacts, extensions, map layout) used for merging.
-- `src/schemas/directorySchemas.js`: (To be created) Will contain new data schemas.
-- `src/data/seedData.js`: (To be created/refactored) Will hold data conforming to new schemas, populated from `MERGED_USER_DATA.csv` and other hardcoded details (locations, external contacts).
+- **`src/data/canonicalContactData.json`:** **THE Source of Truth for contact/location data (Flattened Schema).**
+- `users_5_3_2025 7_00_43 PM.csv`: Original M365 user export (historical context).
+- `App.jsx`, `ArtifactCode.jsx`: Deprecated sources of data, **to be deleted** after Phase 1/2 validation.
+- `src/schemas/directorySchemas.js`: (To be created) Will contain Zod/TS schemas matching the **flattened** `canonicalContactData.json`.
+- `src/data/seedData.js`: (To be created/refactored) Will load/validate `canonicalContactData.json`.
 
 ## LLM Agent Instructions
 
-- Refer to this file for current state and immediate goals.
+- **Treat `src/data/canonicalContactData.json` as the immutable source of truth (Note: Flattened Schema).**
+- Refer to this file (`PROJECT_STATE.md`) for current state and immediate goals.
 - Update `Last Updated`, `Recent Activity`, and `Next Steps` after completing tasks.
 - Use `Overall Progress` for context within `REFACTOR_PLAN.md`.
-- Use `MERGED_USER_DATA.csv` as the primary source for user/contact entities when populating `src/data/seedData.js`. Supplement with location/external contact data from `App.jsx`. 
+- The next task involves implementing schemas that *validate* the **flattened** structure in `canonicalContactData.json`. 
