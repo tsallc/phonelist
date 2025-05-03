@@ -1370,7 +1370,7 @@ const OfficeMapDisplay = () => {
     if (!validationResults || !canAdminister() || validationResults.valid) return null;
     
     return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4 mx-4">
+      <div className="bg-red-50 border-l-4 border-red-500 p-4 my-0 sm:my-4 mx-0 sm:mx-4">
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
@@ -1406,7 +1406,7 @@ const OfficeMapDisplay = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto bg-gray-100 min-h-screen">
+    <div className="w-full max-w-6xl mx-auto bg-gray-100 min-h-screen">
       {/* Role indicator for admins and editors */}
       {(canAdminister() || canEdit()) && (
         <div className="bg-gray-800 text-white px-4 py-1 text-xs flex justify-between items-center">
@@ -1538,7 +1538,7 @@ const OfficeMapDisplay = () => {
       
       {/* Search Results */}
       {searchResults.length > 0 && (
-        <div className="bg-amber-50 shadow-md rounded-lg m-4 overflow-hidden">
+        <div className="bg-amber-50 shadow-md rounded-lg m-0 sm:m-4 overflow-hidden">
           <div className="flex items-center px-4 py-3 bg-amber-100 border-b border-amber-200">
             <Search className="w-5 h-5 text-amber-600 mr-2" />
             <h2 className="font-bold text-amber-800">Search Results ({searchResults.length})</h2>
@@ -1557,7 +1557,7 @@ const OfficeMapDisplay = () => {
       
       {/* Main Content */}
       {!showListView && searchResults.length === 0 ? (
-        <div className="bg-white shadow-md rounded-lg m-4 overflow-hidden">
+        <div className="bg-white shadow-md rounded-lg m-0 sm:m-4 overflow-hidden">
           {/* Floor heading */}
           <div className="p-3 bg-gray-50 border-b border-gray-200 flex items-center">
             <MapPin className="w-5 h-5 text-blue-600 mr-2" />
@@ -1576,7 +1576,7 @@ const OfficeMapDisplay = () => {
         </div>
       ) : (
         searchResults.length === 0 && (
-          <div className="bg-white shadow-md rounded-lg m-4 overflow-hidden">
+          <div className="bg-white shadow-md rounded-lg m-0 sm:m-4 overflow-hidden">
             <div className="p-3 bg-gray-50 border-b border-gray-200 flex items-center">
               <List className="w-5 h-5 text-blue-600 mr-2" />
               <h2 className="text-lg font-bold text-gray-800">Directory Listing</h2>
@@ -1616,7 +1616,9 @@ const OfficeMapDisplay = () => {
 const OfficeFloorMap = ({ initialVersion = 'default' }) => {
   return (
     <OfficeMapProvider initialVersion={initialVersion}>
-      <OfficeMapDisplay />
+      <div className="p-0 overflow-hidden">
+        <OfficeMapDisplay />
+      </div>
     </OfficeMapProvider>
   );
 };
