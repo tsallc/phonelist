@@ -1,0 +1,40 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# `phonelist-canonicalizer` Script Guide
+
+This script acts as a utility for managing the live canonical data file ([src/data/canonicalContactData.json](mdc:src/data/canonicalContactData.json)) and syncing specific fields with Office 365 via CSV exports.
+
+## Core Files
+
+*   **Entry Point:** [scripts/canonicalize.ts](mdc:scripts/canonicalize.ts) (implements CLI using `commander`)
+*   **Schema:** [lib/schema.ts](mdc:lib/schema.ts) (defines the canonical structure using `Zod`)
+*   **Validation:** [lib/validate.ts](mdc:lib/validate.ts) (validates data against schema)
+*   **CSV Export:** [lib/exportCsv.ts](mdc:lib/exportCsv.ts) (generates O365-compatible CSV)
+*   **Update Logic (Placeholder):** [lib/updateFromJson.ts](mdc:lib/updateFromJson.ts)
+*   **Helpers:** [lib/hash.ts](mdc:lib/hash.ts), [lib/diff.ts](mdc:lib/diff.ts), [lib/parseCsv.ts](mdc:lib/parseCsv.ts), [lib/types.ts](mdc:lib/types.ts)
+*   **Tests:** `lib/tests/`, `scripts/tests/`
+*   **Build Config:** [tsconfig.canon.json](mdc:tsconfig.canon.json)
+
+## Workflow Modes
+
+(Run via `node dist/canon/scripts/canonicalize.js <args>` after `pnpm run build:canon`)
+
+1.  **Default (Validation):** `node ...canonicalize.js [--json path/to/live.json]`
+    *   Reads the live JSON (defaults to `canonicalContactData.json`).
+    *   Validates it against the schema.
+    *   Reports success or errors.
+2.  **Export (`--export-csv`):** `node ...canonicalize.js --export-csv path/to/output.csv [--json path/to/live.json]`
+    *   Reads and validates the live JSON.
+    *   Generates the specified CSV file suitable for O365 import.
+3.  **Update (`--update-from-csv`) *[Logic Pending]*:** `node ...canonicalize.js --update-from-csv path/to/new.csv [--json path/to/live.json] [--out path/to/updated.json]`
+    *   Reads live JSON and new O365 CSV.
+    *   **Currently:** Uses placeholder logic; does not modify data.
+    *   **Future:** Will selectively update/add entries in the live JSON based on the CSV, preserving merged data.
+    *   Supports `--dry-run` and `--fail-on-diff`.
+
+Use `--verbose` for debug logs.
+
+See [README.md](mdc:README.md) for detailed usage.

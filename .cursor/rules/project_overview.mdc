@@ -1,0 +1,23 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Project Overview & Data
+
+This repository contains two main parts:
+
+1.  **React Application (`tsa-phone-list`):** Located primarily in `src/`, this app displays contact info. It is undergoing refactoring (see [REFACTOR_PLAN.md](mdc:REFACTOR_PLAN.md)) and currently uses deprecated data from [src/App.jsx](mdc:src/App.jsx) and [src/ArtifactCode.jsx](mdc:src/ArtifactCode.jsx).
+2.  **Node.js Utility (`phonelist-canonicalizer`):** Located in `lib/` and `scripts/`, this CLI tool manages the canonical contact data.
+
+## Key Data Files
+
+*   **Live Data:** [src/data/canonicalContactData.json](mdc:src/data/canonicalContactData.json) is the mutable source of truth for contact information. It contains merged data (historically from O365 CSV + JSX). The React app should read from this, and the canonicalizer script validates/exports/updates it.
+*   **Static Reference:** [src/data/reference_example.json](mdc:src/data/reference_example.json) is a read-only copy of the initial merged data state.
+*   **O365 CSV Exports:** Files like [src/data/users_5_3_2025 7_00_43 PM.csv](mdc:src/data/users_5_3_2025%207_00_43%20PM.csv) are inputs for the canonicalizer's *update* functionality (feature pending).
+
+## Status & Planning
+
+*   See [PROJECT_STATE.md](mdc:PROJECT_STATE.md) for current progress.
+*   See [CODEBASE_AUDIT.md](mdc:CODEBASE_AUDIT.md) for detailed file analysis.
+*   See [POSTMORTEM.md](mdc:POSTMORTEM.md) for the history of the canonicalizer script pivot.
