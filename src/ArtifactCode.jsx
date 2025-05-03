@@ -122,6 +122,14 @@ const ROOM_TYPE_RENDERERS = {
             </div>
           )}
         </div>
+        {room.warning && (
+          <div className="mt-2 bg-red-100 px-2 py-1 rounded-md text-xs text-red-700 flex items-center">
+            <svg className="w-3 h-3 mr-1 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            {room.warning}
+          </div>
+        )}
         <div className="flex items-center mt-3 text-xs text-gray-600">
           <MapPin className="w-3 h-3 mr-1 text-gray-400" />
           <span className="font-medium">
@@ -354,7 +362,7 @@ const RAW_OFFICE_DATA = [
   { id: 'solutions-copy-room', name: 'Copy Room', extension: '1100', floor: 'lobby', location: 'solutions', type: 'common', status: 'active' },
   { id: 'solutions-closers', name: 'Closers', extension: '1018', floor: 'lobby', location: 'solutions', type: 'office', status: 'active' },
   { id: 'solutions-conf-1', name: 'Conference Room 1', extension: '1200', floor: 'lobby', location: 'solutions', type: 'meeting', status: 'active' },
-  { id: 'solutions-conf-2', name: 'Conference Room 2', extension: '1201', floor: 'lobby', location: 'solutions', type: 'meeting', status: 'active' },
+  { id: 'solutions-conf-2', name: 'Conference Room 2', extension: '1201', floor: 'lobby', location: 'solutions', type: 'meeting', status: 'active', warning: 'INOP - frayed cord' },
   
   // Title Solutions - Office Bullpen
   { id: 'solutions-bullpen-r1c1', name: 'Empty', extension: '', floor: 'bullpen', location: 'solutions', type: 'empty', status: 'inactive' }, // Amber now empty
@@ -374,10 +382,10 @@ const RAW_OFFICE_DATA = [
   { id: 'solutions-bullpen-r3c5', name: 'Grace', extension: '1003', floor: 'bullpen', location: 'solutions', type: 'office', status: 'active' },
   
   // Title Solutions - 2nd Floor
-  { id: 'solutions-training', name: 'Training Room', extension: '1100', floor: 'upstairs', location: 'solutions', type: 'training', status: 'active' },
-  { id: 'solutions-lunch', name: 'Lunch Room', extension: '1103', floor: 'upstairs', location: 'solutions', type: 'common', status: 'active' },
+  { id: 'solutions-training', name: 'Training Room', extension: '1103', floor: 'upstairs', location: 'solutions', type: 'training', status: 'active' },
+  { id: 'solutions-lunch', name: 'Lunch Room', extension: '1110', floor: 'upstairs', location: 'solutions', type: 'common', status: 'active' },
   { id: 'solutions-tiller', name: 'Brian T.', extension: '1024', floor: 'upstairs', location: 'solutions', type: 'office', status: 'active' },
-  { id: 'solutions-pam', name: 'Pam', extension: '1018', floor: 'upstairs', location: 'solutions', type: 'office', status: 'active' },
+  { id: 'solutions-pam', name: 'Pam', extension: '1016', floor: 'upstairs', location: 'solutions', type: 'office', status: 'active' },
   { id: 'solutions-tina', name: 'Tina', extension: '1027', floor: 'upstairs', location: 'solutions', type: 'office', status: 'active' },
   
   // TruTitle
@@ -420,6 +428,13 @@ const Room = ({ roomId, roomMap, active, onSelect, className = "", size = "h-[75
         {isInactive && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <div className="text-red-500 font-bold text-xl transform rotate-12">X</div>
+          </div>
+        )}
+        {room.warning && (
+          <div className="absolute top-0 right-0 m-1">
+            <div className="bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center" title={room.warning}>
+              !
+            </div>
           </div>
         )}
         <div className="font-bold">{room.name}</div>
@@ -476,6 +491,18 @@ const RoomDetailsDrawer = ({ roomId, roomMap, onClose }) => {
             </svg>
           </button>
         </div>
+        
+        {/* Warning message if room has one */}
+        {room.warning && (
+          <div className="mt-4 bg-red-50 p-3 rounded-lg border-l-4 border-red-500 text-sm text-red-700">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+              <span className="font-bold">Warning:</span> <span className="ml-1">{room.warning}</span>
+            </div>
+          </div>
+        )}
         
         {/* Only show room type info if not empty */}
         {room.type !== 'empty' && (
