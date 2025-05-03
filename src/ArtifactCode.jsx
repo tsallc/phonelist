@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useReducer, createContext, useContext } from 'react';
 import { Search, MapPin, Phone, List, Grid, Users, Coffee, Printer, FileText, Home, Waves } from 'lucide-react';
 
-// Room type definitions with associated styles and metadata - now as strategy objects
-const ROOM_TYPES = {
+// Room type styles - separated from render logic
+const ROOM_TYPE_STYLES = {
   empty: { 
     label: 'Empty', 
     bg: 'bg-gray-100', 
@@ -10,10 +10,52 @@ const ROOM_TYPES = {
     dot: 'bg-gray-500',
     icon: Home,
     gradientClass: 'bg-gradient-to-r from-gray-50 to-gray-100 border-l-4 border-gray-300',
-    iconColor: 'text-gray-600',
+    iconColor: 'text-gray-600'
+  },
+  common: { 
+    label: 'Common Area', 
+    bg: 'bg-blue-100', 
+    border: 'border-blue-300', 
+    dot: 'bg-blue-500',
+    icon: Printer,
+    gradientClass: 'bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-400',
+    iconColor: 'text-blue-600'
+  },
+  meeting: { 
+    label: 'Conference', 
+    bg: 'bg-purple-100', 
+    border: 'border-purple-300', 
+    dot: 'bg-purple-500',
+    icon: FileText,
+    gradientClass: 'bg-gradient-to-r from-purple-50 to-purple-100 border-l-4 border-purple-400',
+    iconColor: 'text-purple-600'
+  },
+  training: { 
+    label: 'Training', 
+    bg: 'bg-yellow-100', 
+    border: 'border-yellow-300', 
+    dot: 'bg-yellow-500',
+    icon: Users,
+    gradientClass: 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-l-4 border-yellow-400',
+    iconColor: 'text-yellow-600'
+  },
+  office: { 
+    label: 'Office', 
+    bg: 'bg-green-100', 
+    border: 'border-green-300', 
+    dot: 'bg-green-500',
+    icon: Users,
+    gradientClass: 'bg-gradient-to-r from-green-50 to-green-100 border-l-4 border-green-400',
+    iconColor: 'text-green-600'
+  }
+};
+
+// Room type renderers - can be dynamically replaced or extended
+const ROOM_TYPE_RENDERERS = {
+  empty: {
     renderCard: (room, { active, onSelect }) => (
       <div 
-        className={`bg-gradient-to-r from-gray-50 to-gray-100 border-l-4 border-gray-300 p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
+        className={`${ROOM_TYPE_STYLES.empty.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
         onClick={() => onSelect(room.id)}
       >
         <div className="flex justify-between items-start">
@@ -31,17 +73,10 @@ const ROOM_TYPES = {
       </div>
     )
   },
-  common: { 
-    label: 'Common Area', 
-    bg: 'bg-blue-100', 
-    border: 'border-blue-300', 
-    dot: 'bg-blue-500',
-    icon: Printer,
-    gradientClass: 'bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-400',
-    iconColor: 'text-blue-600',
+  common: {
     renderCard: (room, { active, onSelect }) => (
       <div 
-        className={`bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-400 p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
+        className={`${ROOM_TYPE_STYLES.common.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
         onClick={() => onSelect(room.id)}
       >
         <div className="flex justify-between items-start">
@@ -67,17 +102,10 @@ const ROOM_TYPES = {
       </div>
     )
   },
-  meeting: { 
-    label: 'Conference', 
-    bg: 'bg-purple-100', 
-    border: 'border-purple-300', 
-    dot: 'bg-purple-500',
-    icon: FileText,
-    gradientClass: 'bg-gradient-to-r from-purple-50 to-purple-100 border-l-4 border-purple-400',
-    iconColor: 'text-purple-600',
+  meeting: {
     renderCard: (room, { active, onSelect }) => (
       <div 
-        className={`bg-gradient-to-r from-purple-50 to-purple-100 border-l-4 border-purple-400 p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
+        className={`${ROOM_TYPE_STYLES.meeting.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
         onClick={() => onSelect(room.id)}
       >
         <div className="flex justify-between items-start">
@@ -103,17 +131,10 @@ const ROOM_TYPES = {
       </div>
     )
   },
-  training: { 
-    label: 'Training', 
-    bg: 'bg-yellow-100', 
-    border: 'border-yellow-300', 
-    dot: 'bg-yellow-500',
-    icon: Users,
-    gradientClass: 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-l-4 border-yellow-400',
-    iconColor: 'text-yellow-600',
+  training: {
     renderCard: (room, { active, onSelect }) => (
       <div 
-        className={`bg-gradient-to-r from-yellow-50 to-yellow-100 border-l-4 border-yellow-400 p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
+        className={`${ROOM_TYPE_STYLES.training.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
         onClick={() => onSelect(room.id)}
       >
         <div className="flex justify-between items-start">
@@ -139,17 +160,10 @@ const ROOM_TYPES = {
       </div>
     )
   },
-  office: { 
-    label: 'Office', 
-    bg: 'bg-green-100', 
-    border: 'border-green-300', 
-    dot: 'bg-green-500',
-    icon: Users,
-    gradientClass: 'bg-gradient-to-r from-green-50 to-green-100 border-l-4 border-green-400',
-    iconColor: 'text-green-600',
+  office: {
     renderCard: (room, { active, onSelect }) => (
       <div 
-        className={`bg-gradient-to-r from-green-50 to-green-100 border-l-4 border-green-400 p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
+        className={`${ROOM_TYPE_STYLES.office.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
         onClick={() => onSelect(room.id)}
       >
         <div className="flex justify-between items-start">
@@ -176,6 +190,32 @@ const ROOM_TYPES = {
     )
   }
 };
+
+// Unified registry for dynamic composition at runtime
+const createRoomTypeRegistry = (styles = ROOM_TYPE_STYLES, renderers = ROOM_TYPE_RENDERERS) => {
+  const registry = {};
+  
+  // Combine styles and renderers for each type
+  Object.keys(styles).forEach(typeKey => {
+    registry[typeKey] = {
+      ...styles[typeKey],
+      ...(renderers[typeKey] || {})
+    };
+  });
+  
+  // Allow registering new room types or overriding existing ones
+  registry.register = (typeKey, config) => {
+    registry[typeKey] = {
+      ...(registry[typeKey] || {}),
+      ...config
+    };
+  };
+  
+  return registry;
+};
+
+// Create the room type registry
+const ROOM_TYPES = createRoomTypeRegistry();
 
 // Floor metadata with names and icons
 const FLOORS = {
@@ -481,7 +521,120 @@ const defaultGridCellRenderer = (positionId, cellProps, renderContent) => (
   </div>
 );
 
-// FloorSection component with slots for extensibility
+// Default plugin implementation with no-op methods
+const DEFAULT_LAYOUT_PLUGINS = {
+  // Layout preprocessing
+  preprocessLayout: (layoutConfig) => layoutConfig,
+  
+  // Row lifecycle hooks
+  beforeRenderRow: (row, rowMeta) => {},
+  afterRenderRow: (rowElement, rowMeta) => rowElement,
+  onMountRow: (rowRef, rowMeta) => {},
+  
+  // Cell lifecycle hooks
+  beforeRenderCell: (positionId, cellMeta) => {},
+  afterRenderCell: (cellElement, cellMeta) => cellElement,
+  modifyCellClass: (cellClass, cellMeta) => cellClass,
+  
+  // Overlay injection
+  injectOverlay: (positionId, cellMeta) => null,
+  
+  // Room rendering hooks
+  beforeRenderRoom: (roomId, roomMeta) => {},
+  afterRenderRoom: (roomElement, roomMeta) => roomElement
+};
+
+// Layout validation utility
+const validateLayoutSchema = (layoutConfig, roomAssignments, roomData) => {
+  const validationResults = {
+    valid: true,
+    errors: [],
+    warnings: [],
+    unusedRooms: [],
+    missingRooms: [],
+    duplicateAssignments: []
+  };
+  
+  // Track all room IDs referenced in the layout
+  const referencedRoomIds = new Set();
+  
+  // Check each location and floor
+  Object.entries(layoutConfig).forEach(([location, floors]) => {
+    Object.entries(floors).forEach(([floor, config]) => {
+      // Check if assignment data exists for this location/floor
+      if (!roomAssignments[location] || !roomAssignments[location][floor]) {
+        validationResults.errors.push(
+          `Missing room assignments for ${location}/${floor}`
+        );
+        validationResults.valid = false;
+        return;
+      }
+      
+      // Collect all position IDs from the layout
+      const positionIds = new Set();
+      const roomIds = new Set();
+      
+      // Process each section and row
+      config.layout.forEach(section => {
+        section.forEach(row => {
+          row.forEach(positionId => {
+            if (!positionId) return; // Skip null positions
+            
+            // Check for duplicate position IDs
+            if (positionIds.has(positionId)) {
+              validationResults.errors.push(
+                `Duplicate position ID: ${positionId} in ${location}/${floor}`
+              );
+              validationResults.valid = false;
+            }
+            positionIds.add(positionId);
+            
+            // Check if this position has a room assignment
+            const roomId = roomAssignments[location][floor][positionId];
+            if (!roomId) {
+              validationResults.warnings.push(
+                `Position ${positionId} in ${location}/${floor} has no room assignment`
+              );
+              return;
+            }
+            
+            // Check if room data exists for this ID
+            const roomExists = roomData.some(room => room.id === roomId);
+            if (!roomExists) {
+              validationResults.missingRooms.push(roomId);
+              validationResults.errors.push(
+                `Room ID ${roomId} assigned to position ${positionId} in ${location}/${floor} does not exist in room data`
+              );
+              validationResults.valid = false;
+            }
+            
+            // Check for duplicate room assignments
+            if (roomIds.has(roomId)) {
+              validationResults.duplicateAssignments.push(roomId);
+              validationResults.warnings.push(
+                `Room ${roomId} is assigned to multiple positions in ${location}/${floor}`
+              );
+            }
+            roomIds.add(roomId);
+            referencedRoomIds.add(roomId);
+          });
+        });
+      });
+    });
+  });
+  
+  // Check for unused rooms
+  roomData.forEach(room => {
+    if (!referencedRoomIds.has(room.id)) {
+      validationResults.unusedRooms.push(room.id);
+      validationResults.warnings.push(`Room ${room.id} is not assigned to any position`);
+    }
+  });
+  
+  return validationResults;
+};
+
+// FloorSection component with enhanced extensibility
 const FloorSection = ({ 
   location, 
   floor, 
@@ -492,15 +645,177 @@ const FloorSection = ({
   getPositionRoomId,
   renderRow = defaultRowRenderer,
   renderGridCell = defaultGridCellRenderer,
-  className = ""
+  className = "",
+  layoutPlugins = DEFAULT_LAYOUT_PLUGINS,
+  showValidation = false
 }) => {
+  const { canAdminister, isPositionValid } = useOfficeMap();
+  
+  // Merge the validation overlay plugin if needed
+  const enhancedPlugins = useMemo(() => {
+    if (showValidation && canAdminister()) {
+      return {
+        ...layoutPlugins,
+        injectOverlay: (positionId, meta) => {
+          const roomId = getPositionRoomId(location, floor, positionId);
+          return (
+            <>
+              {layoutPlugins.injectOverlay && layoutPlugins.injectOverlay(positionId, meta)}
+              <ValidationOverlay 
+                location={location} 
+                floor={floor} 
+                positionId={positionId} 
+                roomId={roomId} 
+              />
+            </>
+          );
+        },
+        modifyCellClass: (cellClass, meta) => {
+          const positionId = meta.positionId;
+          if (!positionId) return cellClass;
+          
+          const baseClass = layoutPlugins.modifyCellClass 
+            ? layoutPlugins.modifyCellClass(cellClass, meta)
+            : cellClass;
+            
+          // Add validation-related classes
+          if (!isPositionValid(location, floor, positionId)) {
+            return `${baseClass} invalid-position`;
+          }
+          
+          return baseClass;
+        }
+      };
+    }
+    
+    return layoutPlugins;
+  }, [layoutPlugins, showValidation, canAdminister, location, floor, isPositionValid, getPositionRoomId]);
+  
   const config = LAYOUT_CONFIG[location]?.[floor];
   if (!config) return null;
+  
+  // Apply layout preprocessing if provided
+  const processedConfig = useMemo(() => {
+    return enhancedPlugins.preprocessLayout ? 
+      enhancedPlugins.preprocessLayout({...config}, { location, floor }) : 
+      config;
+  }, [config, enhancedPlugins, location, floor]);
   
   // Function to get the room ID at a position
   const getRoomIdAtPosition = (positionId) => {
     if (!positionId) return null;
     return getPositionRoomId(location, floor, positionId);
+  };
+  
+  // Create refs for rows to support onMountRow hook
+  const rowRefs = useMemo(() => {
+    return processedConfig.layout.map(section => 
+      section.map(() => React.createRef())
+    );
+  }, [processedConfig.layout]);
+  
+  // Handle row mounting
+  useEffect(() => {
+    if (!enhancedPlugins.onMountRow) return;
+    
+    rowRefs.forEach((sectionRefs, sectionIndex) => {
+      sectionRefs.forEach((rowRef, rowIndex) => {
+        if (rowRef.current) {
+          enhancedPlugins.onMountRow(rowRef, {
+            location, 
+            floor, 
+            sectionIndex, 
+            rowIndex,
+            rowElement: rowRef.current
+          });
+        }
+      });
+    });
+  }, [rowRefs, enhancedPlugins, location, floor]);
+  
+  // Enhanced row renderer that applies plugins
+  const enhancedRenderRow = (row, rowProps, renderCell) => {
+    // Call beforeRenderRow hook
+    if (enhancedPlugins.beforeRenderRow) {
+      enhancedPlugins.beforeRenderRow(row, rowProps);
+    }
+    
+    // Render the row
+    const rowElement = (
+      <div 
+        key={rowProps.key}
+        ref={rowRefs[rowProps.sectionIndex][rowProps.rowIndex]}
+        className={rowProps.className}
+        style={rowProps.style}
+      >
+        {row.map((positionId, cellIndex) => renderCell(positionId, cellIndex))}
+      </div>
+    );
+    
+    // Apply afterRenderRow hook if provided
+    return enhancedPlugins.afterRenderRow ? 
+      enhancedPlugins.afterRenderRow(rowElement, rowProps) : 
+      rowElement;
+  };
+  
+  // Enhanced cell renderer that applies plugins
+  const enhancedRenderCell = (positionId, cellProps, renderContent) => {
+    // Call beforeRenderCell hook
+    if (enhancedPlugins.beforeRenderCell) {
+      enhancedPlugins.beforeRenderCell(positionId, cellProps);
+    }
+    
+    // Modify cell class if needed
+    const cellClass = enhancedPlugins.modifyCellClass ? 
+      enhancedPlugins.modifyCellClass('', cellProps) : 
+      '';
+    
+    // Inject overlay if provided
+    const overlay = enhancedPlugins.injectOverlay ? 
+      enhancedPlugins.injectOverlay(positionId, {
+        ...cellProps,
+        location,
+        floor,
+        roomId: getRoomIdAtPosition(positionId)
+      }) : 
+      null;
+    
+    // Render the cell
+    const cellElement = (
+      <div key={cellProps.key} className={cellClass}>
+        {renderContent()}
+        {overlay}
+      </div>
+    );
+    
+    // Apply afterRenderCell hook if provided
+    return enhancedPlugins.afterRenderCell ? 
+      enhancedPlugins.afterRenderCell(cellElement, cellProps) : 
+      cellElement;
+  };
+  
+  // Enhanced room rendering with hooks
+  const enhancedRenderRoom = (roomId) => {
+    // Call beforeRenderRoom hook
+    if (enhancedPlugins.beforeRenderRoom) {
+      enhancedPlugins.beforeRenderRoom(roomId, { location, floor });
+    }
+    
+    // Render the room
+    const roomElement = (
+      <Room 
+        roomId={roomId}
+        roomMap={roomMap}
+        active={roomId === activeRoom}
+        onSelect={onRoomSelect}
+        className={searchResults.length > 0 && roomId && searchResults.includes(roomId) ? "ring-2 ring-yellow-500" : ""}
+      />
+    );
+    
+    // Apply afterRenderRoom hook if provided
+    return enhancedPlugins.afterRenderRoom ? 
+      enhancedPlugins.afterRenderRoom(roomElement, { roomId, location, floor }) : 
+      roomElement;
   };
   
   return (
@@ -510,20 +825,20 @@ const FloorSection = ({
       </h3>
       
       <div className="p-4">
-        {config.layout.map((section, sectionIndex) => (
+        {processedConfig.layout.map((section, sectionIndex) => (
           <div key={`${location}-${floor}-section-${sectionIndex}`} className="mb-4">
-            {section.map((row, rowIndex) => renderRow(
+            {section.map((row, rowIndex) => enhancedRenderRow(
               row,
               {
                 key: `${location}-${floor}-section-${sectionIndex}-row-${rowIndex}`,
-                style: { gridTemplateColumns: `repeat(${config.columns}, minmax(0, 1fr))` },
+                style: { gridTemplateColumns: `repeat(${processedConfig.columns}, minmax(0, 1fr))` },
                 className: "grid gap-4 mb-4",
                 rowIndex,
                 sectionIndex,
                 location,
                 floor
               },
-              (positionId, cellIndex) => renderGridCell(
+              (positionId, cellIndex) => enhancedRenderCell(
                 positionId,
                 {
                   key: `${location}-${floor}-${positionId || `empty-${cellIndex}`}`,
@@ -534,15 +849,7 @@ const FloorSection = ({
                 },
                 () => {
                   const roomId = getRoomIdAtPosition(positionId);
-                  return (
-                    <Room 
-                      roomId={roomId}
-                      roomMap={roomMap}
-                      active={roomId === activeRoom}
-                      onSelect={onRoomSelect}
-                      className={searchResults.length > 0 && roomId && searchResults.includes(roomId) ? "ring-2 ring-yellow-500" : ""}
-                    />
-                  );
+                  return roomId ? enhancedRenderRoom(roomId) : null;
                 }
               )
             ))}
@@ -561,7 +868,10 @@ const OfficeMapActions = {
   SEARCH: 'SEARCH',
   CLEAR_SEARCH: 'CLEAR_SEARCH',
   TOGGLE_VIEW: 'TOGGLE_VIEW',
-  CHANGE_VERSION: 'CHANGE_VERSION'
+  CHANGE_VERSION: 'CHANGE_VERSION',
+  UPDATE_ROOM: 'UPDATE_ROOM',
+  MOVE_ROOM: 'MOVE_ROOM',
+  UPDATE_LAYOUT: 'UPDATE_LAYOUT'
 };
 
 // Initial state
@@ -618,20 +928,117 @@ function officeMapReducer(state, action) {
         ...state,
         layoutVersion: action.payload
       };
+    case OfficeMapActions.UPDATE_ROOM:
+      return {
+        ...state,
+        roomMap: {
+          ...state.roomMap,
+          [action.payload.roomId]: {
+            ...state.roomMap[action.payload.roomId],
+            ...action.payload.data
+          }
+        }
+      };
+    case OfficeMapActions.MOVE_ROOM:
+      return {
+        ...state,
+        roomMap: {
+          ...state.roomMap,
+          [action.payload.roomId]: {
+            ...state.roomMap[action.payload.roomId],
+            position: action.payload.position
+          }
+        }
+      };
+    case OfficeMapActions.UPDATE_LAYOUT:
+      return {
+        ...state,
+        layoutConfig: {
+          ...state.layoutConfig,
+          [action.payload.location]: {
+            ...state.layoutConfig[action.payload.location],
+            [action.payload.floor]: {
+              ...state.layoutConfig[action.payload.location][action.payload.floor],
+              layout: action.payload.layout
+            }
+          }
+        }
+      };
     default:
       return state;
   }
 }
 
-// Create context
-const OfficeMapContext = createContext();
+// Define user roles
+const OfficeMapRoles = {
+  ADMIN: 'ADMIN',
+  EDITOR: 'EDITOR',
+  VIEWER: 'VIEWER',
+  NONE: 'NONE'
+};
 
-// Context provider component
-const OfficeMapProvider = ({ children, initialVersion = 'default' }) => {
+// Default feature flags
+const DEFAULT_FEATURE_FLAGS = {
+  enableEditing: false,
+  enableRoomReservation: false,
+  enableExtensionCalling: false,
+  enableOccupancyStatus: false,
+  enableVersionHistory: false,
+  enableMultiFloorView: true,
+  enableListView: true,
+  enableSearch: true
+};
+
+// Create context
+const OfficeMapContext = createContext(null);
+
+// Context provider component with validation
+const OfficeMapProvider = ({ 
+  children, 
+  initialVersion = 'default',
+  initialRole = OfficeMapRoles.VIEWER,
+  customFeatureFlags = {},
+  validateLayout = true
+}) => {
   const [state, dispatch] = useReducer(officeMapReducer, {
     ...initialState,
     layoutVersion: initialVersion
   });
+  
+  // Role state with upgrade/downgrade capabilities
+  const [userRole, setUserRole] = useState(initialRole);
+  
+  // Combine default feature flags with custom ones
+  const featureFlags = useMemo(() => ({
+    ...DEFAULT_FEATURE_FLAGS,
+    ...customFeatureFlags
+  }), [customFeatureFlags]);
+  
+  // Layout validation state
+  const [validationResults, setValidationResults] = useState(null);
+  
+  // Perform layout validation
+  useEffect(() => {
+    if (!validateLayout) return;
+    
+    const results = validateLayoutSchema(
+      LAYOUT_CONFIG, 
+      ROOM_ASSIGNMENTS, 
+      RAW_OFFICE_DATA
+    );
+    
+    setValidationResults(results);
+    
+    // Log warnings and errors in development
+    if (process.env.NODE_ENV === 'development') {
+      if (!results.valid) {
+        console.error('Office Map Layout Validation Failed:', results.errors);
+      }
+      if (results.warnings.length > 0) {
+        console.warn('Office Map Layout Warnings:', results.warnings);
+      }
+    }
+  }, [validateLayout]);
   
   // Cache frequently used data
   const memoizedData = useMemo(() => {
@@ -651,9 +1058,20 @@ const OfficeMapProvider = ({ children, initialVersion = 'default' }) => {
       roomsByLocationAndFloor,
       getPositionRoomId: (location, floor, positionId) => {
         return ROOM_ASSIGNMENTS[location]?.[floor]?.[positionId] || null;
+      },
+      isPositionValid: (location, floor, positionId) => {
+        if (!validationResults) return true;
+        
+        // Check if this position has a room assignment
+        const roomId = ROOM_ASSIGNMENTS[location]?.[floor]?.[positionId];
+        if (!roomId) return false;
+        
+        // Check if room exists in data and isn't duplicated
+        return !validationResults.missingRooms.includes(roomId) && 
+          !validationResults.duplicateAssignments.includes(roomId);
       }
     };
-  }, []);
+  }, [validationResults]);
   
   // Search function that prioritizes active location and selected floors
   const performSearch = (term) => {
@@ -685,18 +1103,48 @@ const OfficeMapProvider = ({ children, initialVersion = 'default' }) => {
     return results;
   };
   
+  // Role-based access control functions
+  const roleControl = {
+    canEdit: () => [OfficeMapRoles.ADMIN, OfficeMapRoles.EDITOR].includes(userRole),
+    canAdminister: () => userRole === OfficeMapRoles.ADMIN,
+    canView: () => userRole !== OfficeMapRoles.NONE,
+    upgradeRole: (newRole) => {
+      // Only admins can upgrade roles
+      if (userRole === OfficeMapRoles.ADMIN) {
+        setUserRole(newRole);
+        return true;
+      }
+      return false;
+    },
+    downgradeRole: (newRole) => {
+      // Anyone can downgrade their own role
+      setUserRole(newRole);
+      return true;
+    }
+  };
+  
   // Handlers for common actions
   const handlers = {
     setActiveLocation: (location) => {
       dispatch({ type: OfficeMapActions.SET_LOCATION, payload: location });
     },
     toggleFloor: (floor) => {
-      dispatch({ type: OfficeMapActions.TOGGLE_FLOOR, payload: floor });
+      if (!featureFlags.enableMultiFloorView) {
+        // If multi-floor view is disabled, just set the single floor
+        dispatch({ 
+          type: OfficeMapActions.SET_FLOORS, 
+          payload: [floor] 
+        });
+      } else {
+        dispatch({ type: OfficeMapActions.TOGGLE_FLOOR, payload: floor });
+      }
     },
     setActiveRoom: (roomId) => {
       dispatch({ type: OfficeMapActions.SET_ACTIVE_ROOM, payload: roomId });
     },
     search: (term) => {
+      if (!featureFlags.enableSearch) return;
+      
       const results = performSearch(term);
       dispatch({ type: OfficeMapActions.SEARCH, payload: term, results });
     },
@@ -704,18 +1152,55 @@ const OfficeMapProvider = ({ children, initialVersion = 'default' }) => {
       dispatch({ type: OfficeMapActions.CLEAR_SEARCH });
     },
     toggleView: () => {
+      if (!featureFlags.enableListView) return;
+      
       dispatch({ type: OfficeMapActions.TOGGLE_VIEW });
     },
     changeVersion: (version) => {
+      if (!featureFlags.enableVersionHistory) return;
+      
       dispatch({ type: OfficeMapActions.CHANGE_VERSION, payload: version });
+    },
+    
+    // Admin actions - these check for proper role
+    updateRoomData: (roomId, newData) => {
+      if (!roleControl.canEdit()) return false;
+      
+      dispatch({ 
+        type: OfficeMapActions.UPDATE_ROOM, 
+        payload: { roomId, data: newData } 
+      });
+      return true;
+    },
+    moveRoom: (roomId, newPosition) => {
+      if (!roleControl.canEdit()) return false;
+      
+      dispatch({ 
+        type: OfficeMapActions.MOVE_ROOM, 
+        payload: { roomId, position: newPosition } 
+      });
+      return true;
+    },
+    updateLayout: (location, floor, newLayout) => {
+      if (!roleControl.canAdminister()) return false;
+      
+      dispatch({ 
+        type: OfficeMapActions.UPDATE_LAYOUT, 
+        payload: { location, floor, layout: newLayout } 
+      });
+      return true;
     }
   };
   
-  // Combine state, data, and handlers
+  // Combine state, data, handlers, role control and feature flags
   const contextValue = {
     ...state,
     ...memoizedData,
     ...handlers,
+    ...roleControl,
+    userRole,
+    featureFlags,
+    validationResults,
     getAvailableFloors: () => Object.keys(LAYOUT_CONFIG[state.activeLocation] || {}),
     getActiveLocationRooms: () => RAW_OFFICE_DATA.filter(room => room.location === state.activeLocation)
   };
@@ -736,6 +1221,39 @@ const useOfficeMap = () => {
   return context;
 };
 
+// Admin validation debug overlay component 
+const ValidationOverlay = ({ location, floor, positionId, roomId }) => {
+  const { validationResults, isPositionValid, canAdminister } = useOfficeMap();
+  
+  // Only show for admins and when validation results exist
+  if (!canAdminister() || !validationResults) return null;
+  
+  const isValid = isPositionValid(location, floor, positionId);
+  
+  if (!isValid) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center z-20 bg-red-500 bg-opacity-20 rounded-lg border-2 border-red-500 pointer-events-none">
+        <div className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+          Invalid
+        </div>
+      </div>
+    );
+  }
+  
+  // If room is unused (warning), show a yellow indicator 
+  if (roomId && validationResults.unusedRooms.includes(roomId)) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center z-20 bg-yellow-500 bg-opacity-20 rounded-lg border-2 border-yellow-500 pointer-events-none">
+        <div className="bg-yellow-600 text-white text-xs font-bold px-2 py-1 rounded">
+          Unused
+        </div>
+      </div>
+    );
+  }
+  
+  return null;
+};
+
 // Main display component that uses the context
 const OfficeMapDisplay = () => {
   const {
@@ -747,6 +1265,7 @@ const OfficeMapDisplay = () => {
     selectedFloors,
     roomMap,
     getPositionRoomId,
+    isPositionValid,
     setActiveRoom,
     setActiveLocation,
     toggleFloor,
@@ -754,7 +1273,12 @@ const OfficeMapDisplay = () => {
     clearSearch,
     toggleView,
     getAvailableFloors,
-    getActiveLocationRooms
+    getActiveLocationRooms,
+    canEdit,
+    canAdminister,
+    userRole,
+    featureFlags,
+    validationResults
   } = useOfficeMap();
 
   // Derived data
@@ -768,6 +1292,9 @@ const OfficeMapDisplay = () => {
     const term = e.target.value;
     search(term);
   };
+  
+  // Show validation highlights for admins
+  const [showValidation, setShowValidation] = useState(false);
 
   // Render floor layouts based on selected floors
   const renderFloorLayout = () => {
@@ -787,6 +1314,7 @@ const OfficeMapDisplay = () => {
             searchResults={searchResultIds}
             roomMap={roomMap}
             getPositionRoomId={getPositionRoomId}
+            showValidation={showValidation && canAdminister()}
           />
         ))}
       </>
@@ -813,18 +1341,91 @@ const OfficeMapDisplay = () => {
   const renderLegend = () => {
     return (
       <div className="flex flex-wrap justify-center gap-2 px-4 py-2 bg-white shadow-sm text-xs border-b border-gray-200">
-        {Object.entries(ROOM_TYPES).map(([key, type]) => (
+        {Object.entries(ROOM_TYPE_STYLES).map(([key, type]) => (
           <div key={key} className={`${type.bg} px-3 py-1 rounded-full text-${key === 'empty' ? 'gray' : key}-800 flex items-center`}>
             <div className={`w-2 h-2 rounded-full ${type.dot} mr-1`}></div>
             <span>{type.label}</span>
           </div>
         ))}
+        
+        {/* Validation legend for admins */}
+        {validationResults && canAdminister() && (
+          <>
+            <div className="bg-red-100 px-3 py-1 rounded-full text-red-800 flex items-center">
+              <div className="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
+              <span>Invalid Position</span>
+            </div>
+            <div className="bg-yellow-100 px-3 py-1 rounded-full text-yellow-800 flex items-center">
+              <div className="w-2 h-2 rounded-full bg-yellow-500 mr-1"></div>
+              <span>Unused Room</span>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
+  // Render validation errors for admins
+  const renderValidationErrors = () => {
+    if (!validationResults || !canAdminister() || validationResults.valid) return null;
+    
+    return (
+      <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4 mx-4">
+        <div className="flex items-center">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-red-800">
+              Layout validation found {validationResults.errors.length} error(s)
+            </h3>
+            <div className="mt-2 text-sm text-red-700">
+              <ul className="list-disc pl-5 space-y-1">
+                {validationResults.errors.slice(0, 3).map((error, i) => (
+                  <li key={i}>{error}</li>
+                ))}
+                {validationResults.errors.length > 3 && (
+                  <li>...and {validationResults.errors.length - 3} more errors</li>
+                )}
+              </ul>
+            </div>
+          </div>
+          <div className="ml-auto pl-3">
+            <button
+              className="bg-red-50 text-red-500 hover:bg-red-100 focus:outline-none px-4 py-2 rounded-lg text-sm"
+              onClick={() => setShowValidation(!showValidation)}
+            >
+              {showValidation ? 'Hide Highlights' : 'Show Highlights'}
+            </button>
+          </div>
+        </div>
       </div>
     );
   };
 
   return (
     <div className="max-w-6xl mx-auto bg-gray-100 min-h-screen">
+      {/* Role indicator for admins and editors */}
+      {(canAdminister() || canEdit()) && (
+        <div className="bg-gray-800 text-white px-4 py-1 text-xs flex justify-between items-center">
+          <div>
+            <span className="font-bold">Role:</span> {userRole}
+          </div>
+          {canAdminister() && (
+            <div>
+              <button 
+                className="ml-4 bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-white text-xs"
+                onClick={() => setShowValidation(!showValidation)}
+              >
+                {showValidation ? 'Hide Validation' : 'Show Validation'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      
       {/* Header with design improvements */}
       <div className="bg-gradient-to-r from-blue-700 to-blue-600 shadow-lg">
         {/* Main Header */}
@@ -853,6 +1454,7 @@ const OfficeMapDisplay = () => {
               className="w-full pl-10 pr-4 py-2 text-sm border-0 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
               value={searchTerm}
               onChange={handleSearchChange}
+              disabled={!featureFlags.enableSearch}
             />
             {searchTerm && (
               <button 
@@ -867,10 +1469,11 @@ const OfficeMapDisplay = () => {
           </div>
           
           {/* View Toggle */}
-          <div className="bg-blue-800 rounded-lg p-1 flex">
+          <div className={`bg-blue-800 rounded-lg p-1 flex ${!featureFlags.enableListView ? 'opacity-50 pointer-events-none' : ''}`}>
             <button
               className={`px-3 py-1.5 text-sm rounded-md transition-all duration-200 flex items-center ${!showListView ? 'bg-white text-blue-700 font-medium' : 'text-blue-100 hover:bg-blue-700'}`}
               onClick={() => toggleView()}
+              disabled={!featureFlags.enableListView}
             >
               <Grid className="w-4 h-4 mr-1" />
               <span className="hidden sm:inline">Map</span>
@@ -878,6 +1481,7 @@ const OfficeMapDisplay = () => {
             <button
               className={`px-3 py-1.5 text-sm rounded-md transition-all duration-200 flex items-center ${showListView ? 'bg-white text-blue-700 font-medium' : 'text-blue-100 hover:bg-blue-700'}`}
               onClick={() => toggleView()}
+              disabled={!featureFlags.enableListView}
             >
               <List className="w-4 h-4 mr-1" />
               <span className="hidden sm:inline">List</span>
@@ -903,7 +1507,7 @@ const OfficeMapDisplay = () => {
         </div>
         
         {/* Floor tabs - only shown for active location when relevant */}
-        {!showListView && searchResults.length === 0 && getAvailableFloors().length > 1 && (
+        {!showListView && searchResults.length === 0 && getAvailableFloors().length > 1 && featureFlags.enableMultiFloorView && (
           <div className="flex bg-white border-b border-gray-200 shadow-sm overflow-x-auto">
             {getAvailableFloors().map(floor => {
               const floorInfo = FLOORS[floor] || { name: floor, icon: MapPin };
@@ -928,6 +1532,9 @@ const OfficeMapDisplay = () => {
       
       {/* Legend */}
       {renderLegend()}
+      
+      {/* Validation Errors for Admins */}
+      {renderValidationErrors()}
       
       {/* Search Results */}
       {searchResults.length > 0 && (
@@ -986,6 +1593,20 @@ const OfficeMapDisplay = () => {
           roomMap={roomMap}
           onClose={() => setActiveRoom(null)} 
         />
+      )}
+      
+      {/* Conditional Admin Controls */}
+      {canEdit() && (
+        <div className="fixed bottom-4 right-4 z-30">
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-lg"
+            title="Edit Mode"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+        </div>
       )}
     </div>
   );
