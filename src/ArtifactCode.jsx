@@ -241,12 +241,12 @@ const LAYOUT_CONFIG = {
         // First row: two columns
         [
           ['pos_0_0', 'pos_0_1'],  // Column 1, Column 2
-          ['pos_1_0', 'pos_1_1'],  // Column 1, Column 2
+          ['pos_1_0', null],       // Column 1, Column 2 (removing pos_1_1)
           ['pos_2_0', 'pos_2_1']   // Column 1, Column 2
         ],
-        // Second row: special format for Tina
+        // Second row: special format (removing unused position)
         [
-          [null, 'pos_3_1']        // Empty, Column 2
+          [null, null]              // Empty, Empty
         ]
       ]
     },
@@ -264,8 +264,8 @@ const LAYOUT_CONFIG = {
       columns: 2,
       layout: [
         [
-          ['pos_0_0', null],
-          ['pos_1_0', 'pos_1_1']
+          ['pos_0_0', 'pos_0_1'],
+          ['pos_1_0', 'pos_1_1', 'pos_1_2']
         ]
       ]
     }
@@ -300,10 +300,8 @@ const ROOM_ASSIGNMENTS = {
       'pos_0_0': 'solutions-front-desk',
       'pos_0_1': 'solutions-conf-2',
       'pos_1_0': 'solutions-copy-room',
-      'pos_1_1': 'solutions-pam',
       'pos_2_0': 'solutions-closers',
       'pos_2_1': 'solutions-conf-1',
-      'pos_3_1': 'solutions-tina'
     },
     bullpen: {
       'pos_0_0': 'solutions-bullpen-r1c1',
@@ -324,8 +322,10 @@ const ROOM_ASSIGNMENTS = {
     },
     upstairs: {
       'pos_0_0': 'solutions-training',
+      'pos_0_1': 'solutions-tina',
       'pos_1_0': 'solutions-lunch',
-      'pos_1_1': 'solutions-tiller'
+      'pos_1_1': 'solutions-tiller',
+      'pos_1_2': 'solutions-pam'
     }
   },
   tru: {
@@ -353,8 +353,6 @@ const RAW_OFFICE_DATA = [
   { id: 'solutions-front-desk', name: 'Front Desk', extension: '1000', floor: 'lobby', location: 'solutions', type: 'common', status: 'active' },
   { id: 'solutions-copy-room', name: 'Copy Room', extension: '1100', floor: 'lobby', location: 'solutions', type: 'common', status: 'active' },
   { id: 'solutions-closers', name: 'Closers', extension: '1018', floor: 'lobby', location: 'solutions', type: 'office', status: 'active' },
-  { id: 'solutions-pam', name: 'Pam', extension: '1018', floor: 'lobby', location: 'solutions', type: 'office', status: 'active' },
-  { id: 'solutions-tina', name: 'Tina', extension: '1027', floor: 'lobby', location: 'solutions', type: 'office', status: 'active' },
   { id: 'solutions-conf-1', name: 'Conference Room 1', extension: '1200', floor: 'lobby', location: 'solutions', type: 'meeting', status: 'active' },
   { id: 'solutions-conf-2', name: 'Conference Room 2', extension: '1201', floor: 'lobby', location: 'solutions', type: 'meeting', status: 'active' },
   
@@ -379,6 +377,8 @@ const RAW_OFFICE_DATA = [
   { id: 'solutions-training', name: 'Training Room', extension: '1100', floor: 'upstairs', location: 'solutions', type: 'training', status: 'active' },
   { id: 'solutions-lunch', name: 'Lunch Room', extension: '1103', floor: 'upstairs', location: 'solutions', type: 'common', status: 'active' },
   { id: 'solutions-tiller', name: 'Brian T.', extension: '1024', floor: 'upstairs', location: 'solutions', type: 'office', status: 'active' },
+  { id: 'solutions-pam', name: 'Pam', extension: '1018', floor: 'upstairs', location: 'solutions', type: 'office', status: 'active' },
+  { id: 'solutions-tina', name: 'Tina', extension: '1027', floor: 'upstairs', location: 'solutions', type: 'office', status: 'active' },
   
   // TruTitle
   { id: 'tru-reception', name: 'Reception', extension: '2100', floor: 'main', location: 'tru', type: 'common', status: 'active' },
