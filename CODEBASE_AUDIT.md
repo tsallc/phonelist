@@ -34,10 +34,12 @@
 │   ├── components/
 │   │   └── ui/         # shadcn/ui components
 │   ├── data/
-│   │   └── canonicalContactData.json # Source of Truth (Flattened Schema)
+│   │   └── canonicalContactData.json # Source of Truth (Uses contactPoints array)
 │   ├── lib/
-│   │   └── utils.js    # cn utility, style mapping
-│   ├── schemas/        # (To be created)
+│   │   ├── utils.js    # cn utility, style mapping (React App)
+│   │   ├── schema.ts   # Zod schemas (Canonicalizer Script)
+│   │   └── canonicalizer lib files ...
+│   ├── schemas/        # (To be created for React App Schemas)
 │   ├── App.css
 │   ├── App.jsx         # Root component, Tabs (Data Deprecated)
 │   ├── ArtifactCode.jsx# Office map component (Data Deprecated)
@@ -59,9 +61,9 @@
 └── vite.config.js
 ```
 
-*   **Layout:** Standard React (`src`, `public`).
+*   **Layout:** Standard React (`src`, `public`). Includes `lib` and `scripts` for canonicalizer.
 *   **Components:** `shadcn/ui` in `src/components/ui/`; Custom components (`App.jsx`, `ArtifactCode.jsx`) in `src/`.
-*   **Data:** **Canonical data extracted to `src/data/canonicalContactData.json` (Flattened Schema). Hardcoded data in `App.jsx`/`ArtifactCode.jsx` is now deprecated.**
+*   **Data:** **Canonical data established in `src/data/canonicalContactData.json` (Uses `contactPoints` array). Hardcoded data in `App.jsx`/`ArtifactCode.jsx` is now deprecated.**
 
 ## 4. Core Components & Functionality
 
@@ -88,9 +90,9 @@
 
 ## 6. Data Management (Current State)
 
-*   **Status:** **Canonical source of truth established in `src/data/canonicalContactData.json` (Flattened Schema).** Data previously hardcoded in components (`App.jsx`, `ArtifactCode.jsx`) is now deprecated.
+*   **Status:** **Canonical source of truth established in `src/data/canonicalContactData.json` (Uses `contactPoints` array).** Data previously hardcoded in components (`App.jsx`, `ArtifactCode.jsx`) is now deprecated.
 *   **State:** `App.jsx` uses simple `useState`; `ArtifactCode.jsx` uses React Context internally.
-*   **Schema:** Defined implicitly by `canonicalContactData.json`. Explicit schema implementation (`src/schemas/`) is the next step.
+*   **Schema:** Defined by `canonicalContactData.json` structure. Explicit schema implementation (`src/schemas/`) is pending for the React app refactor. Canonicalizer script uses `lib/schema.ts`.
 *   **Refactor Target:** Proceeding with Phase 1 based on the canonical data.
 
 ## 7. Build & Configuration
@@ -113,12 +115,13 @@
 
 ## 9. Refactor Plan Adherence
 
-*   **Status:** Canonical data extraction complete (Flattened Schema). Ready for Phase 1 schema implementation.
+*   **Status:** Canonical data extraction complete. Canonicalizer script (Phases 1-3) built to process CSV into this format. React app refactor Phase 1 (Schema Implementation) is pending.
 *   **Planning Docs:** `REFACTOR_PLAN.md`, `PROJECT_STATE.md`, `CODEBASE_AUDIT.md` updated.
-*   **Implementation:** `src/data/canonicalContactData.json` created/updated.
+*   **Implementation:** `src/data/canonicalContactData.json` created/updated. `lib/*.ts` and `scripts/*.ts` (pending) created for canonicalizer.
 
 ## 10. Conclusion
 
-The project is a functional React app using Vite, Tailwind, and shadcn/ui. The primary weakness (hardcoded data) has been addressed by extracting a canonical source of truth to `src/data/canonicalContactData.json` (using a flattened schema). `ArtifactCode.jsx` still needs refactoring. The project is ready to proceed with implementing schema validation based on the canonical data.
+The project is a functional React app using Vite, Tailwind, and shadcn/ui. The primary weakness (hardcoded data) has been addressed by establishing a canonical source of truth in `src/data/canonicalContactData.json`. `ArtifactCode.jsx` still needs refactoring. A supporting canonicalizer script is being built to manage the canonical data. The project is ready to proceed with implementing schema validation *within the React app* based on the canonical data (Phase 1 of refactor) once the canonicalizer script is complete.
 
-**Next Action:** Create `src/schemas/` directory. 
+**Next Action (Canonicalizer):** Implement Phase 4 (Output Gen) & Phase 5 (CLI).
+**Next Action (React App Refactor):** Create `src/schemas/` directory and implement schemas matching `canonicalContactData.json`. 

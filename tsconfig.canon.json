@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    /* Base Options */
+    "esModuleInterop": true,             /* Enables compatibility with CommonJS modules */
+    "skipLibCheck": true,                /* Skip type checking of declaration files */
+    "target": "ES2020",                 /* Set JavaScript version for emitted code */
+    "allowJs": false,                    /* Do not allow JavaScript files to be compiled */
+    "resolveJsonModule": true,         /* Allow importing JSON files */
+    "moduleDetection": "force",          /* Treat files as modules */
+    "isolatedModules": true,           /* Ensure files can be safely transpiled individually */
+
+    /* Strictness */
+    "strict": true,                      /* Enable all strict type-checking options */
+    "noUncheckedIndexedAccess": true,  /* Add 'undefined' to index signatures */
+    "noImplicitAny": true,             /* Raise error on expressions and declarations with an implied 'any' type */
+
+    /* Module Resolution */
+    "module": "NodeNext",             /* Use Node.js ES module system */
+    "moduleResolution": "NodeNext",     /* Use Node.js module resolution */
+    // "baseUrl": ".",              /* Base directory for non-relative module imports (optional) */
+    // "paths": {},                 /* Specify path mapping relative to baseUrl (optional) */
+
+    /* Emit */
+    "outDir": "./dist/canon",           /* Specify output directory for compiled files */
+    "rootDir": ".",                    /* Specify the root directory of input files */
+    "sourceMap": true,                 /* Generate corresponding '.map' files */
+    // "declaration": true,            /* Generate corresponding '.d.ts' files (optional) */
+    // "declarationMap": true,         /* Generate source maps for '.d.ts' files (optional) */
+
+    /* Interop Constraints */
+    "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references */
+
+  },
+  "include": [
+    "lib/**/*.ts",                   /* Include all TypeScript files in lib */
+    "scripts/**/*.ts"                /* Include all TypeScript files in scripts */
+  ],
+  "exclude": [
+    "node_modules",                  /* Exclude node_modules */
+    "dist",                          /* Exclude output directory */
+    "src"                            /* Exclude React app source */
+  ]
+} 
