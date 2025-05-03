@@ -81,8 +81,6 @@ const ContactDirectory = () => {
 
       {/* Locations Section */}
       <div className="directory-section">
-        <h3 className="section-header">Office Locations</h3>
-
         <div className="grid-container pt-4">
           {/* Michigan Office Card - Final Polish */}
           <div className="location-card relative p-4 border rounded shadow-sm mb-4 hover:shadow-md transition-shadow pb-8">
