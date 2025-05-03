@@ -5,21 +5,21 @@ import { Search, MapPin, Phone, List, Grid, Users, Coffee, Printer, FileText, Ho
 const ROOM_TYPE_STYLES = {
   empty: { 
     label: 'Empty', 
-    bg: 'bg-gray-100', 
-    border: 'border-gray-300', 
-    dot: 'bg-gray-500',
+    bg: 'bg-muted', 
+    border: 'border-border', 
+    dot: 'bg-muted-foreground',
     icon: Home,
-    gradientClass: 'bg-gradient-to-r from-gray-50 to-gray-100 border-l-4 border-gray-300',
-    iconColor: 'text-gray-600'
+    gradientClass: 'bg-gradient-to-r from-muted/50 to-muted border-l-4 border-border',
+    iconColor: 'text-muted-foreground'
   },
   common: { 
     label: 'Common Area', 
-    bg: 'bg-blue-100', 
-    border: 'border-blue-300', 
-    dot: 'bg-blue-500',
+    bg: 'bg-primary/10', 
+    border: 'border-primary/30', 
+    dot: 'bg-primary',
     icon: Printer,
-    gradientClass: 'bg-gradient-to-r from-blue-50 to-blue-100 border-l-4 border-blue-400',
-    iconColor: 'text-blue-600'
+    gradientClass: 'bg-gradient-to-r from-primary/5 to-primary/10 border-l-4 border-primary/40',
+    iconColor: 'text-primary'
   },
   meeting: { 
     label: 'Conference', 
@@ -55,19 +55,19 @@ const ROOM_TYPE_RENDERERS = {
   empty: {
     renderCard: (room, { active, onSelect }) => (
       <div 
-        className={`${ROOM_TYPE_STYLES.empty.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
+        className={`${ROOM_TYPE_STYLES.empty.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-primary/50' : ''}`}
         onClick={() => onSelect(room.id)}
       >
         <div className="flex justify-between items-start">
           <div className="flex items-center">
             <div className="mr-3">
-              <Home className="w-4 h-4 text-gray-600" />
+              <Home className="w-4 h-4 text-muted-foreground" />
             </div>
-            <div className="font-bold text-gray-800">{room.name}</div>
+            <div className="font-bold text-foreground">{room.name}</div>
           </div>
         </div>
-        <div className="flex items-center mt-3 text-xs text-gray-600">
-          <MapPin className="w-3 h-3 mr-1 text-gray-400" />
+        <div className="flex items-center mt-3 text-xs text-muted-foreground">
+          <MapPin className="w-3 h-3 mr-1 text-muted-foreground" />
           <span className="font-medium opacity-75">Unoccupied Space</span>
         </div>
       </div>
@@ -76,25 +76,25 @@ const ROOM_TYPE_RENDERERS = {
   common: {
     renderCard: (room, { active, onSelect }) => (
       <div 
-        className={`${ROOM_TYPE_STYLES.common.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
+        className={`${ROOM_TYPE_STYLES.common.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-primary/50' : ''}`}
         onClick={() => onSelect(room.id)}
       >
         <div className="flex justify-between items-start">
           <div className="flex items-center">
             <div className="mr-3">
-              <Printer className="w-4 h-4 text-blue-600" />
+              <Printer className="w-4 h-4 text-primary" />
             </div>
-            <div className="font-bold text-gray-800">{room.name}</div>
+            <div className="font-bold text-foreground">{room.name}</div>
           </div>
           {room.extension && (
-            <div className="bg-white px-3 py-1 rounded-full shadow-sm text-gray-700 font-medium flex items-center">
-              <Phone className="w-3 h-3 mr-1 text-gray-400" />
+            <div className="bg-background px-3 py-1 rounded-full shadow-sm text-foreground/80 font-medium flex items-center">
+              <Phone className="w-3 h-3 mr-1 text-muted-foreground" />
               {room.extension}
             </div>
           )}
         </div>
-        <div className="flex items-center mt-3 text-xs text-gray-600">
-          <MapPin className="w-3 h-3 mr-1 text-gray-400" />
+        <div className="flex items-center mt-3 text-xs text-muted-foreground">
+          <MapPin className="w-3 h-3 mr-1 text-muted-foreground" />
           <span className="font-medium">
             Common Area
           </span>
@@ -105,7 +105,7 @@ const ROOM_TYPE_RENDERERS = {
   meeting: {
     renderCard: (room, { active, onSelect }) => (
       <div 
-        className={`${ROOM_TYPE_STYLES.meeting.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-blue-500' : ''}`}
+        className={`${ROOM_TYPE_STYLES.meeting.gradientClass} p-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer ${active ? 'ring-2 ring-primary/50' : ''}`}
         onClick={() => onSelect(room.id)}
       >
         <div className="flex justify-between items-start">
@@ -113,25 +113,25 @@ const ROOM_TYPE_RENDERERS = {
             <div className="mr-3">
               <FileText className="w-4 h-4 text-purple-600" />
             </div>
-            <div className="font-bold text-gray-800">{room.name}</div>
+            <div className="font-bold text-foreground">{room.name}</div>
           </div>
           {room.extension && (
-            <div className="bg-white px-3 py-1 rounded-full shadow-sm text-gray-700 font-medium flex items-center">
-              <Phone className="w-3 h-3 mr-1 text-gray-400" />
+            <div className="bg-background px-3 py-1 rounded-full shadow-sm text-foreground/80 font-medium flex items-center">
+              <Phone className="w-3 h-3 mr-1 text-muted-foreground" />
               {room.extension}
             </div>
           )}
         </div>
         {room.warning && (
-          <div className="mt-2 bg-red-100 px-2 py-1 rounded-md text-xs text-red-700 flex items-center">
-            <svg className="w-3 h-3 mr-1 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <div className="mt-2 bg-destructive/10 px-2 py-1 rounded-md text-xs text-destructive flex items-center">
+            <svg className="w-3 h-3 mr-1 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
             </svg>
             {room.warning}
           </div>
         )}
-        <div className="flex items-center mt-3 text-xs text-gray-600">
-          <MapPin className="w-3 h-3 mr-1 text-gray-400" />
+        <div className="flex items-center mt-3 text-xs text-muted-foreground">
+          <MapPin className="w-3 h-3 mr-1 text-muted-foreground" />
           <span className="font-medium">
             Conference Room
           </span>
@@ -918,27 +918,27 @@ const RoomDetailsDrawer = ({ roomId, roomMap, onClose }) => {
   const Icon = typeInfo.icon;
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-xl z-20 rounded-t-xl overflow-hidden animate-slide-up">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-500 h-1"></div>
+    <div className="fixed bottom-0 left-0 right-0 bg-background shadow-xl z-20 rounded-t-xl overflow-hidden animate-slide-up">
+      <div className="bg-gradient-to-r from-primary to-primary/90 h-1"></div>
       <div className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">{room.name}</h2>
+            <h2 className="text-xl font-bold text-foreground">{room.name}</h2>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {room.extension && (
-                <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium flex items-center">
                   <Phone className="w-4 h-4 mr-1" />
                   Extension: {room.extension}
                 </div>
               )}
-              <div className="text-sm text-gray-600 flex items-center">
+              <div className="text-sm text-muted-foreground flex items-center">
                 <MapPin className="w-4 h-4 mr-1" />
                 {LOCATIONS[room.location]?.name} - {FLOORS[room.floor]?.name}
               </div>
             </div>
           </div>
           <button 
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-full p-2 focus:outline-none transition-colors duration-200"
+            className="bg-muted hover:bg-muted-foreground/20 text-foreground rounded-full p-2 focus:outline-none transition-colors duration-200"
             onClick={onClose}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -949,9 +949,9 @@ const RoomDetailsDrawer = ({ roomId, roomMap, onClose }) => {
         
         {/* Warning message if room has one */}
         {room.warning && (
-          <div className="mt-4 bg-red-50 p-3 rounded-lg border-l-4 border-red-500 text-sm text-red-700">
+          <div className="mt-4 bg-destructive/5 p-3 rounded-lg border-l-4 border-destructive text-sm text-destructive">
             <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-5 h-5 mr-2 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
               </svg>
               <span className="font-bold">Warning:</span> <span className="ml-1">{room.warning}</span>
@@ -961,9 +961,9 @@ const RoomDetailsDrawer = ({ roomId, roomMap, onClose }) => {
         
         {/* Only show room type info if not empty */}
         {room.type !== 'empty' && (
-          <div className="mt-4 bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
+          <div className="mt-4 bg-muted/50 p-3 rounded-lg text-sm text-muted-foreground">
             <div className="flex items-start">
-              <div className="bg-blue-100 p-2 rounded-full mr-3">
+              <div className="bg-primary/10 p-2 rounded-full mr-3">
                 <Icon className={`w-5 h-5 ${typeInfo.iconColor}`} />
               </div>
               <div>
@@ -976,7 +976,7 @@ const RoomDetailsDrawer = ({ roomId, roomMap, onClose }) => {
         
         {/* Call button only for rooms with extensions */}
         {room.extension && (
-          <button className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center transition-colors duration-200">
+          <button className="mt-4 w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 px-4 rounded-lg font-medium flex items-center justify-center transition-colors duration-200">
             <Phone className="w-5 h-5 mr-2" />
             Call Extension {room.extension}
           </button>
@@ -1830,9 +1830,9 @@ const OfficeMapDisplay = () => {
   // Render the type legend
   const renderLegend = () => {
     return (
-      <div className="flex flex-wrap justify-center gap-2 px-4 py-2 bg-white shadow-sm text-xs border-b border-gray-200 w-full">
+      <div className="flex flex-wrap justify-center gap-2 px-4 py-2 bg-background shadow-sm text-xs border-b border-border w-full">
         {Object.entries(ROOM_TYPE_STYLES).map(([key, type]) => (
-          <div key={key} className={`${type.bg} px-3 py-1 rounded-full text-${key === 'empty' ? 'gray' : key}-800 flex items-center`}>
+          <div key={key} className={`${type.bg} px-3 py-1 rounded-full text-${key === 'empty' ? 'muted-foreground' : key}-800 flex items-center`}>
             <div className={`w-2 h-2 rounded-full ${type.dot} mr-1`}></div>
             <span>{type.label}</span>
           </div>
@@ -1841,8 +1841,8 @@ const OfficeMapDisplay = () => {
         {/* Validation legend for admins */}
         {validationResults && canAdminister() && (
           <>
-            <div className="bg-red-100 px-3 py-1 rounded-full text-red-800 flex items-center">
-              <div className="w-2 h-2 rounded-full bg-red-500 mr-1"></div>
+            <div className="bg-destructive/10 px-3 py-1 rounded-full text-destructive flex items-center">
+              <div className="w-2 h-2 rounded-full bg-destructive mr-1"></div>
               <span>Invalid Position</span>
             </div>
             <div className="bg-yellow-100 px-3 py-1 rounded-full text-yellow-800 flex items-center">
@@ -1860,18 +1860,18 @@ const OfficeMapDisplay = () => {
     if (!validationResults || !canAdminister() || validationResults.valid) return null;
     
     return (
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 my-0 sm:my-4 mx-0 sm:mx-4">
+      <div className="bg-destructive/5 border-l-4 border-destructive p-4 my-0 sm:my-4 mx-0 sm:mx-4">
         <div className="flex items-center">
           <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="h-5 w-5 text-destructive" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
             </svg>
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">
+            <h3 className="text-sm font-medium text-destructive">
               Layout validation found {validationResults.errors.length} error(s)
             </h3>
-            <div className="mt-2 text-sm text-red-700">
+            <div className="mt-2 text-sm text-destructive">
               <ul className="list-disc pl-5 space-y-1">
                 {validationResults.errors.slice(0, 3).map((error, i) => (
                   <li key={i}>{error}</li>
@@ -1884,7 +1884,7 @@ const OfficeMapDisplay = () => {
           </div>
           <div className="ml-auto pl-3">
             <button
-              className="bg-red-50 text-red-500 hover:bg-red-100 focus:outline-none px-4 py-2 rounded-lg text-sm"
+              className="bg-destructive/5 text-destructive hover:bg-destructive/10 focus:outline-none px-4 py-2 rounded-lg text-sm"
               onClick={() => setShowValidation(!showValidation)}
             >
               {showValidation ? 'Hide Highlights' : 'Show Highlights'}
@@ -1896,17 +1896,17 @@ const OfficeMapDisplay = () => {
   };
 
   return (
-    <div className="w-full max-w-none mx-0 bg-gray-100 min-h-screen" style={{ margin: 0, padding: 0 }}>
+    <div className="w-full max-w-none mx-0 bg-muted min-h-screen" style={{ margin: 0, padding: 0 }}>
       {/* Role indicator for admins and editors */}
       {(canAdminister() || canEdit()) && (
-        <div className="bg-gray-800 text-white px-4 py-1 text-xs flex justify-between items-center">
+        <div className="bg-background text-foreground px-4 py-1 text-xs flex justify-between items-center">
           <div>
             <span className="font-bold">Role:</span> {userRole}
           </div>
           {canAdminister() && (
             <div>
               <button 
-                className="ml-4 bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-white text-xs"
+                className="ml-4 bg-primary hover:bg-primary/90 px-2 py-1 rounded text-primary-foreground text-xs"
                 onClick={() => setShowValidation(!showValidation)}
               >
                 {showValidation ? 'Hide Validation' : 'Show Validation'}
@@ -1917,14 +1917,14 @@ const OfficeMapDisplay = () => {
       )}
       
       {/* Header with design improvements */}
-      <div className="w-full bg-gradient-to-r from-blue-700 to-blue-600 shadow-lg" style={{ margin: 0, padding: 0 }}>
+      <div className="w-full bg-gradient-to-r from-primary to-primary/90 shadow-lg" style={{ margin: 0, padding: 0 }}>
         {/* Main Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-blue-500 w-full">
-          <h1 className="text-xl font-bold text-white flex items-center">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-primary/50 w-full">
+          <h1 className="text-xl font-bold text-primary-foreground flex items-center">
             <Phone className="w-5 h-5 mr-2" />
             Office Phone Directory
           </h1>
-          <div className="text-sm text-blue-100 flex items-center gap-2">
+          <div className="text-sm text-primary-foreground/80 flex items-center gap-2">
             <span className="hidden sm:inline">Interactive</span>
             <MapPin className="w-4 h-4" />
             <span>Extension Map</span>
@@ -1936,19 +1936,19 @@ const OfficeMapDisplay = () => {
           {/* Search Bar */}
           <div className="flex-1 relative mr-2">
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <Search className="w-4 h-4 text-gray-400" />
+              <Search className="w-4 h-4 text-muted-foreground" />
             </div>
             <input
               type="text"
               placeholder="Search by name or extension..."
-              className="w-full pl-10 pr-4 py-2 text-sm border-0 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+              className="w-full pl-10 pr-4 py-2 text-sm border-0 bg-background rounded-lg shadow-sm focus:ring-2 focus:ring-primary/40 focus:outline-none"
               value={searchTerm}
               onChange={handleSearchChange}
               disabled={!featureFlags.enableSearch}
             />
             {searchTerm && (
               <button 
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
                 onClick={clearSearch}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -1959,9 +1959,9 @@ const OfficeMapDisplay = () => {
           </div>
           
           {/* View Toggle */}
-          <div className={`bg-blue-800 rounded-lg p-1 flex ${!featureFlags.enableListView ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div className={`bg-primary-foreground/10 rounded-lg p-1 flex ${!featureFlags.enableListView ? 'opacity-50 pointer-events-none' : ''}`}>
             <button
-              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-200 flex items-center ${!showListView ? 'bg-white text-blue-700 font-medium' : 'text-blue-100 hover:bg-blue-700'}`}
+              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-200 flex items-center ${!showListView ? 'bg-background text-primary' : 'text-primary-foreground/80 hover:bg-primary-foreground/10'}`}
               onClick={() => toggleView()}
               disabled={!featureFlags.enableListView}
             >
@@ -1969,7 +1969,7 @@ const OfficeMapDisplay = () => {
               <span className="hidden sm:inline">Map</span>
             </button>
             <button
-              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-200 flex items-center ${showListView ? 'bg-white text-blue-700 font-medium' : 'text-blue-100 hover:bg-blue-700'}`}
+              className={`px-3 py-1.5 text-sm rounded-md transition-all duration-200 flex items-center ${showListView ? 'bg-background text-primary' : 'text-primary-foreground/80 hover:bg-primary-foreground/10'}`}
               onClick={() => toggleView()}
               disabled={!featureFlags.enableListView}
             >
@@ -1980,14 +1980,14 @@ const OfficeMapDisplay = () => {
         </div>
         
         {/* Location Tabs */}
-        <div className="flex border-t border-blue-500 bg-blue-800 w-full">
+        <div className="flex border-t border-primary/50 bg-primary-foreground/10 w-full">
           {Object.entries(LOCATIONS).map(([key, location]) => {
             const LocationIcon = location.icon;
             return (
               <button 
                 key={key}
                 onClick={() => setActiveLocation(key)}
-                className={`flex-1 py-2 px-3 text-sm font-medium transition-colors duration-200 flex justify-center items-center ${activeLocation === key ? 'bg-white text-blue-700' : 'text-blue-100 hover:bg-blue-700'}`}
+                className={`flex-1 py-2 px-3 text-sm font-medium transition-colors duration-200 flex justify-center items-center ${activeLocation === key ? 'bg-background text-primary' : 'text-primary-foreground/80 hover:bg-primary-foreground/10'}`}
               >
                 <LocationIcon className="w-4 h-4 mr-1" />
                 <span>{location.name}</span>
@@ -1998,7 +1998,7 @@ const OfficeMapDisplay = () => {
         
         {/* Floor tabs - only shown for active location when relevant */}
         {!showListView && searchResults.length === 0 && getAvailableFloors().length > 1 && featureFlags.enableMultiFloorView && (
-          <div className="flex bg-white border-b border-gray-200 shadow-sm overflow-x-auto w-full">
+          <div className="flex bg-background border-b border-border shadow-sm overflow-x-auto w-full">
             {getAvailableFloors().map(floor => {
               const floorInfo = FLOORS[floor] || { name: floor, icon: MapPin };
               const FloorIcon = floorInfo.icon;
@@ -2008,8 +2008,8 @@ const OfficeMapDisplay = () => {
                   onClick={() => toggleFloor(floor)}
                   className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-200 flex items-center
                     ${selectedFloors.includes(floor) 
-                      ? 'text-blue-700 border-b-2 border-blue-500 bg-blue-50' 
-                      : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'}`}
+                      ? 'text-primary border-b-2 border-primary bg-primary/5' 
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'}`}
                 >
                   <FloorIcon className="w-3 h-3 mr-1" />
                   <span className="ml-1">{floorInfo.name}</span>
@@ -2047,11 +2047,11 @@ const OfficeMapDisplay = () => {
       
       {/* Main Content */}
       {!showListView && searchResults.length === 0 ? (
-        <div className="bg-white shadow-md rounded-0 sm:rounded-lg m-0 p-0 overflow-hidden">
+        <div className="bg-background shadow-md rounded-0 sm:rounded-lg m-0 p-0 overflow-hidden">
           {/* Floor heading */}
-          <div className="p-3 bg-gray-50 border-b border-gray-200 flex items-center">
-            <MapPin className="w-5 h-5 text-blue-600 mr-2" />
-            <h2 className="text-lg font-bold text-gray-800">
+          <div className="p-3 bg-muted/50 border-b border-border flex items-center">
+            <MapPin className="w-5 h-5 text-primary mr-2" />
+            <h2 className="text-lg font-bold text-foreground">
               {LOCATIONS[activeLocation]?.name} 
               {selectedFloors.length > 0 
                 ? ` - ${selectedFloors.map(floor => FLOORS[floor]?.name || floor).join(', ')}` 
@@ -2066,10 +2066,10 @@ const OfficeMapDisplay = () => {
         </div>
       ) : (
         searchResults.length === 0 && (
-          <div className="bg-white shadow-md rounded-0 sm:rounded-lg m-0 p-0 overflow-hidden">
-            <div className="p-3 bg-gray-50 border-b border-gray-200 flex items-center">
-              <List className="w-5 h-5 text-blue-600 mr-2" />
-              <h2 className="text-lg font-bold text-gray-800">Directory Listing</h2>
+          <div className="bg-background shadow-md rounded-0 sm:rounded-lg m-0 p-0 overflow-hidden">
+            <div className="p-3 bg-muted/50 border-b border-border flex items-center">
+              <List className="w-5 h-5 text-primary mr-2" />
+              <h2 className="text-lg font-bold text-foreground">Directory Listing</h2>
             </div>
             {renderRoomList(getActiveLocationRooms())}
           </div>
@@ -2089,7 +2089,7 @@ const OfficeMapDisplay = () => {
       {canEdit() && (
         <div className="fixed bottom-4 right-4 z-30">
           <button
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-3 shadow-lg"
             title="Edit Mode"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2128,7 +2128,7 @@ const OfficeFloorMap = ({ initialVersion = 'default' }) => {
 
   return (
     <OfficeMapProvider initialVersion={initialVersion}>
-      <div className="p-0 m-0 w-full overflow-hidden" style={{ 
+      <div className="p-0 m-0 w-full overflow-hidden bg-background" style={{ 
         maxWidth: '100%', 
         margin: 0, 
         padding: 0,
