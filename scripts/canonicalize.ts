@@ -1,4 +1,10 @@
 // scripts/canonicalize.ts
+/**
+ * @file scripts/canonicalize.ts
+ * @description CLI script to validate, export, and potentially update
+ *              the canonical contact data JSON file.
+ *              Serves as a stop-gap utility for O365 CSV sync.
+ */
 import { Command } from "commander";
 import fs from "fs-extra";
 import path from "path"; // Import path for resolving paths
@@ -32,6 +38,11 @@ program
 program.parse(process.argv);
 const opts = program.opts<{ json: string; out: string; updateFromCsv?: string; exportCsv?: string; failOnDiff: boolean; dryRun: boolean; verbose: boolean }>();
 
+/**
+ * Main execution function for the CLI script.
+ * Handles argument parsing, loads data, performs validation,
+ * and orchestrates export or update operations.
+ */
 async function main() {
   try {
     // --- Load the LIVE Canonical JSON --- 

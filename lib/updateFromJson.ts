@@ -1,3 +1,10 @@
+/**
+ * @module lib/updateFromJson
+ * @description Placeholder function for selectively updating canonical data from a CSV.
+ * @future Implement the logic to merge specific fields from new CSV data
+ *         into the existing live canonical JSON, preserving merged sources.
+ *         Must handle adding new users found only in the CSV.
+ */
 import { CanonicalExport } from "./schema.js";
 import { RawOfficeCsvRow } from "./types.js";
 

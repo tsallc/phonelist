@@ -7,15 +7,25 @@ import { RawOfficeCsvRow } from "./types.js"; // Import shared type
 
 const slugify = (slugifyNs as any).default ?? slugifyNs; // Access default, with fallback
 
+/** Generates a URL-friendly slug */
 function generateSlug(name: string): string { // Add return type
   // return slugify(name, { lower: true, strict: true }); // Original call
   return (slugify as (str: string, opts?: any) => string)(name, { lower: true, strict: true }); // Cast slugify if needed
 }
 
+/** Generates a SHA256 hash for ID collision fallback */
 function hashId(upn: string, source: string): string { // Add return type
   return createHash("sha256").update(upn + source).digest("hex");
 }
 
+/**
+ * Transforms an array of raw CSV row objects into the canonical JSON structure.
+ * Handles ID generation (slug/hash), default values, and field mapping.
+ * @param rawRows Parsed rows from the CSV file.
+ * @param inputPath Basename of the input CSV file (for metadata).
+ * @param verbose Enable debug logging.
+ * @returns The structured CanonicalExport object.
+ */
 export function toCanonical(
   rawRows: RawOfficeCsvRow[],
   inputPath: string,

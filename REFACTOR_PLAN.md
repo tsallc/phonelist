@@ -1,5 +1,7 @@
 # Refactoring Plan: Contact Directory V2 - Operational Graph Model
 
+**Status Note (YYYY-MM-DD): This refactor plan is currently PAUSED.** Phase 0 (Analysis, Planning, Data Extraction) is complete. The initial merged data exists in `src/data/canonicalContactData.json` (initialized from `reference_example.json`). A supporting utility (`phonelist-canonicalizer`) has been built to validate this data and provide a stop-gap CSV export/import workflow for O365 sync. Phase 1 of the React app refactor (implementing schemas and reading this data) can begin once decided, but the logic to *generate* the merged data described below is **not** being implemented by the current utility script.
+
 **1. Vision & Goals:**
 
 *   **Truth-First Data Model:** Model the directory as a dynamic graph of entities, operational roles, contact points, and their relationships over time, independent of specific UI views. Prioritize semantic accuracy and operational reality.
@@ -17,6 +19,7 @@
 
 **3. Phase 1: Foundational Graph Schema & Temporal Logic (`src/schemas/`, `src/data/`)**
 
+*   **Note:** The initial canonical data (`src/data/canonicalContactData.json`) is already established. This phase now focuses on implementing the schemas *within the React app* (`src/schemas/directorySchemas.js`) to parse/validate this existing data, and building the service layer to consume it. The data source refactoring (`src/data/seedData.js`) involves loading the JSON, not generating it from scratch.
 *   **3.1. Define Core Schemas (`src/schemas/directorySchemas.js`):** *(Major Overhaul)*
     *   **`ContactEntity` Schema:** (Unified)
         *   `id`: Unique identifier (system-generated UUID, UPN/ObjectID from Entra, or manual ID).
@@ -71,13 +74,7 @@
         *   `validFrom`, `validTo`: Timestamps for location validity.
 
 *   **3.2. Refactor Data Source (`src/data/seedData.js`):**
-    *   Populate according to the *new unified `ContactEntity`* and related schemas.
-    *   Represent Sydney Williams as *one* `ContactEntity` (`entityType: 'person'`) with two `RoleAssignment` entries (linking her entity ID to the 'closer_mi' and 'closer_fl' `Role` definitions, each with its own assignment validity). Create separate `ContactPoint` assets for the MI and FL extensions. Create `ContactPointAssignment` entries linking Sydney's *role assignments* (or entity ID for personal points) to the relevant `ContactPoint` IDs, specifying usage and validity.
-    *   Define `Role` definitions (operational functions/scopes) separately.
-    *   Define `Location` data separately.
-    *   Define shared/role-based `ContactPoint` assets explicitly.
-    *   Represent external orgs (Wayne County) as `ContactEntity` (`entityType: 'organization'`).
-    *   Set `validFrom`/`validTo` appropriately (e.g., `validFrom: now`, `validTo: null` for current).
+    *   Replace current hardcoding with logic to **load and validate** `src/data/canonicalContactData.json` using the schemas defined in 3.1.
 
 *   **3.3. Prepare Service Layer Stubs (`src/services/directoryService.js`):**
     *   Define function signatures for loading, resolving, filtering based on time, roles, visibility, etc. Implementation deferred to Phase 2.
