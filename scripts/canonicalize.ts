@@ -9,133 +9,141 @@ import { diffCanonical, DiffResult } from "../lib/diff.js"; // Import DiffResult
 import { computeHash } from "../lib/hash.js";
 import { exportCsv } from "../lib/exportCsv.js";
 import { CanonicalExport } from "../lib/schema.js"; // Import CanonicalExport type
+import { updateFromJson } from "../lib/updateFromJson.js"; // Import for new logic
 
 const program = new Command();
 
 program
-  .option("-c, --csv <path>", "Path to input Office365 CSV file")
-  .option("-j, --json <path>", "Path to existing canonical JSON (required for --export-csv)", "src/data/canonicalContactData.json")
-  .option("-o, --out <path>", "Output path for canonical JSON", "src/data/canonicalContactData.json")
-  .option("-e, --export-csv <path>", "Optional: Export canonical JSON back to Office365 CSV format at specified path")
-  .option("-f, --fail-on-diff", "Exit with code 1 if changes are detected compared to existing JSON", false)
-  .option("-d, --dry-run", "Perform all steps except writing output files", false)
-  .version("1.0.0") // Add a version
-  .description("Processes Office365 CSV into canonical JSON, validates, diffs, and optionally exports back to CSV.");
+  // Input/Output for the LIVE canonical file
+  .option("-j, --json <path>", "Path to the LIVE canonical JSON file", "src/data/canonicalContactData.json")
+  .option("-o, --out <path>", "Output path for updated canonical JSON (used by --update-from-csv)", "src/data/canonicalContactData.json")
+  
+  // Modes of operation
+  .option("-u, --update-from-csv <path>", "Path to NEW Office365 CSV to selectively update the live JSON file")
+  .option("-e, --export-csv <path>", "Export the live JSON data to Office365 CSV format at specified path")
+
+  // Modifiers
+  .option("-f, --fail-on-diff", "Exit with code 1 if --update-from-csv causes changes", false)
+  .option("-d, --dry-run", "Perform --update-from-csv checks without writing output file", false)
+  .option("-v, --verbose", "Enable verbose debug logging", false)
+  .version("1.1.0") // Increment version
+  .description("Validates, exports, or selectively updates the live canonical JSON contact data.");
 
 program.parse(process.argv);
-const opts = program.opts();
+const opts = program.opts<{ json: string; out: string; updateFromCsv?: string; exportCsv?: string; failOnDiff: boolean; dryRun: boolean; verbose: boolean }>();
 
 async function main() {
   try {
-    // --- Reverse Export Mode ---    
+    // --- Load the LIVE Canonical JSON --- 
+    if (!opts.json || !fs.existsSync(opts.json)) {
+        console.error(`❌ Error: Live canonical JSON file not found at path: ${opts.json}`);
+        process.exit(1);
+    }
+    console.log(`📘 Loading live canonical data from: ${opts.json}`);
+    let liveData: CanonicalExport;
+    try {
+        liveData = await fs.readJson(opts.json);
+    } catch (err: any) {
+        console.error(`❌ Error parsing live canonical JSON file: ${err.message}`);
+        process.exit(1);
+    }
+
+    // --- Validate the loaded live data --- 
+    console.log(`🛡️  Validating structure of loaded live data...`);
+    const validation = validateCanonical(liveData);
+    if (!validation.success) {
+      console.error("❌ Live data validation failed:");
+      validation.errors?.forEach(err => console.error(`   - ${err}`))
+      // Allow continuing for export, but maybe not for update?
+      // For now, we exit if initial data is invalid, unless exporting.
+      if (!opts.exportCsv) {
+          process.exit(1);
+      }
+       console.warn("⚠️ Warning: Live data failed validation, export may be incomplete/incorrect.");
+    } else {
+        console.log(`✅ Live data validation successful.`);
+    }
+
+    // --- Mode: Export to CSV ---    
     if (opts.exportCsv) {
-        if (!opts.json || !fs.existsSync(opts.json)) {
-            console.error(`❌ Error: Existing canonical JSON file not found at specified path: ${opts.json}`);
-            console.error(`       Please provide a valid path using --json <path> for export mode.`);
-            process.exit(1);
-        }
-        console.log(`🔄 Reading canonical data from: ${opts.json}`);
-        const canonicalData: CanonicalExport = await fs.readJson(opts.json);
-        
-        console.log(`📤 Exporting to CSV format at: ${opts.exportCsv}`);
-        await exportCsv(canonicalData.ContactEntities, opts.exportCsv);
+        console.log(`📤 Exporting live data to CSV format at: ${opts.exportCsv}`);
+        await exportCsv(liveData.ContactEntities, opts.exportCsv);
         console.log(`✅ Successfully exported CSV to: ${opts.exportCsv}`);
         return; // Exit after export
     }
 
-    // --- Standard Processing Mode ---    
-    if (!opts.csv || !fs.existsSync(opts.csv)) {
-      console.error(`❌ Error: Input CSV file not found at specified path: ${opts.csv}`);
-      console.error(`       Please provide a valid path using --csv <path>.`);
-      process.exit(1);
-    }
-
-    console.log(`📄 Reading CSV data from: ${opts.csv}`);
-    const rawRows = await parseCsv(opts.csv);
-    console.log(`🔍 Parsed ${rawRows.length} rows from CSV.`);
-
-    console.log(`⚙️  Transforming data to canonical format...`);
-    const newCanonicalData = toCanonical(rawRows, path.basename(opts.csv)); // Pass only basename
-
-    console.log(`🛡️  Validating canonical data structure...`);
-    const validation = validateCanonical(newCanonicalData);
-    if (!validation.success) {
-      console.error("❌ Validation failed:");
-      validation.errors?.forEach(err => console.error(`   - ${err}`))
-      process.exit(1);
-    }
-    console.log(`✅ Validation successful.`);
-
-    console.log(`🧮 Computing hash...`);
-    const newHash = computeHash(newCanonicalData.ContactEntities, newCanonicalData.Locations);
-    newCanonicalData._meta.hash = newHash;
-    console.log(`   - Hash: ${newHash}`);
-
-    console.log(`⏳ Loading previous canonical data (if exists) from: ${opts.out}`);
-    let previousCanonicalData: CanonicalExport | null = null;
-    try {
-        if (fs.existsSync(opts.out)) {
-            previousCanonicalData = await fs.readJson(opts.out);
-            console.log(`   - Found previous data with hash: ${previousCanonicalData?._meta?.hash ?? 'N/A'}`);
-        } else {
-            console.log(`   - No previous data file found.`);
+    // --- Mode: Update from CSV --- 
+    if (opts.updateFromCsv) {
+        if (!fs.existsSync(opts.updateFromCsv)) {
+            console.error(`❌ Error: Input CSV file for update not found at path: ${opts.updateFromCsv}`);
+            process.exit(1);
         }
-    } catch (err: any) {
-        console.warn(`⚠️ Warning: Could not read or parse previous JSON file at ${opts.out}. Assuming no previous data. Error: ${err.message}`);
-        previousCanonicalData = null;
-    }
-
-    console.log(`🔄 Comparing current data with previous version...`);
-    const diffResult: DiffResult | null = diffCanonical(previousCanonicalData, newCanonicalData);
-    
-    // Explicitly check if previous data exists for change detection
-    let hasChanges: boolean;
-    if (!previousCanonicalData) {
-        console.log("   - No previous data found, considering all current data as added.");
-        hasChanges = true; // No previous file means definite changes
-    } else {
-        // Compare hashes only if previous data exists
-        console.log(`   - Comparing new hash (${newHash}) with previous hash (${previousCanonicalData._meta.hash}).`);
-        hasChanges = previousCanonicalData._meta.hash !== newHash;
-    }
-
-    if (hasChanges) {
-      console.log(`❗️ Changes detected:`);
-      console.log(`   - Added: ${diffResult?.added.length ?? 'N/A'}`);
-      console.log(`   - Removed: ${diffResult?.removed.length ?? 'N/A'}`);
-      console.log(`   - Changed: ${diffResult?.changedCount ?? 'N/A'}`);
-      
-      if (opts.dryRun) {
-        console.log(`🚫 Dry Run: Skipping file writes.`);
-      } else {
-        // Write the main JSON output
-        console.log(`DEBUG: Object to be written contains ${newCanonicalData.ContactEntities.length} ContactEntities.`); 
+        console.log(`📄 Reading CSV data for update from: ${opts.updateFromCsv}`);
+        const rawUpdateRows = await parseCsv(opts.updateFromCsv);
+        console.log(`🔍 Parsed ${rawUpdateRows.length} rows from update CSV.`);
         
-        console.log(`💾 Writing updated canonical JSON to: ${opts.out}`);
-        await fs.outputJson(opts.out, newCanonicalData, { spaces: 2 }); 
-        console.log(`✅ Successfully wrote JSON.`);
+        console.log(`⚙️  Performing selective update...`);
+        const updatedLiveData = updateFromJson(liveData, rawUpdateRows, opts.verbose);
         
-        // Write the diff log
-        const logDir = path.resolve("logs"); // Ensure logs directory path
-        const logFileName = `diff-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-        const logPath = path.join(logDir, logFileName);
-        console.log(`📝 Writing diff log to: ${logPath}`);
-        await fs.outputJson(logPath, diffResult ?? {}, { spaces: 2 }); // Ensure diffResult is not null when writing log 
-        console.log(`✅ Successfully wrote diff log.`);
-      }
+        console.log(`🛡️  Validating updated data structure...`);
+        const updateValidation = validateCanonical(updatedLiveData);
+        if (!updateValidation.success) {
+            console.error("❌ Updated data validation failed:");
+            updateValidation.errors?.forEach(err => console.error(`   - ${err}`))
+            process.exit(1); // Don't proceed if update broke validation
+        }
+        console.log(`✅ Updated data validation successful.`);
 
-      if (opts.failOnDiff) {
-        console.error("❌ Exiting with code 1 due to detected changes (--fail-on-diff specified).");
-        process.exit(1);
-      }
-    } else {
-      console.log("✅ No changes detected compared to previous data.");
+        console.log(`🧮 Computing hash of updated data...`);
+        const newHash = computeHash(updatedLiveData.ContactEntities, updatedLiveData.Locations);
+        updatedLiveData._meta.hash = newHash; // Update hash in the object
+        // TODO: Consider updating generatedFrom and generatedAt in _meta?
+        console.log(`   - New Hash: ${newHash}`);
+
+        console.log(`🔄 Comparing updated data with original live version...`);
+        const diffResult = diffCanonical(liveData, updatedLiveData); // Compare original vs updated
+        const hasChanges = liveData._meta.hash !== newHash; // Compare hashes
+
+        if (hasChanges) {
+            console.log(`❗️ Changes detected by update:`);
+            console.log(`   - Added: ${diffResult?.added.length ?? 'N/A'}`);
+            console.log(`   - Removed: ${diffResult?.removed.length ?? 'N/A'}`);
+            console.log(`   - Changed: ${diffResult?.changedCount ?? 'N/A'}`);
+
+            if (opts.dryRun) {
+                console.log(`🚫 Dry Run: Skipping file writes.`);
+            } else {
+                if (opts.verbose) {
+                    console.log(`DEBUG: Object to be written contains ${updatedLiveData.ContactEntities.length} ContactEntities.`); 
+                }
+                console.log(`💾 Writing updated canonical JSON to: ${opts.out}`);
+                await fs.outputJson(opts.out, updatedLiveData, { spaces: 2 }); 
+                console.log(`✅ Successfully wrote JSON.`);
+                
+                const logDir = path.resolve("logs");
+                const logFileName = `diff-update-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+                const logPath = path.join(logDir, logFileName);
+                console.log(`📝 Writing update diff log to: ${logPath}`);
+                await fs.outputJson(logPath, diffResult ?? {}, { spaces: 2 }); 
+                console.log(`✅ Successfully wrote diff log.`);
+            }
+
+            if (opts.failOnDiff) {
+                console.error("❌ Exiting with code 1 due to detected changes (--fail-on-diff specified).");
+                process.exit(1);
+            }
+        } else {
+            console.log("✅ No changes detected after update process.");
+        }
+        console.log("✨ Update process complete.");
+        return; // Exit after update
     }
 
-    console.log("✨ Canonicalization process complete.");
+    // --- Default Mode: Just Validate ---    
+    console.log("✨ Validation of live canonical data complete. No update or export requested.");
 
   } catch (error: any) {
-    console.error("❌ An unexpected error occurred during canonicalization:");
+    console.error("❌ An unexpected error occurred:");
     console.error(error.stack || error.message || error);
     process.exit(1);
   }

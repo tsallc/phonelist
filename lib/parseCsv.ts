@@ -36,14 +36,14 @@ export async function parseCsv(path: string): Promise<RawOfficeCsvRow[]> {
         const title = data["title"]?.trim() || undefined;
         const department = data["department"]?.trim() || undefined;
 
-        // Push object conforming to RawOfficeCsvRow type (with correct key casing)
+        // Push object conforming to RawOfficeCsvRow type (with lowercase keys)
         results.push({
-          "Display name": displayName,
-          "Mobile Phone": mobilePhone,
-          "Object ID": objectId,
-          "User principal name": userPrincipalName,
-          "Title": title,
-          "Department": department,
+          "display name": displayName,
+          "mobile phone": mobilePhone,
+          "object id": objectId,
+          "user principal name": userPrincipalName,
+          "title": title,
+          "department": department,
         });
       })
       .on("end", () => resolve(results))

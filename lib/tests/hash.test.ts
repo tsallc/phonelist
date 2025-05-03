@@ -1,14 +1,14 @@
 // lib/tests/hash.test.ts
 import { describe, it, expect } from 'vitest';
-import { computeHash } from '../hash';
-import { ContactEntity } from '../schema'; // Assuming schema.ts defines this
+import { computeHash } from '../hash.js';
+import { ContactEntity } from '../schema.js'; // Added .js
 
 // Helper to create mock entities (simplified)
 const createEntity = (id: string, name: string): ContactEntity => ({
   id,
   displayName: name,
   contactPoints: [],
-  roles: [{ office: 'UNK', title: 'Test', priority: 1 }],
+  roles: [{ office: 'PLY', title: 'Test', priority: 1 }],
   source: 'Office365',
   upn: `${id}@example.com`,
 });

@@ -1,14 +1,14 @@
 // lib/tests/diffCanonical.test.ts
 import { describe, it, expect } from 'vitest';
-import { diffCanonical } from '../diff';
-import { CanonicalExport, ContactEntity } from '../schema'; // Assuming schema.ts defines these
+import { diffCanonical } from '../diff.js';
+import { CanonicalExport, ContactEntity } from '../schema.js'; // Added .js
 
 // Helper to create a mock ContactEntity
 const createEntity = (id: string, name: string, title: string | null = 'Default Title'): ContactEntity => ({
   id,
   displayName: name,
   contactPoints: [],
-  roles: [{ office: 'UNK', title, priority: 1 }],
+  roles: [{ office: 'PLY', title, priority: 1 }],
   source: 'Office365',
   // Add other required fields with defaults if necessary
   objectId: `obj-${id}`,

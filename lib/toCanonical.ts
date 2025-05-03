@@ -18,30 +18,31 @@ function hashId(upn: string, source: string): string { // Add return type
 
 export function toCanonical(
   rawRows: RawOfficeCsvRow[],
-  inputPath: string
+  inputPath: string,
+  verbose: boolean = false
 ): CanonicalExport {
   const entities: Omit<ContactEntity, 'id'>[] = []; // Use Omit initially
   const potentialSlugs: { [key: string]: number } = {}; // Track slug counts
 
   // First pass: Prepare entities and count potential slug collisions
   for (const row of rawRows) {
-    const displayName = row["Display Name"]; // Already trimmed or undefined from parseCsv
-    // *** Add logging to check the actual displayName value ***
-    console.log(`DEBUG [toCanonical Loop Start]: Processing row. displayName = '${displayName}' (Type: ${typeof displayName})`); 
+    const displayName = row["display name"];
+    if (verbose) console.log(`DEBUG [toCanonical Loop Start]: Processing row = ${JSON.stringify(row)}`);
+    if (verbose) console.log(`DEBUG [toCanonical Loop Start]: Processing row. displayName = '${displayName}' (Type: ${typeof displayName})`);
     if (!displayName) continue; // Skip if undefined/empty after parsing
 
-    // const slug = generateSlug(displayName); // Pass non-empty displayName // Moved down
-    console.log(`DEBUG [toCanonical Loop Body]: Entered loop body for '${displayName}'`); // Check if body is ever entered
+    if (verbose) console.log(`DEBUG [toCanonical Loop Body]: Entered loop body for '${displayName}'`);
     const slug = generateSlug(displayName);
     potentialSlugs[slug] = (potentialSlugs[slug] || 0) + 1;
 
     const contactPoints: ContactPoint[] = [];
-    if (row["Mobile Phone"]?.trim()) {
-      const phoneValue = row["Mobile Phone"].trim();
-      const parts = phoneValue.split(/[,\/;]/);
+    const mobilePhoneValue = row["mobile phone"]?.trim(); // Use lowercase key
+    if (mobilePhoneValue) {
+      const parts = mobilePhoneValue.split(/[,\/;]/);
       const firstPhonePart = parts[0];
       const firstPhone = firstPhonePart ? firstPhonePart.trim() : undefined;
       if (firstPhone) {
+        if (verbose) console.log(`DEBUG [toCanonical ContactPoint]: Adding mobile ${firstPhone} for ${displayName}`);
         contactPoints.push({
           type: "mobile",
           value: firstPhone,
@@ -51,17 +52,20 @@ export function toCanonical(
     }
 
     const roles: Role[] = [];
-    if (row["Title"]?.trim()) {
+    const titleValue = row["title"]?.trim(); // Use lowercase key
+    if (verbose) console.log(`DEBUG [toCanonical Role Check]: Checking title for ${displayName}. Value = '${titleValue}'`);
+    // if (row["title"]?.trim()) { // Original check
+    if (titleValue) { // Check the trimmed value
+       if (verbose) console.log(`DEBUG [toCanonical Role]: Adding role with title '${titleValue}' for ${displayName}`);
        roles.push({
-          office: "UNK",
-          title: row["Title"].trim(),
+          office: "PLY",
+          title: titleValue,
           priority: 1,
        });
     } else {
-        // Add a role with null title if no title provided in CSV
-        // This ensures the roles array is not empty if contact exists
+        if (verbose) console.log(`DEBUG [toCanonical Role]: Adding role with NULL title for ${displayName}`);
         roles.push({
-            office: "UNK",
+            office: "PLY",
             title: null,
             priority: 1,
         });
@@ -72,18 +76,16 @@ export function toCanonical(
       displayName: displayName,
       contactPoints,
       roles,
-      objectId: row["Object ID"]?.trim() || undefined,
-      upn: row["User Principal Name"]?.trim() || undefined,
-      department: row["Department"]?.trim() || undefined,
+      objectId: row["object id"]?.trim() || undefined, // Use lowercase key
+      upn: row["user principal name"]?.trim() || undefined, // Use lowercase key
+      department: row["department"]?.trim() || undefined, // Use lowercase key
       source: "Office365",
     });
-    // *** Add logging inside loop ***
-    console.log(`DEBUG [toCanonical Loop]: Pushed entity for ${displayName}. entities.length = ${entities.length}`);
+    if (verbose) console.log(`DEBUG [toCanonical Loop]: Pushed entity for ${displayName}. entities.length = ${entities.length}`);
   }
   // *** End of first loop ***
 
-  // *** Add logging after loop ***
-  console.log(`DEBUG [toCanonical AfterLoop]: entities array contains ${entities.length} entities before map.`);
+  if (verbose) console.log(`DEBUG [toCanonical AfterLoop]: entities array contains ${entities.length} entities before map.`);
 
   // Second pass: Assign final IDs based on slug uniqueness
   const finalEntities: ContactEntity[] = entities.map(entity => {
@@ -115,14 +117,12 @@ export function toCanonical(
       };
   });
 
-
   // Sort final entities by display name
   const sortedEntities = finalEntities.sort((a, b) =>
     a.displayName.localeCompare(b.displayName)
   );
 
-  // *** Add logging before return ***
-  console.log(`DEBUG [toCanonical]: sortedEntities contains ${sortedEntities.length} entities before returning.`);
+  if (verbose) console.log(`DEBUG [toCanonical]: sortedEntities contains ${sortedEntities.length} entities before returning.`);
 
   // Assemble the final export object
   return {

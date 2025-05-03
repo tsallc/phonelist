@@ -1,24 +1,26 @@
 # Project State
 
-**Last Updated:** YYYY-MM-DD HH:MM:SSZ # Placeholder, will be updated
+**Last Updated:** 2025-05-03T21:40:00Z # Updated
 
 ## Current Focus
 
-- **Canonicalizer Script:** Implement Phase 4 (Output Generation) and Phase 5 (CLI) for the Node.js/TypeScript tool.
-- **React App Refactor:** Paused while canonicalizer foundation is built. Next step remains implementing schemas/services based on `canonicalContactData.json`.
+- **Canonicalizer Script:** Complete testing/validation and prepare for potential integration or next steps.
+- **React App Refactor:** Pending. Next step is Phase 1 (Schema & Foundation) using the generated `canonicalContactData.json`.
 
 ## Overall Progress
 
 - **Plan:** `REFACTOR_PLAN.md` defined for the main React application.
 - **Canonicalizer Script:**
-    - Phase 1 (Setup & Schema): **Completed**
-    - Phase 2 (Ingest & Transform): **Completed**
-    - Phase 3 (Validation, Diff, Hash): **Completed**
-    - Phase 4 (Output Generation): Pending
-    - Phase 5 (CLI): Pending
+    - Phase 1 (Setup & Schema): ✅ Completed
+    - Phase 2 (Ingest & Transform): ✅ Completed
+    - Phase 3 (Validation, Diff, Hash): ✅ Completed
+    - Phase 4 (Output Generation): ✅ Completed (JSON write, CSV export logic)
+    - Phase 5 (CLI): ✅ Completed
+    - Phase 6 (Testing): ✅ Basic unit tests implemented and passing.
+    - Phase 7 (Refinement): ✅ Added --verbose flag.
 - **React App Refactor:**
     - Phase 0 (Analysis, Planning, Data Extraction): Completed
-    - Phase 1 (Schema & Foundation): Pending (Blocked on canonicalizer completion/stabilization)
+    - Phase 1 (Schema & Foundation): Pending
 
 - **Milestones Completed:**
     - Project analysis and refactoring plan creation (`REFACTOR_PLAN.md`).
@@ -26,20 +28,25 @@
     - Full codebase audit (`CODEBASE_AUDIT.md`).
     - Detailed audit & reconciliation of hardcoded data vs. M365 export.
     - **Canonical data extraction to `src/data/canonicalContactData.json` (Source of Truth, uses `contactPoints` array).**
-    - **Canonicalizer Script:** Setup, CSV Parsing, Transformation logic, Validation, Hashing, Diffing implemented.
+    - **Implemented core canonicalizer script logic (Phases 1-5).**
+    - **Added basic unit tests for canonicalizer library functions.**
+    - **Added `--verbose` flag for conditional debug logging.**
+    - Successfully generated valid `src/data/canonicalContactData.json` from CSV.
     - Deleted intermediate `MERGED_USER_DATA.csv`.
 
 - **Milestones Pending:**
-    - **Canonicalizer Script:** Implement JSON/CSV output writing, CLI interface.
+    - **Canonicalizer Script:** Add integration tests for CLI script (`scripts/canonicalize.ts`) (Recommended).
     - **React App:** Implement Core Schemas (`src/schemas/directorySchemas.js`), Refactor Data Source (`src/data/seedData.js`), Prepare Service Layer Stubs (`src/services/directoryService.js`).
     - **Delete `App.jsx` and `ArtifactCode.jsx` after data migration is confirmed and React app reads from canonical data.**
 
 ## Recent Activity
 
-- **Acknowledged outdated documentation regarding "flattened schema"; confirmed `contactPoints` is an array.**
-- Completed Phases 1-3 of the canonicalizer script (`lib/schema.ts`, `lib/parseCsv.ts`, `lib/toCanonical.ts`, `lib/validate.ts`, `lib/hash.ts`, `lib/diff.ts`).
-- Corrected `package.json` for `pnpm` usage and dependencies.
-- Resolved linter issues in helper scripts.
+- **Added `--verbose` flag to canonicalizer script for debug logging.**
+- Corrected file state inconsistencies and finalized canonicalizer script implementation.
+- Successfully generated `canonicalContactData.json` from the correct CSV source.
+- Implemented and passed unit tests for canonicalizer library functions (`vitest`).
+- Debugged and resolved various issues (module resolution, type errors, case sensitivity, file writing persistence).
+- Updated documentation (`README.md`, `PROJECT_STATE.md`, `CODEBASE_AUDIT.md`) to reflect current state.
 
 ## Filtered UPNs (Excluded during canonical extraction)
 
@@ -63,9 +70,9 @@
 
 ## Next Steps
 
-1.  **Canonicalizer Script:** Implement `lib/exportCsv.ts` (Phase 4).
-2.  **Canonicalizer Script:** Implement main CLI script `scripts/canonicalize.ts` (Phase 5).
-3.  **Documentation:** Update `CODEBASE_AUDIT.md` and rewrite `README.md`.
+1.  **(Recommended)** Add integration tests for `scripts/canonicalize.ts`.
+2.  Decide whether to expand canonicalizer to handle JSX sources or proceed with React App Refactor Phase 1 using current data.
+3.  Update documentation as needed.
 
 ## Blockers/Issues
 
@@ -74,18 +81,19 @@
 ## Relevant Files & Context
 
 - `REFACTOR_PLAN.md`: Guiding refactoring document for the main React app.
-- `CODEBASE_AUDIT.md`: Detailed analysis of codebase state pre-refactor (needs update).
+- `CODEBASE_AUDIT.md`: Detailed analysis of codebase state pre-refactor.
 - `PROJECT_STATE.md`: This file.
-- **`src/data/canonicalContactData.json`:** **THE Source of Truth for contact/location data (Uses `contactPoints` array).**
-- `package.json`: Defines dependencies and scripts for both React app and canonicalizer tool.
-- `lib/*.ts`: Helper modules for the canonicalizer script.
-- `scripts/canonicalize.ts`: (To be created) Main CLI entry point for the canonicalizer.
-- `users_5_3_2025 7_00_43 PM.csv`: Original M365 user export (historical context).
+- **`src/data/canonicalContactData.json`:** **THE Source of Truth (currently CSV-derived).**
+- `package.json`: Defines dependencies and scripts.
+- `lib/*.ts`: Modules for the canonicalizer script.
+- `scripts/canonicalize.ts`: Main CLI entry point for the canonicalizer.
+- `lib/tests/*.test.ts`: Unit tests for canonicalizer.
+- `users_5_3_2025 7_00_43 PM.csv`: Primary O365 user export.
 - `App.jsx`, `ArtifactCode.jsx`: Deprecated sources of data, **to be deleted** later.
 
 ## LLM Agent Instructions
 
-- **Treat `src/data/canonicalContactData.json` as the immutable source of truth (Note: Uses `contactPoints` array).**
+- **Treat `src/data/canonicalContactData.json` as the current source of truth (derived from CSV).**
 - Refer to this file (`PROJECT_STATE.md`) for current state and immediate goals.
 - Update `Last Updated`, `Recent Activity`, and `Next Steps` after completing tasks.
 - Use `Overall Progress` for context within `REFACTOR_PLAN.md`. 

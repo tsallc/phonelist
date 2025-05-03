@@ -1,20 +1,20 @@
 import { createHash } from "crypto";
-import { ContactEntity } from "./schema.js";
+import { ContactEntity, Location } from "./schema.js";
 
-// Note: Locations array is currently always empty (type never[]) in Phase 1
-export function computeHash(contacts: ContactEntity[], locations: never[]): string {
+// Note: Locations array may be populated now
+export function computeHash(contacts: ContactEntity[], locations: Location[]): string {
   const h = createHash("sha256");
 
   // Sort contacts deterministically by ID
   const sortedContacts = [...contacts].sort((a, b) => a.id.localeCompare(b.id));
 
-  // Locations array is always empty in Phase 1
-  const sortedLocations = locations; // Assigning the empty array
+  // Sort locations deterministically by ID 
+  const sortedLocations = [...locations].sort((a, b) => a.id.localeCompare(b.id));
 
   // Use stable JSON stringification (optional, but good practice)
   // For simple objects, standard stringify is often sufficient, but consider
   // libraries like 'json-stable-stringify' if object key order becomes an issue.
   h.update(JSON.stringify(sortedContacts));
-  h.update(JSON.stringify(sortedLocations)); // Will stringify to '[]'
+  h.update(JSON.stringify(sortedLocations));
   return h.digest("hex");
 } 

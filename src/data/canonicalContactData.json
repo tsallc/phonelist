@@ -1,156 +1,148 @@
 {
   "ContactEntities": [
     {
-      "displayName": "Admin Mailbox",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "admin@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "admin-mailbox"
-    },
-    {
+      "id": "andrea-donayre",
       "displayName": "Andrea Donayre",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "9545344838",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "2026",
+          "source": "App.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "FTL",
           "title": "Office Manager",
           "priority": 1
         }
       ],
+      "objectId": "80e43ee8-9b62-49b7-991d-b8365a0ed5a6",
       "upn": "ADonayre@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "andrea-donayre"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "andrew-ignagni",
       "displayName": "Andrew Ignagni",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "7346796664",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1006",
+          "source": "App.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Escrow Officer",
           "priority": 1
         }
       ],
+      "objectId": "3f6fd6c1-a95d-4dea-89f3-08901b2a513b",
       "upn": "aignagni@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "andrew-ignagni"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "becca-griffin",
       "displayName": "Becca Griffin",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "734-306-8536",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "2100",
+          "source": "App.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY", 
           "title": null,
           "priority": 1
         }
       ],
+      "objectId": "01f91650-6b68-4e1f-9114-9b6fc8157d86",
       "upn": "Becca@trutitleinc.com",
-      "source": "Office365",
-      "id": "becca-griffin"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "brian-tiller",
       "displayName": "Brian Tiller",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "2485631443",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1024",
+          "source": "ArtifactCode.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "President",
           "priority": 1
         }
       ],
+      "objectId": "a200fce3-d32a-4c06-861a-780850009fe1",
       "upn": "btiller@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "brian-tiller"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "bud-brown",
       "displayName": "Bud Brown",
       "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
+      "roles": [], 
+      "objectId": "6ad31985-be52-4a1a-9959-4b24deac0cf5",
       "upn": "bbrown@coastaltitlellc.com",
-      "source": "Office365",
-      "id": "bud-brown"
+      "department": null,
+      "title": null,
+      "source": "Office365"
     },
     {
+      "id": "chad-williams",
       "displayName": "Chad Williams",
-      "contactPoints": [],
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "2040",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "FTL", 
           "title": null,
           "priority": 1
         }
       ],
+      "objectId": "8dfbe371-5cec-4da3-ac79-7c7606cd4182",
       "upn": "chad@coastaltitlellc.com",
-      "source": "Office365",
-      "id": "chad-williams"
+      "department": null,
+      "source": "Merged"
     },
     {
-      "displayName": "Chris Ciotti",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "cciotti@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "chris-ciotti"
-    },
-    {
-      "displayName": "Closing Calendar",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "ccal@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "closing-calendar"
-    },
-    {
+      "id": "collin-fabian",
       "displayName": "Collin Fabian",
       "contactPoints": [
         {
@@ -161,16 +153,18 @@
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Director of Sales",
           "priority": 1
         }
       ],
+      "objectId": "24d2ccdb-634c-4318-aa11-83ee5501706a",
       "upn": "CFabian@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "collin-fabian"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "curt-white",
       "displayName": "Curt White",
       "contactPoints": [
         {
@@ -181,186 +175,153 @@
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Closer",
           "priority": 1
         }
       ],
+      "objectId": "5210ca36-6d34-412d-99bc-6bf0ceb21036",
       "upn": "cwhite@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "curt-white"
+      "department": null,
+      "source": "Merged"
     },
     {
-      "displayName": "Customer Complaints",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "customercomplaints@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "customer-complaints"
-    },
-    {
-      "displayName": "Docs",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "docs@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "docs"
-    },
-    {
-      "displayName": "Fax",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "fax@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "fax"
-    },
-    {
-      "displayName": "Funding",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "Funding@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "funding"
-    },
-    {
+      "id": "georgia-caudle",
       "displayName": "Georgia Caudle",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "2486051044",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1015",
+          "source": "App.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Title Examiner",
           "priority": 1
         }
       ],
+      "objectId": "0ff8ba55-4934-4ad9-b374-e281e8fc98fe",
       "upn": "gcaudle@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "georgia-caudle"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "grace-guibord",
       "displayName": "Grace Guibord",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "2489746902",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1003",
+          "source": "App.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Escrow Officer",
           "priority": 1
         }
       ],
+      "objectId": "8508bab5-4cd1-4be5-a374-8434fffb3ead",
       "upn": "gguibord@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "grace-guibord"
+      "department": null,
+      "source": "Merged"
     },
     {
-      "displayName": "Gravity Title",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "gravitytitle@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "gravity-title"
-    },
-    {
+      "id": "jessie-ignagni",
       "displayName": "Jessie Ignagni",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "7346342124",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1010",
+          "source": "App.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Recording Department",
           "priority": 1
         }
       ],
+      "objectId": "8a50d425-d102-4147-bf92-fed4f3b7cbea",
       "upn": "jignagni@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "jessie-ignagni"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "kathy-case",
       "displayName": "Kathy Case",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "7346643610",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1007",
+          "source": "App.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Processor",
           "priority": 1
         }
       ],
+      "objectId": "5f322c80-1e10-432c-b186-bb6a8548fd41",
       "upn": "kcase@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "kathy-case"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "katie-cooley",
       "displayName": "Katie Cooley",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "7346499984",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1012",
+          "source": "App.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Closer",
           "priority": 1
         }
       ],
+      "objectId": "5af06279-398e-4ca6-b833-353704150134",
       "upn": "kcooley@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "katie-cooley"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "kyle-smith",
       "displayName": "Kyle Smith",
       "contactPoints": [
         {
@@ -371,92 +332,83 @@
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Closer",
           "priority": 1
         }
       ],
+      "objectId": "1d97d880-02e7-499e-b924-11ff24a80fa2",
       "upn": "ksmith@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "kyle-smith"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "lexi-tiller",
       "displayName": "Lexi Tiller",
       "contactPoints": [],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": null,
           "priority": 1
         }
       ],
+      "objectId": "5a3998b9-a9ba-4140-bf42-de7007378f8d",
       "upn": "ltiller@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "lexi-tiller"
+      "department": null,
+      "source": "Office365"
     },
     {
+      "id": "megan-lamar",
       "displayName": "Megan Lamar",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "7347161431",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1009",
+          "source": "ArtifactCode.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Processor",
           "priority": 1
         }
       ],
+      "objectId": "1acfbe77-a3e0-469c-aa36-ec595876cc3a",
       "upn": "MLamar@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "megan-lamar"
+      "department": null,
+      "source": "Merged"
     },
     {
-      "displayName": "On-Premises Directory Synchronization Service Account",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "Sync_DC01_cd57fb6f11b6@titlesolutionsllc.onmicrosoft.com",
-      "source": "Office365",
-      "id": "on-premises-directory-synchronization-service-account"
-    },
-    {
-      "displayName": "Online Admin",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "admin@titlesolutionsllc.onmicrosoft.com",
-      "source": "Office365",
-      "id": "online-admin"
-    },
-    {
+      "id": "pam-byrne",
       "displayName": "Pam Byrne",
-      "contactPoints": [],
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "1016",
+          "source": "App.jsx"
+        }
+      ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Accountant",
           "priority": 1
         }
       ],
+      "objectId": "e8eca921-af36-46c1-a8aa-18ddb8d8c51f",
       "upn": "pbyrne@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "pam-byrne"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "paul-makara",
       "displayName": "Paul Makara",
       "contactPoints": [
         {
@@ -467,176 +419,117 @@
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Closer",
           "priority": 1
         }
       ],
+      "objectId": "2828ae08-a026-452e-a8c4-19d872a5ee0f",
       "upn": "pmakara@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "paul-makara"
+      "department": null,
+      "source": "Office365"
     },
     {
+      "id": "peter-joelson",
       "displayName": "Peter Joelson",
-      "contactPoints": [],
-      "roles": [
+      "contactPoints": [
         {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
+          "type": "mobile",
+          "value": "248-961-4201",
+          "source": "App.jsx"
         }
       ],
+      "roles": [],
+      "objectId": "68f94748-a3ef-4886-a519-ca9f393e9c03",
       "upn": "PJoelson@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "peter-joelson"
+      "department": null,
+      "title": null,
+      "source": "Merged"
     },
     {
-      "displayName": "Qualia",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "qualia@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "qualia"
-    },
-    {
+      "id": "rachel-jewell",
       "displayName": "Rachel Jewell",
-      "contactPoints": [],
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "2041",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "FTL",
           "title": null,
           "priority": 1
         }
       ],
+      "objectId": "0244d102-e28c-47f5-8b48-36a17bbfcc5f",
       "upn": "Rachel@coastaltitlellc.com",
-      "source": "Office365",
-      "id": "rachel-jewell"
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "robin-muroff",
       "displayName": "Robin Muroff",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "3132839167",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1013",
+          "source": "App.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": null,
           "priority": 1
         }
       ],
+      "objectId": "73ba471c-f5b6-443b-8e5d-3904d7bb0799",
       "upn": "RMuroff@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "robin-muroff"
+      "department": null,
+      "source": "Merged"
     },
     {
-      "displayName": "Sabrina Mastroberardino",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "smastroberardino@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "sabrina-mastroberardino"
-    },
-    {
-      "displayName": "Sales MI",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "salesmi@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "sales-mi"
-    },
-    {
+      "id": "sarah-fleming",
       "displayName": "Sarah Fleming",
-      "contactPoints": [],
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "1000",
+          "source": "App.jsx"
+        }
+      ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": null,
           "priority": 1
         }
       ],
+      "objectId": "398bb132-b869-4236-b32b-e3660537b61a",
       "upn": "sfleming@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "sarah-fleming"
+      "department": null,
+      "source": "Merged"
     },
     {
-      "displayName": "ScannyMcScanFace",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "ScannyMcScanFace@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "scannymcscanface"
-    },
-    {
+      "id": "shelby-sinkus",
       "displayName": "Shelby Sinkus",
       "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
+      "roles": [],
+      "objectId": "bc59e352-4ffb-4fc1-abdd-c969837967f2",
       "upn": "shelby@4pp.dev",
-      "source": "Office365",
-      "id": "shelby-sinkus"
+      "department": null,
+      "title": null,
+      "source": "Office365"
     },
     {
-      "displayName": "Social Media",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "social@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "social-media"
-    },
-    {
-      "displayName": "Superne Technologies",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "stech@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "superne-technologies"
-    },
-    {
+      "id": "suzy-crossley",
       "displayName": "Suzy Crossley",
       "contactPoints": [
         {
@@ -647,147 +540,374 @@
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Marketng",
           "priority": 1
         }
       ],
+      "objectId": "618c0271-a999-42ee-8f31-da3094b249f4",
       "upn": "SCrossley@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "suzy-crossley"
+      "department": null,
+      "source": "Office365"
     },
     {
+      "id": "sydney-tiller",
       "displayName": "Sydney Tiller",
-      "contactPoints": [],
-      "roles": [
+      "contactPoints": [
         {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
+          "type": "desk-extension",
+          "value": "1008",
+          "source": "App.jsx"
+        },
+        {
+          "type": "desk-extension",
+          "value": "2020",
+          "source": "App.jsx"
         }
       ],
+      "roles": [
+        {
+          "office": "PLY",
+          "title": null,
+          "priority": 1
+        },
+        {
+          "office": "FTL",
+          "title": null,
+          "priority": 2
+        }
+      ],
+      "objectId": "926b9014-3437-4b33-8008-90793f80d193",
       "upn": "stiller@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "sydney-tiller"
+      "department": null,
+      "source": "Merged"
     },
     {
-      "displayName": "Tina Admin",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "tadmin@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "tina-admin"
-    },
-    {
+      "id": "tina-tiller",
       "displayName": "Tina Tiller",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "2485631266",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1027",
+          "source": "App.jsx"
+        },
+        {
+          "type": "desk-extension",
+          "value": "2027",
+          "source": "App.jsx"
+        },
+        {
+          "type": "desk-extension",
+          "value": "1009",
+          "source": "ArtifactCode.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": "Manager",
           "priority": 1
-        }
-      ],
-      "upn": "ttiller@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "tina-tiller"
-    },
-    {
-      "displayName": "Title",
-      "contactPoints": [],
-      "roles": [
+        },
         {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
+          "office": "FTL",
+          "title": "Manager",
+          "priority": 2
         }
       ],
-      "upn": "title@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "title"
+      "objectId": "0cfbd348-6f3f-4559-bf8c-3a3b7377a8ca",
+      "upn": "ttiller@titlesolutionsllc.com",
+      "department": null,
+      "source": "Merged"
     },
     {
+      "id": "troy-mauritho",
       "displayName": "Troy Mauritho",
       "contactPoints": [
         {
           "type": "mobile",
           "value": "313-820-3102",
           "source": "Office365"
+        },
+        {
+          "type": "desk-extension",
+          "value": "2101",
+          "source": "App.jsx"
         }
       ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": null,
           "priority": 1
         }
       ],
+      "objectId": "3fda63be-70dc-41fa-94d6-1bc358c0ca90",
       "upn": "Troy@trutitleinc.com",
-      "source": "Office365",
-      "id": "troy-mauritho"
+      "department": null,
+      "source": "Merged"
     },
     {
-      "displayName": "TruTitle Orders",
-      "contactPoints": [],
-      "roles": [
-        {
-          "office": "UNK",
-          "title": null,
-          "priority": 1
-        }
-      ],
-      "upn": "orders@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "trutitle-orders"
-    },
-    {
+      "id": "will-peters",
       "displayName": "Will Peters",
-      "contactPoints": [],
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "1030",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
       "roles": [
         {
-          "office": "UNK",
+          "office": "PLY",
           "title": null,
           "priority": 1
         }
       ],
+      "objectId": "a497e58c-114a-432f-b412-ab4215fb3137",
       "upn": "will@4pp.dev",
-      "source": "Office365",
-      "id": "will-peters"
+      "department": null,
+      "source": "Merged"
     },
     {
-      "displayName": "Wires",
-      "contactPoints": [],
+      "id": "copy-room",
+      "displayName": "Copy Room",
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "1100",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
       "roles": [
         {
-          "office": "UNK",
-          "title": null,
+          "office": "PLY",
+          "title": "Shared Resource",
           "priority": 1
         }
       ],
-      "upn": "wires@titlesolutionsllc.com",
-      "source": "Office365",
-      "id": "wires"
+      "source": "App.jsx"
+    },
+    {
+      "id": "closers",
+      "displayName": "Closers",
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "1018",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
+      "roles": [
+        {
+          "office": "PLY",
+          "title": "Shared Resource",
+          "priority": 1
+        }
+      ],
+      "source": "App.jsx"
+    },
+    {
+      "id": "conference-room-1",
+      "displayName": "Conference Room 1",
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "1200",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
+      "roles": [
+        {
+          "office": "PLY",
+          "title": "Meeting Room",
+          "priority": 1
+        }
+      ],
+      "source": "App.jsx"
+    },
+    {
+      "id": "conference-room-2",
+      "displayName": "Conference Room 2",
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "1201",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
+      "roles": [
+        {
+          "office": "PLY",
+          "title": "Meeting Room",
+          "priority": 1
+        }
+      ],
+      "source": "App.jsx"
+    },
+    {
+      "id": "training-room",
+      "displayName": "Training Room",
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "1103",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
+      "roles": [
+        {
+          "office": "PLY",
+          "title": "Training Room",
+          "priority": 1
+        }
+      ],
+      "source": "App.jsx"
+    },
+    {
+      "id": "lunch-room",
+      "displayName": "Lunch Room",
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "1110",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
+      "roles": [
+        {
+          "office": "PLY",
+          "title": "Common Area",
+          "priority": 1
+        }
+      ],
+      "source": "App.jsx"
+    },
+    {
+      "id": "cts-harbor",
+      "displayName": "CTS-Harbor",
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "2050",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
+      "roles": [
+        {
+          "office": "FTL",
+          "title": "Office Space",
+          "priority": 1
+        }
+      ],
+      "source": "App.jsx"
+    },
+    {
+      "id": "cts-harbor-2",
+      "displayName": "CTS-Harbor 2",
+      "contactPoints": [
+        {
+          "type": "desk-extension",
+          "value": "2051",
+          "source": "ArtifactCode.jsx"
+        }
+      ],
+      "roles": [
+        {
+          "office": "FTL",
+          "title": "Office Space",
+          "priority": 1
+        }
+      ],
+      "source": "App.jsx"
+    },
+    {
+      "id": "docs",
+      "displayName": "Docs",
+      "contactPoints": [],
+      "roles": [],
+      "objectId": "78411228-3117-4ce9-8e04-5bf48c1761c3",
+      "upn": "docs@titlesolutionsllc.com",
+      "department": null,
+      "title": null,
+      "source": "Office365"
+    },
+    {
+      "id": "funding",
+      "displayName": "Funding",
+      "contactPoints": [],
+      "roles": [],
+      "objectId": "72be8a12-95af-40ab-876a-93737865584e",
+      "upn": "Funding@titlesolutionsllc.com",
+      "department": null,
+      "title": null,
+      "source": "Office365"
+    },
+    {
+      "id": "title",
+      "displayName": "Title",
+      "contactPoints": [],
+      "roles": [],
+      "objectId": "5cf7300b-4377-4609-9d5f-95589ed42be9",
+      "upn": "title@titlesolutionsllc.com",
+      "department": null,
+      "title": null,
+      "source": "Office365"
     }
   ],
-  "Locations": [],
+  "Locations": [
+    {
+      "id": "PLY",
+      "name": "Plymouth, MI",
+      "rooms": [
+        { "id": "Front Desk", "desks": [{"type": "desk-extension", "value": "1000"}] },
+        { "id": "Copy Room", "desks": [{"type": "desk-extension", "value": "1100"}] },
+        { "id": "Closers", "desks": [{"type": "desk-extension", "value": "1018"}] },
+        { "id": "Conference Room 1", "desks": [{"type": "desk-extension", "value": "1200"}] },
+        { "id": "Conference Room 2", "desks": [{"type": "desk-extension", "value": "1201"}] },
+        { "id": "Jesse", "desks": [{"type": "desk-extension", "value": "1010"}] },
+        { "id": "Kathy", "desks": [{"type": "desk-extension", "value": "1007"}] },
+        { "id": "Will", "desks": [{"type": "desk-extension", "value": "1030"}] },
+        { "id": "Robin", "desks": [{"type": "desk-extension", "value": "1013"}] },
+        { "id": "Sydney", "desks": [{"type": "desk-extension", "value": "1008"}] },
+        { "id": "Katie", "desks": [{"type": "desk-extension", "value": "1012"}] },
+        { "id": "Tina", "desks": [{"type": "desk-extension", "value": "1009"}] }, 
+        { "id": "Andrew", "desks": [{"type": "desk-extension", "value": "1006"}] },
+        { "id": "Grace", "desks": [{"type": "desk-extension", "value": "1003"}] },
+        { "id": "Training Room", "desks": [{"type": "desk-extension", "value": "1103"}] },
+        { "id": "Lunch Room", "desks": [{"type": "desk-extension", "value": "1110"}] },
+        { "id": "Brian T.", "desks": [{"type": "desk-extension", "value": "1024"}] },
+        { "id": "Pam", "desks": [{"type": "desk-extension", "value": "1016"}] },
+        { "id": "Tina", "desks": [{"type": "desk-extension", "value": "1027"}]} 
+      ]
+    },
+    {
+      "id": "FTL",
+      "name": "Fort Lauderdale, FL",
+       "rooms": [
+        { "id": "Tina", "desks": [{"type": "desk-extension", "value": "2027"}] },
+        { "id": "Syd", "desks": [{"type": "desk-extension", "value": "2020"}] },
+        { "id": "Andrea", "desks": [{"type": "desk-extension", "value": "2026"}] },
+        { "id": "Chad Williams", "desks": [{"type": "desk-extension", "value": "2040"}] }, 
+        { "id": "Rachel Jewell", "desks": [{"type": "desk-extension", "value": "2041"}] }, 
+        { "id": "CTS-Harbor", "desks": [{"type": "desk-extension", "value": "2050"}] }, 
+        { "id": "CTS-Harbor 2", "desks": [{"type": "desk-extension", "value": "2051"}] }, 
+        { "id": "Reception", "desks": [{"type": "desk-extension", "value": "2100"}] }, 
+        { "id": "Becca G.", "desks": [{"type": "desk-extension", "value": "2100"}] }, 
+        { "id": "Troy M.", "desks": [{"type": "desk-extension", "value": "2101"}]} 
+      ]
+    }
+  ],
   "_meta": {
     "generatedFrom": [
-      "users_5_3_2025 7_00_43 PM.csv"
+      "users_5_3_2025 7_00_43 PM.csv",
+      "App.jsx",
+      "ArtifactCode.jsx"
     ],
-    "generatedAt": "2025-05-03T21:16:04.451Z",
-    "version": 1,
-    "hash": "8e6f5054a1fd164e14398a4a4e70ebd50f3759419d0061e155cb5b98d3e41c42"
+    "generatedAt": "2025-05-03T19:45:00Z" 
   }
 }
