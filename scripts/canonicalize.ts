@@ -201,12 +201,12 @@ async function main() {
         log.info(`   - Matched & No Change: ${noChangeCount}`);
         log.info(`   - Skipped (No matching ID found): ${skippedCount}`);
 
-        // --- FINAL CHECK --- 
-        log.verbose(`[Final Check] Value of hasChanges BEFORE final if/else: ${hasChanges}`);
-        // --- END FINAL CHECK ---
+        // --- START GRANULAR FINAL LOGGING ---
+        log.verbose(`[Final Summary Check] Value of hasChanges just before final if/else: ${hasChanges}`); 
+        // --- END GRANULAR FINAL LOGGING ---
 
         if (hasChanges) {
-            log.verbose(`[canonicalize.ts] ENTERED if(hasChanges) block.`);
+            log.verbose(`[Final Summary Check] Entering HAS CHANGES branch.`);
             // NOW it's safe to assign the hash and update other meta fields
             updatedCanonicalExport._meta.hash = newHash;
             updatedCanonicalExport._meta.generatedFrom = [...new Set([...liveData._meta.generatedFrom, `updateFromCsv: ${path.basename(opts.updateFromCsv)}`])];
@@ -255,7 +255,7 @@ async function main() {
                 process.exit(1);
             }
         } else {
-            log.verbose(`[canonicalize.ts] ENTERED else block (no changes).`); 
+            log.verbose(`[Final Summary Check] Entering NO CHANGES branch.`); 
             // Log BEFORE printing the final no change message
             log.verbose("--> Preparing to log: ✅ No changes detected");
             log.info('✅ No changes detected after update process.');
