@@ -51,7 +51,9 @@ export function computeHash(contacts: ReadonlyArray<ContactEntity>, locations: R
   // Filter and sort ALL contacts deterministically by objectId (since all should have one now)
   // No longer need separate valid/invalid filtering based on objectId presence
   const sortedContacts = [...contacts].sort((a, b) => 
-    (a.objectId ?? 'manual-error').localeCompare(b.objectId ?? 'manual-error') // Use fallback for safety
+    // Use 'manual-error' as a fallback for missing objectId to ensure deterministic sorting.
+    // This value is chosen as a placeholder unlikely to conflict with valid objectId values.
+    (a.objectId ?? 'manual-error').localeCompare(b.objectId ?? 'manual-error')
   );
 
   // Filter and sort locations deterministically by ID
