@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useContactData } from '../contexts/ContactDataContext';
+import { useContactData, DataSourceState } from '../contexts/ContactDataContext';
 import ContactList from '../components/contact/ContactList';
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Phone, MapPin, Settings, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Phone, MapPin, Settings, RefreshCw, ToggleLeft, ToggleRight, AlertTriangle, Info } from 'lucide-react';
+import { ENV } from '../lib/contactDataService';
 
 const Directory: React.FC = () => {
   const { 
@@ -16,11 +17,55 @@ const Directory: React.FC = () => {
     useCanonicalData,
     toggleDataSource,
     refreshData,
-    dataStats
+    dataStats,
+    dataSourceState,
+    dataSource
   } = useContactData();
   
   // Local state for tabs
   const [activeTab, setActiveTab] = useState<string>('all');
+  
+  // Helper for data source state label
+  const getDataSourceLabel = () => {
+    switch(dataSourceState) {
+      case DataSourceState.CANONICAL_LOADED:
+        return { 
+          label: 'Canonical',
+          color: 'text-green-700 bg-green-100',
+          icon: <Info className="h-4 w-4 mr-1 text-green-600" />
+        };
+      case DataSourceState.CANONICAL_ERROR:
+        return { 
+          label: 'Canonical Error',
+          color: 'text-orange-700 bg-orange-100',
+          icon: <AlertTriangle className="h-4 w-4 mr-1 text-orange-600" />
+        };
+      case DataSourceState.LEGACY_LOADED:
+        return { 
+          label: 'Legacy',
+          color: 'text-blue-700 bg-blue-100',
+          icon: <Info className="h-4 w-4 mr-1 text-blue-600" />
+        };
+      case DataSourceState.LEGACY_ERROR:
+        return { 
+          label: 'Legacy Error',
+          color: 'text-red-700 bg-red-100',
+          icon: <AlertTriangle className="h-4 w-4 mr-1 text-red-600" />
+        };
+      case DataSourceState.FALLBACK_TO_LEGACY:
+        return { 
+          label: 'Fallback',
+          color: 'text-amber-700 bg-amber-100',
+          icon: <AlertTriangle className="h-4 w-4 mr-1 text-amber-600" />
+        };
+      default:
+        return { 
+          label: 'Loading',
+          color: 'text-gray-700 bg-gray-100',
+          icon: <RefreshCw className="h-4 w-4 mr-1 text-gray-600 animate-spin" />
+        };
+    }
+  };
   
   // Handle errors
   if (error && !contacts.length) {
@@ -28,6 +73,12 @@ const Directory: React.FC = () => {
       <div className="p-4 bg-red-50 border border-red-300 rounded-md">
         <h2 className="text-lg font-bold text-red-800">Error Loading Data</h2>
         <p className="text-red-700">{error.message}</p>
+        {ENV.isDevelopment && (
+          <div className="mt-2 p-2 bg-red-100 rounded text-xs font-mono">
+            <p>Data Source State: {dataSourceState}</p>
+            <p>Source: {dataSource}</p>
+          </div>
+        )}
         <button 
           onClick={() => refreshData()}
           className="mt-2 px-4 py-2 bg-red-100 text-red-800 rounded hover:bg-red-200"
@@ -69,6 +120,9 @@ const Directory: React.FC = () => {
     }
   };
   
+  // Source label
+  const sourceInfo = getDataSourceLabel();
+  
   return (
     <div className="directory-container">
       {/* Header with data source toggle */}
@@ -78,6 +132,20 @@ const Directory: React.FC = () => {
           <p className="text-sm text-gray-600">
             {dataStats.totalContacts} total contacts ({dataStats.externalContacts} employees, {dataStats.internalContacts} resources)
           </p>
+          
+          {/* Source info - shown only in development mode */}
+          {ENV.isDevelopment && (
+            <div className="mt-1 flex items-center text-xs">
+              <span className="text-gray-500 mr-2">Source:</span>
+              <span className={`px-2 py-0.5 rounded flex items-center ${sourceInfo.color}`}>
+                {sourceInfo.icon}
+                {sourceInfo.label}
+              </span>
+              {dataSource && (
+                <span className="ml-2 text-gray-500">{dataSource}</span>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="flex items-center space-x-4">
@@ -87,7 +155,7 @@ const Directory: React.FC = () => {
             className="flex items-center text-sm text-gray-600 hover:text-primary"
             aria-label="Refresh data"
           >
-            <RefreshCw className="h-4 w-4 mr-1" />
+            <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           

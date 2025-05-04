@@ -6,12 +6,12 @@ This project contains the Title Solutions Agency (TSA) phone list React web appl
 
 This repository houses two main parts:
 
-1.  **`tsa-phone-list` (React Application):** A web application (built with Vite, React, shadcn/ui, Tailwind) intended to display contact information and an interactive office map. It is currently undergoing a major refactoring effort (see [REFACTOR_PLAN.md](REFACTOR_PLAN.md)).
+1.  **`tsa-phone-list` (React Application):** A web application (built with Vite, React, shadcn/ui, Tailwind) that displays contact information and an interactive office map. The application has been refactored to use canonical data from a JSON file rather than hardcoded data.
 2.  **`phonelist-canonicalizer` (Node.js Utility Script):** A command-line tool (located in `lib/`, `scripts/`) designed as a **stop-gap measure** to help synchronize contact data between the canonical JSON data file used by this project and Office 365/Entra ID via CSV export/import.
 
 **Data Source of Truth:**
 
-*   **`src/data/canonicalContactData.json`**: This is the **LIVE, MUTABLE** source of truth for the application. It contains merged contact data derived historically from Office 365 and older application code (`App.jsx`, `ArtifactCode.jsx`). It should be modified directly or via the `--update-from-csv` feature (when implemented) of the canonicalizer script.
+*   **`src/data/canonicalContactData.json`**: This is the **LIVE, MUTABLE** source of truth for the application. It contains merged contact data derived historically from Office 365 and older application code (`App.jsx`, `ArtifactCode.jsx`). It should be modified directly or via the `--update-from-csv` feature of the canonicalizer script.
 *   **`src/data/reference_example.json`**: This is a **READ-ONLY, STATIC** copy representing the initial, correctly merged data state. It serves as a reference and was used to initialize `canonicalContactData.json`.
 
 ---
@@ -27,12 +27,19 @@ Displays contact directory and office map.
 *   **Package Manager:** PNPM
 *   **UI Library:** shadcn/ui (Radix UI + Tailwind CSS)
 *   **Styling:** Tailwind CSS
+*   **Type Checking:** TypeScript
+*   **Validation:** Zod
 *   **Deployment:** GitHub Pages (`gh-pages`)
 
 ### Status
 
-*   **Refactoring Required:** The application requires significant refactoring as outlined in [REFACTOR_PLAN.md](REFACTOR_PLAN.md).
-*   **Data Source:** Currently uses deprecated hardcoded data in `App.jsx` and `ArtifactCode.jsx`. Phase 1 of the refactor involves updating components to read from `src/data/canonicalContactData.json`.
+*   **Refactoring Complete:** The application has been refactored to use canonical data as outlined in [REFACTOR_PLAN.md](REFACTOR_PLAN.md).
+*   **Key Components:**
+    * **Data Access Layer:** `lib/contactDataService.ts` with Zod schema validation
+    * **State Management:** `contexts/ContactDataContext.tsx` with feature toggling
+    * **UI Components:** `components/contact/ContactCard.tsx` and `components/contact/ContactList.tsx`
+    * **Pages:** `pages/Directory.tsx` with filtering capabilities
+*   **Feature Toggle:** The app includes a toggle to switch between canonical data and legacy data for testing purposes.
 *   **See:** [PROJECT_STATE.md](PROJECT_STATE.md) for detailed progress.
 
 ### Setup & Running
@@ -56,7 +63,7 @@ This CLI script (**located in `lib/` and `scripts/`**) provides helper functions
 
 1.  **Validate:** Read and validate the structure and integrity of `src/data/canonicalContactData.json` against the defined schema (`lib/schema.ts`).
 2.  **Export:** Generate an O365-compatible CSV file from the data in `src/data/canonicalContactData.json`, suitable for manual import/update into O365/Entra.
-3.  **(Future)** Selectively update `src/data/canonicalContactData.json` with specific fields from a fresh O365 CSV export (e.g., mobile phone numbers, titles) while preserving existing merged data (desk extensions, locations).
+3.  **Update:** Selectively update `src/data/canonicalContactData.json` with specific fields from a fresh O365 CSV export (e.g., mobile phone numbers, titles) while preserving existing merged data (desk extensions, locations).
 
 **Note:** This script *does not* generate the merged `canonicalContactData.json` from scratch; it operates on the existing live file which was initialized from `reference_example.json`.
 
@@ -133,13 +140,41 @@ pnpm test scripts/tests/canonicalize.integration.test.ts
 pnpm test test/update.test.ts # Tests for the update logic
 ```
 All tests for implemented features (validation, export, update) are currently passing.
-**Note:** 2 tests related to the refactored update logic are currently failing and require investigation.
 
 ---
 
+## React App Refactoring
+
+The application has been completely refactored to use the canonical data source instead of hardcoded data. Key aspects of the refactoring include:
+
+### 1. Data Access Layer
+- `lib/contactDataService.ts` provides a type-safe interface to the canonical data
+- Uses Zod schemas for validation
+- Implements caching mechanism for performance
+- Includes robust error handling
+- Provides environment-aware data loading with multiple fallback paths
+
+### 2. Context Provider
+- `contexts/ContactDataContext.tsx` manages state and provides data to components
+- Implements feature toggle for switching between canonical and legacy data
+- Handles data loading, error states, and fallbacks
+- Provides filtering and search functionality
+
+### 3. UI Components
+- `components/contact/ContactCard.tsx` - Displays individual contact information
+- `components/contact/ContactList.tsx` - Renders searchable, filterable list of contacts
+- `pages/Directory.tsx` - Main page with location-based filtering
+
+### 4. Features
+- Responsive layout with grid/list toggle
+- Search functionality across names and contact information
+- Filtering by location and contact type
+- Error handling with clear user feedback
+- Feature toggle for testing both implementations
+
 ## Contributing
 
-Please refer to the project state (`PROJECT_STATE.md`) and refactor plan (`REFACTOR_PLAN.md`) before making significant changes.
+Please refer to the project state (`PROJECT_STATE.md`) and refactor plan (`REFACTOR_PLAN.md`) for current status and next steps.
 
 ## License
 
