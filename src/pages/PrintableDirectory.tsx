@@ -1,26 +1,126 @@
-import "./App.css";
-import { useState } from "react";
-import ArtifactCode from "./ArtifactCode";
-import { 
-  MapPin, 
-  Phone, 
-  Mail, 
-  User, 
-  Building, 
-  Printer,
+import React from 'react';
+import { useContactData } from '../contexts/ContactDataContext';
+import {
+  Phone,
+  MapPin,
+  Mail,
+  User,
+  Building,
   Volume2
 } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/ui/tabs";
+import './PrintableDirectory.css'; // Will create this for print-specific styles
 
-// Import both new components
-import Directory from "./pages/Directory";
-import PrintableDirectory from "./pages/PrintableDirectory";
-import { ContactDataProvider } from "./contexts/ContactDataContext";
+// Define types for our filtered contacts
+interface ContactExtension {
+  name: string;
+  extension: string;
+}
 
-// Legacy Contact Directory Component (will be fully removed when refactor complete)
-const LegacyContactDirectory = () => {
+interface ContactMobile {
+  name: string;
+  mobile: string;
+}
+
+const PrintableDirectory: React.FC = () => {
+  const {
+    contacts,
+    loading,
+    error,
+  } = useContactData();
+
+  // Early return for loading state
+  if (loading) {
+    return <div className="text-center p-4">Loading contact information...</div>;
+  }
+
+  // Error state
+  if (error && !contacts.length) {
+    return (
+      <div className="text-center p-4 text-red-600">
+        Error loading contact data: {error.message}
+      </div>
+    );
+  }
+
+  // Filter contacts for different sections
+  const getMichiganExtensions = (): ContactExtension[] => {
+    return contacts
+      .filter(contact => 
+        contact.roles.some(role => role.office === 'PLY') && 
+        contact.contactPoints.some(cp => cp.type === 'desk-extension')
+      )
+      .map(contact => ({
+        name: contact.displayName.split(' ')[0], // Just first name for extensions
+        extension: contact.contactPoints.find(cp => cp.type === 'desk-extension')?.value || ''
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  const getFloridaExtensions = (): ContactExtension[] => {
+    return contacts
+      .filter(contact => 
+        contact.roles.some(role => role.office === 'FTL') && 
+        contact.contactPoints.some(cp => cp.type === 'desk-extension')
+      )
+      .map(contact => ({
+        name: contact.displayName.split(' ')[0], // Just first name for extensions
+        extension: contact.contactPoints.find(cp => cp.type === 'desk-extension')?.value || ''
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  const getCellPhones = (): ContactMobile[] => {
+    return contacts
+      .filter(contact => 
+        contact.contactPoints.some(cp => cp.type === 'mobile')
+      )
+      .map(contact => ({
+        name: contact.displayName, // Full name for cell phones
+        mobile: contact.contactPoints.find(cp => cp.type === 'mobile')?.value || ''
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  };
+
+  // Type-specific grouping functions instead of a generic one
+  const groupMichiganExtensions = (items: ContactExtension[]): [ContactExtension, ContactExtension?][] => {
+    const pairs: [ContactExtension, ContactExtension?][] = [];
+    for (let i = 0; i < items.length; i += 2) {
+      pairs.push([
+        items[i],
+        items[i + 1] // Might be undefined
+      ]);
+    }
+    return pairs;
+  };
+
+  const groupFloridaExtensions = (items: ContactExtension[]): [ContactExtension, ContactExtension?][] => {
+    const pairs: [ContactExtension, ContactExtension?][] = [];
+    for (let i = 0; i < items.length; i += 2) {
+      pairs.push([
+        items[i],
+        items[i + 1] // Might be undefined
+      ]);
+    }
+    return pairs;
+  };
+
+  const groupCellPhones = (items: ContactMobile[]): [ContactMobile, ContactMobile?][] => {
+    const pairs: [ContactMobile, ContactMobile?][] = [];
+    for (let i = 0; i < items.length; i += 2) {
+      pairs.push([
+        items[i],
+        items[i + 1] // Might be undefined
+      ]);
+    }
+    return pairs;
+  };
+
+  const michiganPairs = groupMichiganExtensions(getMichiganExtensions());
+  const floridaPairs = groupFloridaExtensions(getFloridaExtensions());
+  const cellPairs = groupCellPhones(getCellPhones());
+
   return (
-    <div className="app-container">
+    <div className="app-container printable-directory">
       {/* Compact Header */}
       <div className="app-header">
         <h2 className="text-lg font-bold">Title Solutions Agency, LLC</h2>
@@ -93,7 +193,7 @@ const LegacyContactDirectory = () => {
       {/* Locations Section */}
       <div className="directory-section">
         <div className="grid-container pt-4">
-          {/* Michigan Office Card - Final Polish */}
+          {/* Michigan Office Card */}
           <div className="location-card relative p-4 border rounded shadow-sm mb-4 hover:shadow-md transition-shadow pb-8">
             {/* Clickable Address Block */}
             <a href="https://www.google.com/maps/search/?api=1&query=41486+Wilcox+Rd,+Suite+2,+Plymouth,+MI+48170" target="_blank" rel="noopener noreferrer" className="block hover:text-primary transition-colors mb-2">
@@ -115,7 +215,7 @@ const LegacyContactDirectory = () => {
             </p>
           </div>
 
-          {/* Florida Office Card - Final Polish */}
+          {/* Florida Office Card */}
           <div className="location-card relative p-4 border rounded shadow-sm mb-4 hover:shadow-md transition-shadow pb-8">
             {/* Clickable Address Block */}
             <a href="https://www.google.com/maps/search/?api=1&query=333+Las+Olas+Way+CU315,+Ft.+Lauderdale,+FL+33301" target="_blank" rel="noopener noreferrer" className="block hover:text-primary transition-colors mb-2">
@@ -130,14 +230,14 @@ const LegacyContactDirectory = () => {
               <span className="ml-4">
                 Fax: 954-246-4670
               </span>
-               {/* Location Label (Absolutely Positioned) */}
+              {/* Location Label (Absolutely Positioned) */}
               <span className="absolute bottom-3 right-4 text-xs text-gray-500">
                 Florida Office
               </span>
             </p>
           </div>
 
-          {/* Downtown Office Card - Final Polish */}
+          {/* Downtown Office Card */}
           <div className="location-card relative p-4 border rounded shadow-sm mb-4 hover:shadow-md transition-shadow pb-8">
             {/* Clickable Address Block */}
             <a href="https://www.google.com/maps/search/?api=1&query=601+S+Harbour+Island+Blvd,+Ste+133,+Tampa,+FL+33602" target="_blank" rel="noopener noreferrer" className="block hover:text-primary transition-colors mb-2">
@@ -150,14 +250,14 @@ const LegacyContactDirectory = () => {
               <span className="ml-4 text-gray-400 italic">
                 Fax: N/A
               </span>
-               {/* Location Label (Absolutely Positioned) */}
+              {/* Location Label (Absolutely Positioned) */}
               <span className="absolute bottom-3 right-4 text-xs text-gray-500">
                 Downtown – Coastal Title Solutions
               </span>
             </p>
           </div>
 
-          {/* REO Office Card - Final Polish */}
+          {/* REO Office Card */}
           <div className="location-card relative p-4 border rounded shadow-sm mb-4 hover:shadow-md transition-shadow pb-8">
             {/* Clickable Address Block */}
             <a href="https://www.google.com/maps/search/?api=1&query=550+N+Reo+Street,+Ste+300,+Tampa,+FL+33609" target="_blank" rel="noopener noreferrer" className="block hover:text-primary transition-colors mb-2">
@@ -170,7 +270,7 @@ const LegacyContactDirectory = () => {
               <span className="ml-4 text-gray-400 italic">
                 Fax: N/A
               </span>
-               {/* Location Label (Absolutely Positioned) */}
+              {/* Location Label (Absolutely Positioned) */}
               <span className="absolute bottom-3 right-4 text-xs text-gray-500">
                 REO – Coastal Title Solutions
               </span>
@@ -194,40 +294,24 @@ const LegacyContactDirectory = () => {
           </h4>
           <div className="px-2">
             <div className="directory-grid grid grid-cols-4 gap-x-4 gap-y-1">
-              <div className="text-sm text-gray-600">Andrew</div>
-              <div className="text-sm font-semibold text-primary">1006</div>
-              <div className="text-sm text-gray-600">Becca</div>
-              <div className="text-sm font-semibold text-primary">2100</div>
-              
-              <div className="text-sm text-gray-600">Brian</div>
-              <div className="text-sm font-semibold text-primary">1014</div>
-              <div className="text-sm text-gray-600">Georgia</div>
-              <div className="text-sm font-semibold text-primary">1015</div>
-              
-              <div className="text-sm text-gray-600">Grace</div>
-              <div className="text-sm font-semibold text-primary">1003</div>
-              <div className="text-sm text-gray-600">Jessie</div>
-              <div className="text-sm font-semibold text-primary">1010</div>
-              
-              <div className="text-sm text-gray-600">Kathy</div>
-              <div className="text-sm font-semibold text-primary">1007</div>
-              <div className="text-sm text-gray-600">Katie</div>
-              <div className="text-sm font-semibold text-primary">1012</div>
-              
-              <div className="text-sm text-gray-600">Pam</div>
-              <div className="text-sm font-semibold text-primary">1016</div>
-              <div className="text-sm text-gray-600">Robin</div>
-              <div className="text-sm font-semibold text-primary">1013</div>
-              
-              <div className="text-sm text-gray-600">Sarah</div>
-              <div className="text-sm font-semibold text-primary">1000</div>
-              <div className="text-sm text-gray-600">Sydney</div>
-              <div className="text-sm font-semibold text-primary">1008</div>
-              
-              <div className="text-sm text-gray-600">Tina</div>
-              <div className="text-sm font-semibold text-primary">1027</div>
-              <div className="text-sm text-gray-600">Troy</div>
-              <div className="text-sm font-semibold text-primary">2101</div>
+              {michiganPairs.map((pair, index) => (
+                <React.Fragment key={`mi-${index}`}>
+                  <div className="text-sm text-gray-600">{pair[0].name}</div>
+                  <div className="text-sm font-semibold text-primary">{pair[0].extension}</div>
+                  {pair[1] ? (
+                    <>
+                      <div className="text-sm text-gray-600">{pair[1].name}</div>
+                      <div className="text-sm font-semibold text-primary">{pair[1].extension}</div>
+                    </>
+                  ) : (
+                    // Empty placeholders for odd-numbered lists
+                    <>
+                      <div className="text-sm text-gray-600"></div>
+                      <div className="text-sm font-semibold text-primary"></div>
+                    </>
+                  )}
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </div>
@@ -240,15 +324,24 @@ const LegacyContactDirectory = () => {
           </h4>
           <div className="px-2">
             <div className="directory-grid grid grid-cols-4 gap-x-4 gap-y-1">
-              <div className="text-sm text-gray-600">Andrea</div>
-              <div className="text-sm font-semibold text-primary">2026</div>
-              <div className="text-sm text-gray-600">Brian</div>
-              <div className="text-sm font-semibold text-primary">2024</div>
-              
-              <div className="text-sm text-gray-600">Sydney</div>
-              <div className="text-sm font-semibold text-primary">2020</div>
-              <div className="text-sm text-gray-600">Tina</div>
-              <div className="text-sm font-semibold text-primary">2027</div>
+              {floridaPairs.map((pair, index) => (
+                <React.Fragment key={`fl-${index}`}>
+                  <div className="text-sm text-gray-600">{pair[0].name}</div>
+                  <div className="text-sm font-semibold text-primary">{pair[0].extension}</div>
+                  {pair[1] ? (
+                    <>
+                      <div className="text-sm text-gray-600">{pair[1].name}</div>
+                      <div className="text-sm font-semibold text-primary">{pair[1].extension}</div>
+                    </>
+                  ) : (
+                    // Empty placeholders for odd-numbered lists
+                    <>
+                      <div className="text-sm text-gray-600"></div>
+                      <div className="text-sm font-semibold text-primary"></div>
+                    </>
+                  )}
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </div>
@@ -263,6 +356,7 @@ const LegacyContactDirectory = () => {
             <div className="directory-grid grid grid-cols-4 gap-x-4 gap-y-1">
               <div className="text-sm text-gray-600">Will</div>
               <div className="text-sm font-semibold text-primary">248-619-4535</div>
+              {/* Additional IT staff would go here */}
             </div>
           </div>
         </div>
@@ -275,20 +369,28 @@ const LegacyContactDirectory = () => {
           </h4>
           <div className="px-2">
             <div className="directory-grid grid grid-cols-4 gap-x-4 gap-y-1">
-              <div className="text-sm text-gray-600">Brian Tiller</div>
-              <div className="text-sm font-semibold text-primary">248-563-1443</div>
-              <div className="text-sm text-gray-600">Colin Fabian</div>
-              <div className="text-sm font-semibold text-primary">248-497-6052</div>
-              
-              <div className="text-sm text-gray-600">Curt White</div>
-              <div className="text-sm font-semibold text-primary">734-717-5700</div>
-              <div className="text-sm text-gray-600">Kyle Smith</div>
-              <div className="text-sm font-semibold text-primary">586-675-3300</div>
-              
-              <div className="text-sm text-gray-600">Peter Joelson</div>
-              <div className="text-sm font-semibold text-primary">248-961-4201</div>
-              <div className="text-sm text-gray-600">Tina Tiller</div>
-              <div className="text-sm font-semibold text-primary">248-563-1266</div>
+              {cellPairs.map((pair, index) => (
+                <React.Fragment key={`cell-${index}`}>
+                  <div className="text-sm text-gray-600">{pair[0].name}</div>
+                  <div className="text-sm font-semibold text-primary">
+                    {pair[0].mobile.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}
+                  </div>
+                  {pair[1] ? (
+                    <>
+                      <div className="text-sm text-gray-600">{pair[1].name}</div>
+                      <div className="text-sm font-semibold text-primary">
+                        {pair[1].mobile.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}
+                      </div>
+                    </>
+                  ) : (
+                    // Empty placeholders for odd-numbered lists
+                    <>
+                      <div className="text-sm text-gray-600"></div>
+                      <div className="text-sm font-semibold text-primary"></div>
+                    </>
+                  )}
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </div>
@@ -311,7 +413,7 @@ const LegacyContactDirectory = () => {
               <div className="text-sm text-gray-600">Bankruptcy</div>
               <div className="text-sm font-semibold text-primary">866-222-8029</div>
               
-              <div className="text-sm text-gray-600">Peter's Office</div>
+              <div className="text-sm text-gray-600">Peter&apos;s Office</div>
               <div className="text-sm font-semibold text-primary">248-626-9966</div>
               <div className="text-sm text-gray-600">Qualia</div>
               <div className="text-sm font-semibold text-primary">855-677-7533</div>
@@ -323,103 +425,4 @@ const LegacyContactDirectory = () => {
   );
 };
 
-function App() {
-  const [activeTab, setActiveTab] = useState("contact");
-  
-  // Feature flag for directory implementation, now with three options
-  // "legacy" = Legacy hardcoded view
-  // "modern" = New components with modern UI (Directory.tsx)
-  // "printable" = New printable phone list (PrintableDirectory.tsx)
-  const [directoryView, setDirectoryView] = useState("printable"); // Default to printable view
-  
-  return (
-    <>
-      <Tabs defaultValue="contact" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 bg-primary rounded-none border-none">
-          <TabsTrigger 
-            value="contact" 
-            className={`text-sm font-medium ${activeTab === "contact" ? 'bg-background text-primary' : 'text-primary-foreground hover:bg-primary-foreground/10'}`}
-          >
-            <Phone className="icon-md" /> 
-            Contact Directory
-          </TabsTrigger>
-          <TabsTrigger 
-            value="map"
-            className={`text-sm font-medium ${activeTab === "map" ? 'bg-background text-primary' : 'text-primary-foreground hover:bg-primary-foreground/10'}`}
-          >
-            <MapPin className="icon-md" />
-            Office Map
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="contact" className="mt-0 p-0">
-          {/* Feature toggle for directory implementation with three options */}
-          {directoryView === "legacy" && (
-            <LegacyContactDirectory />
-          )}
-          
-          {directoryView === "modern" && (
-            <ContactDataProvider initialUseCanonical={true}>
-              <Directory />
-            </ContactDataProvider>
-          )}
-          
-          {directoryView === "printable" && (
-            <ContactDataProvider initialUseCanonical={true}>
-              <PrintableDirectory />
-              <button 
-                className="print-button"
-                onClick={() => window.print()}
-              >
-                <Printer className="h-4 w-4 mr-1" />
-                Print Directory
-              </button>
-            </ContactDataProvider>
-          )}
-        </TabsContent>
-        
-        <TabsContent value="map" className="mt-0 p-0">
-          <ArtifactCode />
-        </TabsContent>
-      </Tabs>
-      
-      {/* Development-only toggle buttons for directory implementation */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 z-50 flex space-x-2">
-          <button 
-            onClick={() => setDirectoryView("legacy")} 
-            className={`text-xs px-3 py-1 rounded-full shadow ${
-              directoryView === "legacy" 
-                ? "bg-gray-800 text-white" 
-                : "bg-gray-200 text-gray-800"
-            }`}
-          >
-            Legacy View
-          </button>
-          <button 
-            onClick={() => setDirectoryView("modern")} 
-            className={`text-xs px-3 py-1 rounded-full shadow ${
-              directoryView === "modern" 
-                ? "bg-gray-800 text-white" 
-                : "bg-gray-200 text-gray-800"
-            }`}
-          >
-            Modern View
-          </button>
-          <button 
-            onClick={() => setDirectoryView("printable")} 
-            className={`text-xs px-3 py-1 rounded-full shadow ${
-              directoryView === "printable" 
-                ? "bg-gray-800 text-white" 
-                : "bg-gray-200 text-gray-800"
-            }`}
-          >
-            Printable View
-          </button>
-        </div>
-      )}
-    </>
-  );
-}
-
-export default App;
+export default PrintableDirectory; 
