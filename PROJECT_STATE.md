@@ -1,10 +1,10 @@
 # Project State
 
-**Last Updated:** 2025-05-03T22:15:00Z # Approximate current time
+**Last Updated:** YYYY-MM-DDTHH:mm:ssZ # Replace with current timestamp
 
 ## Current Focus
 
-- **Canonicalizer Script:** Script is functionally complete for validation and O365 CSV export. Next steps are documentation review and deciding on implementation of the `--update-from-csv` feature.
+- **Canonicalizer Script:** Script is functionally complete for validation, O365 CSV export, and selective update via `--update-from-csv`. Focus is on documentation and considering further refinements (schema, decomposition).
 - **React App Refactor:** Pending. Next step is Phase 1 (Schema & Foundation) using the validated `src/data/canonicalContactData.json` as the source of truth.
 
 ## Overall Progress
@@ -15,9 +15,9 @@
     - Phase 2 (Ingest & Transform): ✅ Completed (CSV->JSON logic retained, but not default path)
     - Phase 3 (Validation, Diff, Hash): ✅ Completed
     - Phase 4 (Output Generation): ✅ Completed (JSON write via update, CSV export)
-    - Phase 5 (CLI): ✅ Completed (Validation default, Export flag, Update flag [placeholder])
-    - Phase 6 (Testing): ✅ Unit & Integration tests implemented and passing for validation/export.
-    - Phase 7 (Refinement): ✅ Added --verbose flag, resolved build/runtime issues.
+    - Phase 5 (CLI): ✅ Completed (Validation default, Export flag, Update flag implemented)
+    - Phase 6 (Testing): ✅ Unit & Integration tests implemented and passing for validation, export, and update.
+    - Phase 7 (Refinement): ✅ Added --verbose flag, resolved build/runtime issues, established robust contracts.
 - **React App Refactor:**
     - Phase 0 (Analysis, Planning, Data Extraction): Completed
     - Phase 1 (Schema & Foundation): Pending
@@ -28,15 +28,16 @@
     - **Established `src/data/canonicalContactData.json` as the live, mutable source of truth, initialized from the complete merged data (`reference_example.json`).**
     - **Developed `phonelist-canonicalizer` script:**
         - Implemented core logic for validation, hashing, diffing, CSV export.
+        - Implemented selective update logic (`--update-from-csv`) anchored by `objectId`, including nested field handling and robust change detection.
         - Implemented CLI interface (`scripts/canonicalize.ts`).
-        - Added basic unit and integration tests (`vitest`).
-        - Added `--verbose` flag.
-        - Resolved build/runtime issues (ESM, types, case sensitivity).
-    - **Clarified script purpose:** Confirmed its role as a utility for validating the live JSON and exporting to O365 CSV format (stop-gap measure), *not* for generating the merged data from scratch.
+        - Added comprehensive unit and integration tests (`vitest`) covering all modes.
+        - Added `--verbose` flag and structured logging (`lib/logger.ts`).
+        - Resolved build/runtime issues and data consistency problems.
+    - **Documented key architectural decisions and failure modes** ([docs/CHANGE-DETECTION-FAILURES.md](mdc:docs/CHANGE-DETECTION-FAILURES.md), Cursor Rules).
+    - **Clarified script purpose:** Confirmed its role as a utility for validating the live JSON, exporting to O365 CSV format, and selectively updating the live JSON from a new CSV.
 
 - **Milestones Pending:**
-    - **Canonicalizer Script:** Implement selective update logic for `--update-from-csv` flag (Optional/Decision Point).
-    - **Canonicalizer Script:** Add tests specifically for the update logic (if implemented).
+    - **(Optional) Canonicalizer Script:** Consider further schema hardening and code decomposition.
     - **React App:** Begin Phase 1 - Implement Core Schemas, Data Source loading, Service Layer Stubs based on `src/data/canonicalContactData.json`.
     - **Delete `App.jsx` and `ArtifactCode.jsx` after React app migration.**
     - **Final Documentation Review & Cleanup.**
@@ -48,7 +49,10 @@
 - **Refactored `scripts/canonicalize.ts`** to align with new workflow (validate default, export flag, update flag placeholder).
 - **Updated `lib/schema.ts`** Zod definitions to match the merged data structure.
 - **Updated and fixed all unit and integration tests** to align with the refactored schema and script logic.
-- Confirmed all tests pass.
+- **Implemented `--update-from-csv`:** Developed core logic in `lib/updateFromJson.ts`, integrated into `scripts/canonicalize.ts`, established `objectId` as primary key, implemented robust hashing/diffing, handled nested fields, added comprehensive tests (`test/update.test.ts`), fixed numerous parsing/comparison bugs.
+- **Refactored Logging:** Implemented structured logger (`lib/logger.ts`).
+- **Created Documentation:** Added `docs/CHANGE-DETECTION-FAILURES.md` and Cursor rules.
+- Confirmed all tests pass (including update logic).
 
 ## Filtered UPNs (Excluded during canonical extraction)
 
@@ -72,10 +76,11 @@
 
 ## Next Steps
 
-1.  **(Documentation)** Final review of `README.md`, `PROJECT_STATE.md`, `CODEBASE_AUDIT.md`, `REFACTOR_PLAN.md`, and code comments for accuracy and clarity based on the final script purpose.
-2.  **(Decision)** Decide whether to implement the `--update-from-csv` logic now or defer it.
-3.  **(If Deferring Update)** Proceed with **React App Refactor Phase 1**, using the current `canonicalContactData.json`.
-4.  **(If Implementing Update)** Implement `lib/updateFromJson.ts` and add corresponding tests.
+1.  **(Documentation)** Final review of `README.md`, `PROJECT_STATE.md`, `CODEBASE_AUDIT.md`, `REFACTOR_PLAN.md`, and code comments for accuracy and clarity.
+2.  **(Optional Refinement)** Consider further schema hardening or code decomposition for the canonicalizer script.
+3.  **(React)** Proceed with **React App Refactor Phase 1**, using the current `canonicalContactData.json`.
+4.  **(If Deferring Update)** Proceed with **React App Refactor Phase 1**, using the current `canonicalContactData.json`.
+5.  **(If Implementing Update)** Implement `lib/updateFromJson.ts` and add corresponding tests.
 
 ## Blockers/Issues
 
@@ -100,7 +105,7 @@
 
 - **Treat `src/data/canonicalContactData.json` as the live source of truth (merged data).**
 - The `phonelist-canonicalizer` script validates this file and exports it to O365 CSV format. It does *not* generate the merged data from scratch.
-- The `--update-from-csv` feature is not yet fully implemented.
+- The `--update-from-csv` feature is now fully implemented and tested.
 - Refer to this file (`PROJECT_STATE.md`) for current state and immediate goals.
 - Update `Last Updated`, `Recent Activity`, and `Next Steps` after completing tasks.
 
@@ -119,4 +124,4 @@
 *   **Schema Alignment:** Updated the Zod schema (`lib/schema.ts`) to accurately reflect the structure of the *merged* data present in the live canonical file.
 *   **Testing:** Implemented comprehensive unit tests for library functions and integration tests for the CLI script's validation and export modes using `vitest` and `execa`. All implemented tests are passing.
 
-**Current State:** The `phonelist-canonicalizer` script is functionally complete and tested for its primary role as a validator and O365 CSV exporter based on the established live canonical JSON data. The selective update feature remains unimplemented. 
+**Current State:** The `phonelist-canonicalizer` script is functionally complete and tested for its primary roles as a validator, O365 CSV exporter, and selective updater based on the established live canonical JSON data and `objectId` matching. 
