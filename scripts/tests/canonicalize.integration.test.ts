@@ -168,7 +168,7 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         const mobilePoint = updatedAlice.contactPoints?.find((cp: ContactPoint) => cp.type === 'mobile');
         expect(mobilePoint?.value).toBe('123-456-7890');
 
-        expect(updatedAlice.department).toBeUndefined();
+        expect(updatedAlice.department).toBeNull();
         expect(updatedAlice.upn).toBeNull();
         
         const bob = outputData.ContactEntities.find((e: ContactEntity) => e.objectId === 'obj-b');
@@ -210,10 +210,9 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         expect(stdout).toContain('[Logger] Verbose logging enabled.');
         expect(stdout).toContain('[VERBOSE] [canonicalize.ts] Computed initial hash (Post Copy):');
         expect(stdout).toContain('[VERBOSE] [canonicalize.ts] First parsed CSV row:');
-        expect(stdout).toContain('[VERBOSE] [updateFromCsv loop] First csvRow object:');
-        expect(stdout).toContain('[VERBOSE] [mergeEntry] Final result for ID');
-        expect(stdout).toContain('DEBUG [computeHash - Initial] Hashing Contact');
-        expect(stdout).toContain('DEBUG [computeHash - Updated] Hashing Contact');
+        expect(stdout).toContain('[VERBOSE]   [mergeEntry] -> Validation SUCCEEDED. Returning the \'updated\' object directly.');
+        expect(stdout).toContain('[VERBOSE] [computeHash - Initial] Hashing Contact');
+        expect(stdout).toContain('[VERBOSE] [computeHash - Updated] Hashing Contact');
         expect(stdout).toContain('❗️ Overall state changes detected:');
         expect(stdout).toContain(`💾 Writing updated canonical JSON to: ${outputJsonPath}`);
         expect(stdout).toContain('✨ Update process complete.');

@@ -206,9 +206,12 @@ async function main() {
         // --- END FINAL CHECK ---
 
         if (hasChanges) {
-            log.verbose(`[canonicalize.ts] ENTERED if(hasChanges) block.`); 
-            // ... (diffResult logging) ...
-            // Log BEFORE printing the final change message
+            log.verbose(`[canonicalize.ts] ENTERED if(hasChanges) block.`);
+            // NOW it's safe to assign the hash and update other meta fields
+            updatedCanonicalExport._meta.hash = newHash;
+            updatedCanonicalExport._meta.generatedFrom = [...new Set([...liveData._meta.generatedFrom, `updateFromCsv: ${path.basename(opts.updateFromCsv)}`])];
+            updatedCanonicalExport._meta.generatedAt = new Date().toISOString();
+
             log.verbose("--> Preparing to log: ❗️ Overall state changes detected:");
             log.info(`❗️ Overall state changes detected:`);
             log.info(`   - Entities Added (Overall): ${diffResult.added.length}`);
