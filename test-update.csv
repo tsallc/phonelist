@@ -1,8 +1,0 @@
-UserPrincipalName,DisplayName,Department,MobilePhone,Title,ObjectId,NonsenseField,Office
-ADonayre@titlesolutionsllc.com,Andrea Donayre,Operations,954-555-1212,Office Manager,80e43ee8-9b62-49b7-991d-b8365a0ed5a6,,cts:ftl
-aignagni@titlesolutionsllc.com,Andrew Ignagni,Escrow,,Escrow Officer,3f6fd6c1-a95d-4dea-89f3-08901b2a513b,,tsa:ply
-btiller@titlesolutionsllc.com,Brian Tiller,,248-555-9999,,a200fce3-d32a-4c06-861a-780850009fe1,,tsa:ply
-nonexistent@example.com,Non Existent,Sales,111-222-3333,Sales Rep,new-object-id-1,ShouldBeIgnored,
-kcase@titlesolutionsllc.com,Kathy Case,Processing,7346643610,Processor,5f322c80-1e10-432c-b186-bb6a8548fd41,,tsa:ply
-unknown-upn@example.com,Unknown Person,IT,,,new-object-id-2,,
-red-herring@example.com,Red Herring,Test,,,object-id-does-not-exist,AnotherIgnore, 

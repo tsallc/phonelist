@@ -9,11 +9,23 @@ import { computeHash } from '../lib/hash.js'; // Assuming compiled JS
 
 // --- Test Configuration ---
 const canonicalJsonPath = path.resolve('src/data/canonicalContactData.json');
-const testCsvPath = path.resolve('test-update.csv'); // Use the CSV at the root for now
+// Define path for the main test CSV, will be created dynamically
+const testCsvPath = path.resolve('test-update.csv'); 
 const testReorderCsvPath = path.resolve('test-reorder.csv'); // New CSV for reorder test
 const expectedUpdates = 4; // Based on test-update.csv content
 // const expectedSkips = 3; // Cannot reliably calculate skips from current changes array
 const expectedNoChanges = 35; // Should be total entities - updated entities = 39 - 4 = 35
+
+// Define the content for the main test CSV
+const mainTestCsvContent = `UserPrincipalName,DisplayName,Department,MobilePhone,Title,ObjectId,NonsenseField,Office\r
+ADonayre@titlesolutionsllc.com,Andrea Donayre,Operations,954-555-1212,Office Manager,80e43ee8-9b62-49b7-991d-b8365a0ed5a6,,cts:ftl\r
+aignagni@titlesolutionsllc.com,Andrew Ignagni,Escrow,,Escrow Officer,3f6fd6c1-a95d-4dea-89f3-08901b2a513b,,tsa:ply\r
+btiller@titlesolutionsllc.com,Brian Tiller,,248-555-9999,,a200fce3-d32a-4c06-861a-780850009fe1,,tsa:ply\r
+nonexistent@example.com,Non Existent,Sales,111-222-3333,Sales Rep,new-object-id-1,ShouldBeIgnored,\r
+kcase@titlesolutionsllc.com,Kathy Case,Processing,7346643610,Processor,5f322c80-1e10-432c-b186-bb6a8548fd41,,tsa:ply\r
+unknown-upn@example.com,Unknown Person,IT,,,new-object-id-2,,\r
+red-herring@example.com,Red Herring,Test,,,object-id-does-not-exist,AnotherIgnore, \r
+`;
 
 // --- Test Setup & Data Loading (using beforeAll) ---
 let liveData: CanonicalExport;
@@ -28,8 +40,10 @@ beforeAll(async () => {
     canonicalEntities = liveData.ContactEntities; // Use the migrated data with 'brand'
     originalHash = liveData._meta?.hash ?? computeHash(liveData.ContactEntities, liveData.Locations); // Get hash from file or compute
     
-    // Parse CSVs
-    csvRows = await parseCsv(testCsvPath);
+    // Write and parse test CSVs
+    await fs.writeFile(testCsvPath, mainTestCsvContent); // Write the main test CSV
+    csvRows = await parseCsv(testCsvPath); // Parse the newly written main test CSV
+    
     const reorderCsvContent = `UserPrincipalName,DisplayName,ObjectId,MobilePhone,Office\nADonayre@titlesolutionsllc.com,Andrea D Reordered,80e43ee8-9b62-49b7-991d-b8365a0ed5a6,9545344838,cts:ftl`; 
     await fs.writeFile(testReorderCsvPath, reorderCsvContent);
     csvRowsReorder = await parseCsv(testReorderCsvPath);
