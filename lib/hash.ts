@@ -32,9 +32,9 @@ function compareRoles(a: Role, b: Role): number {
     if (brandA < brandB) return -1;
     if (brandA > brandB) return 1;
     
-    // Compare by title (handle nulls)
-    const titleA = a.title ?? ''; 
-    const titleB = b.title ?? ''; 
+    // Compare by title (handle nulls and undefined explicitly)
+    const titleA = a.title === undefined ? '__MISSING__' : (a.title ?? '__NULL__'); 
+    const titleB = b.title === undefined ? '__MISSING__' : (b.title ?? '__NULL__');
     if (titleA < titleB) return -1;
     if (titleA > titleB) return 1;
     

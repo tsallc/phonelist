@@ -105,9 +105,11 @@ describe('Canonical Data Update from CSV', () => {
         expect(brianChange, "Change record for brian-tiller should exist").toBeDefined();
         if (!brianChange?.before || !brianChange?.after) throw new Error('Missing before/after state for Brian');
         
-        // CSV has Office=tsa:ply but NO Title.
-        // The existing role should be preserved, including its original title.
-        // Therefore, NO role change should be detected.
+        // CSV has Office=tsa:ply but an empty Title.
+        // The Office tag dictates the role structure { brand: tsa, office: PLY }.
+        // The empty CSV Title results in csvTitle being null.
+        // This null title is applied to the role derived from the Office tag.
+        // Therefore, a role change *is* expected (original title 'President' -> null).
         expect(brianChange.type).toBe('update'); // Still an update because mobile changed
 
         const beforeRoles = (brianChange.before?.roles as Role[] | undefined) || [];
@@ -118,17 +120,22 @@ describe('Canonical Data Update from CSV', () => {
         const roleDeltas = getRoleDiffs(beforeRoles, afterRoles);
         console.log("   Role Deltas for Brian:", JSON.stringify(roleDeltas, null, 2));
 
-        // --- CORRECTED ASSERTION (Decoupled Logic) ---
-        // NO semantic role difference is expected because the empty CSV title doesn't overwrite the existing one.
-        expect(roleDeltas.length, "Expected NO role differences for Brian").toBe(0); 
+        // --- UPDATED ASSERTION (Decoupled Logic + Precise Diffing) ---
+        // A difference *is* expected because the title changes from 'President' to null.
+        expect(roleDeltas.length, "Expected 1 role difference (title)").toBe(1);
+        if (roleDeltas.length === 1) {
+            expect(roleDeltas[0].key).toBe('title');
+            expect(roleDeltas[0].before).toBe('President');
+            expect(roleDeltas[0].after).toBeNull();
+        }
 
         // Check the final state directly
         const finalRole = afterRoles[0];
         expect(afterRoles.length).toBe(1);
         expect(finalRole?.brand).toBe('tsa');
         expect(finalRole?.office).toBe('PLY');
-        // Title should remain 'President' from original data
-        expect(finalRole?.title, "Brian final role title should be preserved as 'President'").toBe('President'); 
+        // Title should be null because Office tag dictated the role and CSV title was empty/null.
+        expect(finalRole?.title, "Brian final role title should become null").toBeNull(); 
     });
 
     it('should result in an overall hash change for main test', () => {
@@ -170,6 +177,6 @@ describe('Canonical Data Update from CSV', () => {
         expect(finalRole?.title ?? null, "Reordered Andrea final role title should be null").toBeNull();
     });
 
-});
+}); // Close the describe block
 
 // Removed manual execution and directory creation 

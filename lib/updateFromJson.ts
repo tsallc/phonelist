@@ -156,7 +156,7 @@ function normalizeRoleForDiff(role: Role | null | undefined): Record<string, any
   return {
     brand: role.brand?.toUpperCase() ?? null,
     office: role.office?.toUpperCase() ?? null,
-    title: role.title ?? null,
+    title: role.title === undefined ? '__MISSING__' : (role.title ?? null),
     priority: role.priority ?? 0,
   };
 }
