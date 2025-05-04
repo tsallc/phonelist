@@ -110,8 +110,6 @@ async function main() {
         const result = updateFromCsv(csvRows, liveData.ContactEntities);
         updatedEntities = result.updated;
         changes = result.changes;
-        log.verbose('[DEBUG canonicalize.ts] Received changes array length:', changes.length);
-        log.verbose('[DEBUG canonicalize.ts] Change types received:', JSON.stringify(changes.map(c => c.type)));
       } catch (validationError: any) {
         log.error(`Error during updateFromCsv execution (likely validation failure):`);
         log.error(validationError.message || validationError);
@@ -150,28 +148,14 @@ async function main() {
       const hasChanges = originalHashForCompare !== newHash;
       log.verbose(`[canonicalize.ts] Hash Checkpoint 4: hasChanges = ${hasChanges}`);
 
-      log.verbose('[DEBUG Count Calc] Calculating counts from changes array:', JSON.stringify(changes.map(c => c.type)));
       const updateCount = changes.filter(c => c.type === 'update').length;
-      log.verbose('[DEBUG Count Calc] updateCount result:', updateCount);
-      log.verbose('[DEBUG Count Calc] Inspecting types for no_change filter:');
-      changes.forEach((c, index) => {
-        const typeStr = c.type;
-        const comparisonResult = typeStr === 'no_change';
-        const charCodes = Array.from(typeStr).map(char => char.charCodeAt(0));
-        log.verbose(`  - Index ${index}: type='${typeStr}' (CharCodes: ${charCodes.join(',')}), Matches 'no_change'?: ${comparisonResult}`);
-      });
       const noChangeCount = changes.filter(c => c.type === 'no_change').length;
       const finalNoChangeCount = noChangeCount;
 
-      try {
-        log.verbose(`[TRACE] Logging final update summary. Values:`, { updateCount, finalNoChangeCount });
-        log.info(`Update Summary:`);
-        log.info(`   - Rows Processed from CSV: ${csvRows.length}`);
-        log.info(`   - Matched & Updated: ${updateCount}`);
-        log.info(`   - Matched & No Change: ${finalNoChangeCount}`);
-      } catch (summaryLogError: any) {
-        log.error('Failed during final summary logging:', summaryLogError);
-      }
+      log.info(`Update Summary:`);
+      log.info(`   - Rows Processed from CSV: ${csvRows.length}`);
+      log.info(`   - Matched & Updated: ${updateCount}`);
+      log.info(`   - Matched & No Change: ${finalNoChangeCount}`);
 
       if (hasChanges) {
         updatedCanonicalExport._meta.hash = newHash;

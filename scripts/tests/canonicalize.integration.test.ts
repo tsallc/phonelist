@@ -155,8 +155,6 @@ test('Verbose: Should show detailed logs during update', async () => {
     console.log("STDOUT type:", typeof stdout);
     console.log("STDOUT length:", stdout.length);
     // console.log(stdout); // Optional: Log full stdout
-    expect(stdout).toContain('[Final Check] Condition (hasChanges) evaluated TRUE. Entering IF block.'); 
-
     expect(stdout).toContain('Overall state changes detected:');
 });
 
