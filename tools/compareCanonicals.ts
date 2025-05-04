@@ -3,9 +3,13 @@ console.log('--- Script Starting --- (compareCanonicals.ts)');
 import fs from 'fs';
 import path from 'path';
 import { Command } from 'commander';
-import { CanonicalExportSchema, CanonicalExport, ContactEntity } from '../../canon/lib/schema';
+import { CanonicalExportSchema, CanonicalExport, ContactEntity, Location } from '../lib/schema.js';
 import { z } from 'zod';
 import { isEqual } from 'lodash'; // Using lodash for deep equality check
+import fsExtra from 'fs-extra';
+import { diff } from '../lib/diff.js';
+import { computeHash } from '../lib/hash.js';
+import { execa } from 'execa';
 
 // --- Types ---
 
@@ -87,11 +91,18 @@ function normalizeContactPoints(contactPoints: ContactEntity['contactPoints']) {
  */
 function normalizeRoles(roles: ContactEntity['roles']) {
     if (!roles) return [];
-    // Sort by office, then title, then priority
+    // Sort by brand, office, then title, then priority (Match hash.ts logic)
     return [...roles].sort((a, b) => {
-        if (a.office !== b.office) return a.office.localeCompare(b.office);
-        if ((a.title || '') !== (b.title || '')) return (a.title || '').localeCompare(b.title || '');
-        return (a.priority || 0) - (b.priority || 0);
+        const brandA = a.brand ?? '';
+        const brandB = b.brand ?? '';
+        if (brandA !== brandB) return brandA.localeCompare(brandB);
+        const officeA = a.office ?? ''; 
+        const officeB = b.office ?? '';
+        if (officeA !== officeB) return officeA.localeCompare(officeB);
+        const titleA = a.title ?? ''; 
+        const titleB = b.title ?? ''; 
+        if (titleA !== titleB) return titleA.localeCompare(titleB);
+        return (a.priority ?? 0) - (b.priority ?? 0);
     });
 }
 
@@ -100,23 +111,33 @@ function normalizeRoles(roles: ContactEntity['roles']) {
  * Creates a deep copy to avoid modifying the original object.
  */
 function normalizeData(data: CanonicalExport): CanonicalExport {
-    // Basic deep copy using JSON stringify/parse
-    const normalizedData = JSON.parse(JSON.stringify(data)) as CanonicalExport;
+    // Ensure ContactEntities is an array and sort by objectId
+    const sortedContacts = [...(data.ContactEntities || [])].sort((a: ContactEntity, b: ContactEntity) => 
+        (a.objectId ?? '').localeCompare(b.objectId ?? '')
+    );
 
-    // Sort ContactEntities by objectId
-    normalizedData.ContactEntities.sort((a, b) => (a.objectId || '').localeCompare(b.objectId || ''));
-
-    // Sort internal arrays within each entity
-    normalizedData.ContactEntities.forEach(entity => {
-        entity.contactPoints = normalizeContactPoints(entity.contactPoints);
-        entity.roles = normalizeRoles(entity.roles);
+    // Normalize each contact
+    const normalizedContacts = sortedContacts.map((entity: ContactEntity) => {
+        // Ensure nested arrays exist and are sorted using LOCAL helpers
+        const normalizedContactPoints = normalizeContactPoints(entity.contactPoints);
+        const normalizedRoles = normalizeRoles(entity.roles);
+        return {
+            ...entity,
+            contactPoints: normalizedContactPoints,
+            roles: normalizedRoles
+        };
     });
 
-    // Sort Locations by id (optional, but good practice)
-    normalizedData.Locations?.sort((a, b) => a.id.localeCompare(b.id));
-    // Potentially sort rooms/desks within locations if needed for comparison
+    // Ensure Locations is an array and sort by id
+    const sortedLocations = [...(data.Locations || [])].sort((a: Location, b: Location) => 
+        (a.id ?? '').localeCompare(b.id ?? '')
+    );
 
-    return normalizedData;
+    return {
+        ...data,
+        ContactEntities: normalizedContacts,
+        Locations: sortedLocations
+    };
 }
 
 // --- Main Comparison Logic ---
@@ -125,8 +146,8 @@ function compareCanonicals(dataA: CanonicalExport, dataB: CanonicalExport, fileA
     const normalizedA = normalizeData(dataA);
     const normalizedB = normalizeData(dataB);
 
-    const entitiesA = new Map<string, ContactEntity>(normalizedA.ContactEntities.map(e => [e.objectId, e]));
-    const entitiesB = new Map<string, ContactEntity>(normalizedB.ContactEntities.map(e => [e.objectId, e]));
+    const entitiesA = new Map<string, ContactEntity>(normalizedA.ContactEntities.map((e: ContactEntity) => [e.objectId!, e]));
+    const entitiesB = new Map<string, ContactEntity>(normalizedB.ContactEntities.map((e: ContactEntity) => [e.objectId!, e]));
 
     const addedEntities: ContactEntity[] = [];
     const removedEntities: ContactEntity[] = [];
@@ -285,6 +306,22 @@ try {
     } else {
         console.log('\nNo differences detected between files.');
     }
+
+    // 6. Print detailed differences
+    console.log('\n--- Detailed Differences ---');
+    diffResult.modifiedEntities.forEach(entity => {
+        console.log(`\n  Entity ObjectId: ${entity.objectId}`);
+        console.log(`    File A DisplayName: ${entity.diffs.displayName?.fileA?.displayName}`);
+        console.log(`    File B DisplayName: ${entity.diffs.displayName?.fileB?.displayName}`);
+        console.log("    Differences:");
+        Object.keys(entity.diffs).forEach((field: string) => {
+            if (entity.diffs[field]) {
+                console.log(`      ${field}:`);
+                console.log(`        File A: ${JSON.stringify(entity.diffs[field]?.fileA)}`);
+                console.log(`        File B: ${JSON.stringify(entity.diffs[field]?.fileB)}`);
+            }
+        });
+    });
 
 } catch (error: any) {
     console.error(`\nERROR: An error occurred: ${error.message}`);

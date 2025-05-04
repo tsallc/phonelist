@@ -22,8 +22,8 @@ describe("CSV import enforces 'external' kind", () => {
     
     // Only the valid row should result in an entity
     expect(entities).toHaveLength(1);
-    expect(entities[0].objectId).toBe("valid-obj-id");
-    expect(entities[0].kind).toBe("external");
+    expect(entities[0]?.objectId).toBe("valid-obj-id");
+    expect(entities[0]?.kind).toBe("external");
   });
 
   it("assigns 'external' kind to all valid rows processed", () => {
@@ -38,5 +38,15 @@ describe("CSV import enforces 'external' kind", () => {
         expect(entity.kind).toBe("external");
         expect(entity.objectId).toBeTruthy(); // Ensure objectId was retained
     });
+  });
+
+  it('correctly assigns objectId and sets kind to external for valid rows', () => {
+    const result = rowsToCanonical([
+      { "display name": "Valid External", "mobile phone": "", "object id": "valid-obj-id" }
+    ]);
+    const entities = result;
+    expect(entities).toHaveLength(1);
+    expect(entities[0]?.objectId).toBe("valid-obj-id");
+    expect(entities[0]?.kind).toBe("external");
   });
 }); 

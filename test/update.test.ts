@@ -81,9 +81,10 @@ describe('Canonical Data Update from CSV', () => {
         console.log("   Diff for Andrea:", JSON.stringify(andreaDiff, null, 2));
 
         expect(andreaDiff.department, "Difference in 'department' expected").toBeDefined();
-        expect(andreaDiff.department.before, "Andrea before.department").toBeNull();
-        expect(andreaDiff.department.after, "Andrea after.department").toBe('Operations');
-        
+        if (andreaDiff.department) {
+            expect(andreaDiff.department.before, "Andrea before.department").toBeNull();
+            expect(andreaDiff.department.after, "Andrea after.department").toBe('Operations');
+        }        
         expect(andreaDiff.contactPoints, "Difference in 'contactPoints' expected").toBeDefined();
         const afterMobile = andreaChange.after?.contactPoints?.find(cp => cp.type === 'mobile');
         expect(afterMobile?.value, "Andrea after mobile value").toBe('954-555-1212');
@@ -123,7 +124,7 @@ describe('Canonical Data Update from CSV', () => {
         // --- UPDATED ASSERTION (Decoupled Logic + Precise Diffing) ---
         // A difference *is* expected because the title changes from 'President' to null.
         expect(roleDeltas.length, "Expected 1 role difference (title)").toBe(1);
-        if (roleDeltas.length === 1) {
+        if (roleDeltas.length === 1 && roleDeltas[0]) {
             expect(roleDeltas[0].key).toBe('title');
             expect(roleDeltas[0].before).toBe('President');
             expect(roleDeltas[0].after).toBeNull();
@@ -151,6 +152,9 @@ describe('Canonical Data Update from CSV', () => {
 
     it('should correctly handle reordered Andrea (preserve Title)', () => {
         // Reorder CSV only has Office=cts:ftl, no Title column mentioned
+        // --- DEBUG LOGGING ---
+        console.log("DEBUG [Reorder Test] Input CSV Row:", JSON.stringify(csvRowsReorder[0]));
+        // --- END DEBUG ---
         const { changes } = updateFromCsv(csvRowsReorder, canonicalEntities);
         const andreaReorderChange = changes.find(c => c.key === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6');
         

@@ -197,8 +197,16 @@ export function getRoleDiffs(beforeRoles: Role[] = [], afterRoles: Role[] = []):
 
 // --- REWRITTEN mergeEntry implementing UNFUCKING PLAN ---
 function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, any>): { updated: ContactEntity | null, changed: boolean, roleDiffs: RoleDelta[] } {
-    const objectIdForLog = existing.objectId || incoming["object id"] || 'UNKNOWN';
+    const objectIdFromExisting = existing.objectId;
+    const objectIdFromIncoming = incoming["object id"];
+    const objectIdForLog = objectIdFromExisting || objectIdFromIncoming || 'UNKNOWN';
     const upnForLog = existing.upn || incoming["user principal name"] || 'UNKNOWN';
+
+    // --- DEBUG LOGGING for specific test case ---
+    if (objectIdForLog === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6') {
+        console.log(`DEBUG mergeEntry [Andrea ${objectIdForLog}]: Received incoming row:`, JSON.stringify(incoming));
+    }
+    // --- END DEBUG ---
 
     if (existing.kind !== 'external') {
         log.verbose(`[mergeEntry] Skipping merge for internal entity: ${upnForLog} (${objectIdForLog})`);
@@ -218,6 +226,12 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
     
     // Extract CSV Title *once*
     const csvTitle = normalize(incoming['title']); // Will be null if empty/missing
+
+    // --- DEBUG LOGGING for specific test case ---
+    if (objectIdForLog === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6') {
+        console.log(`DEBUG mergeEntry [Andrea ${objectIdForLog}]: Extracted csvTitle:`, csvTitle);
+    }
+    // --- END DEBUG ---
 
     // --- Simple Field Updates --- 
     const keyMap: Partial<Record<keyof RawOfficeCsvRow, keyof ContactEntity>> = {
@@ -254,7 +268,7 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
     // --- DECOUPLED Role Handling Logic ---
     const csvOfficeString = incoming['office']?.trim() || null;
     const originalRoles = existing.roles || [];
-    let finalRoles: Role[] = mutableUpdated.roles ? cloneDeep(mutableUpdated.roles) : []; // Start with current roles
+    let finalRoles: Role[] = []; // Initialize as empty
 
     if (csvOfficeString) {
         // Office field IS present in CSV - this dictates role structure (brand/office)
@@ -326,11 +340,13 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
         } else {
              log.warn(`[mergeEntry] User ${upnForLog}: Office field '${csvOfficeString}' contained no valid tags. Roles will NOT be modified.`);
              // finalRoles remains clone of existing
+             finalRoles = cloneDeep(originalRoles); // Fallback to original if CSV tags were invalid
         }
     } else {
         // No Office field in CSV - roles are determined SOLELY by existing data.
         // The extracted csvTitle is ignored in this case.
         log.verbose(`[mergeEntry] No Office field in CSV for ${upnForLog}. Keeping existing roles.`);
+        finalRoles = cloneDeep(originalRoles); // Use original roles if no CSV office string
     }
 
     // --- Compare original roles with the final determined roles state --- 
@@ -339,6 +355,12 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
         log.verbose(`[mergeEntry] Role differences DETECTED by getRoleDiffs...`);
         changed = true; 
     }
+
+    // --- DEBUG LOGGING ---
+    if (objectIdForLog === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6') {
+        console.log(`DEBUG mergeEntry [Andrea ${objectIdForLog}]: finalRoles BEFORE assignment to mutableUpdated:`, JSON.stringify(finalRoles));
+    }
+    // --- END DEBUG ---
 
     // --- Always assign the determined finalRoles state --- 
     mutableUpdated.roles = finalRoles;
