@@ -46,11 +46,9 @@ const buildCanonicalHeaderMap = (): Record<string, keyof RawOfficeCsvRow> => {
       const normalizedVariation = normalizeKey(variation);
       if (normalizedVariation && normalizedVariation !== canonicalKey) { // Avoid redundant self-mapping
         map[normalizedVariation] = canonicalKey; 
-        // console.log(`DEBUG [buildMap]: Added map['${normalizedVariation}'] = '${canonicalKey}'`);
       }
     }
   }
-  // console.log("Built Canonical Header Map:", map); // Optional: Log map once
   return map;
 };
 
@@ -65,41 +63,44 @@ const canonicalizeHeaderKey = (originalKey: string | undefined | null): keyof Ra
     return canonicalKey || null; 
 };
 
+// Header transformer function to be used with fast-csv options
+const headerTransformer: ParserHeaderTransformFunction = (headers) => {
+  return headers.map(header => {
+    const canonicalKey = canonicalizeHeaderKey(header);
+    return canonicalKey || header || "";
+  });
+};
+
 export async function parseCsv(path: string): Promise<RawOfficeCsvRow[]> {
   return new Promise((resolve, reject) => {
     const results: RawOfficeCsvRow[] = [];
     let rowCount = 0; 
     fs.createReadStream(path)
-      .pipe(parse({ headers: true }))
-      .on("data", (originalData: Record<string, string | undefined>) => { 
+      .pipe(parse({ 
+        headers: headerTransformer, 
+        trim: true 
+      }))
+      .on("data", (data: Partial<RawOfficeCsvRow>) => { 
         rowCount++; 
-        const canonicalData: Partial<RawOfficeCsvRow> = {}; 
         
-        for (const originalKey in originalData) {
-            if (originalData.hasOwnProperty(originalKey)) {
-                const canonicalKey = canonicalizeHeaderKey(originalKey);
-                if (canonicalKey) { 
-                    canonicalData[canonicalKey] = originalData[originalKey]?.trim(); 
-                }
-            }
-        }
+        // Log first row for debugging
         if (rowCount === 1) { 
-             log.verbose(`[parseCsv] Manually Canonicalized data object:`, JSON.stringify(canonicalData, null, 2));
-         }
+          log.verbose(`[parseCsv] Canonicalized data object:`, JSON.stringify(data, null, 2));
+        }
 
-        const objectId = canonicalData["object id"] || undefined;
+        const objectId = data["object id"] || undefined;
         if (!objectId) {
-            return reject(new Error(`Missing or empty required field 'Object ID' in CSV row number ${rowCount}. Original row data: ${JSON.stringify(originalData)}`));
+            return reject(new Error(`Missing or empty required field 'Object ID' in CSV row number ${rowCount}. Original row data: ${JSON.stringify(data)}`));
         }
 
         // Create final object, converting empty strings to undefined
         const finalObject: RawOfficeCsvRow = {
-          "display name": canonicalData["display name"] === "" ? undefined : canonicalData["display name"],
-          "mobile phone": canonicalData["mobile phone"] === "" ? undefined : canonicalData["mobile phone"],
+          "display name": data["display name"] === "" ? undefined : data["display name"],
+          "mobile phone": data["mobile phone"] === "" ? undefined : data["mobile phone"],
           "object id": objectId,
-          "user principal name": canonicalData["user principal name"] === "" ? undefined : canonicalData["user principal name"],
-          "title": canonicalData["title"] === "" ? undefined : canonicalData["title"],
-          "department": canonicalData["department"] === "" ? undefined : canonicalData["department"],
+          "user principal name": data["user principal name"] === "" ? undefined : data["user principal name"],
+          "title": data["title"] === "" ? undefined : data["title"],
+          "department": data["department"] === "" ? undefined : data["department"],
         };
 
         if (rowCount === 1) { 
