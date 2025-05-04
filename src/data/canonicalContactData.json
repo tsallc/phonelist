@@ -27,7 +27,8 @@
       "upn": "ADonayre@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Office Manager"
     },
     {
       "id": "andrew-ignagni",
@@ -56,7 +57,8 @@
       "upn": "aignagni@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Escrow Officer"
     },
     {
       "id": "becca-griffin",
@@ -114,7 +116,8 @@
       "upn": "btiller@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "President"
     },
     {
       "id": "bud-brown",
@@ -174,7 +177,8 @@
       "upn": "CFabian@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Director of Sales"
     },
     {
       "id": "curt-white",
@@ -198,7 +202,8 @@
       "upn": "cwhite@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Closer"
     },
     {
       "id": "georgia-caudle",
@@ -227,7 +232,8 @@
       "upn": "gcaudle@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Title Examiner"
     },
     {
       "id": "grace-guibord",
@@ -256,7 +262,8 @@
       "upn": "gguibord@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Escrow Officer"
     },
     {
       "id": "jessie-ignagni",
@@ -285,7 +292,8 @@
       "upn": "jignagni@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Recording Department"
     },
     {
       "id": "kathy-case",
@@ -314,7 +322,8 @@
       "upn": "kcase@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Processor"
     },
     {
       "id": "katie-cooley",
@@ -343,7 +352,8 @@
       "upn": "kcooley@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Closer"
     },
     {
       "id": "kyle-smith",
@@ -367,7 +377,8 @@
       "upn": "ksmith@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Closer"
     },
     {
       "id": "lexi-tiller",
@@ -414,7 +425,8 @@
       "upn": "MLamar@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Processor"
     },
     {
       "id": "pam-byrne",
@@ -438,7 +450,8 @@
       "upn": "pbyrne@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Accountant"
     },
     {
       "id": "paul-makara",
@@ -462,18 +475,13 @@
       "upn": "pmakara@titlesolutionsllc.com",
       "department": null,
       "source": "Office365",
-      "kind": "external"
+      "kind": "external",
+      "title": "Closer"
     },
     {
       "id": "peter-joelson",
       "displayName": "Peter Joelson",
-      "contactPoints": [
-        {
-          "type": "mobile",
-          "value": "248-961-4201",
-          "source": "App.jsx"
-        }
-      ],
+      "contactPoints": [],
       "roles": [],
       "objectId": "68f94748-a3ef-4886-a519-ca9f393e9c03",
       "upn": "PJoelson@titlesolutionsllc.com",
@@ -593,7 +601,8 @@
       "upn": "SCrossley@titlesolutionsllc.com",
       "department": null,
       "source": "Office365",
-      "kind": "external"
+      "kind": "external",
+      "title": "Marketng"
     },
     {
       "id": "sydney-tiller",
@@ -673,7 +682,8 @@
       "upn": "ttiller@titlesolutionsllc.com",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": "Manager"
     },
     {
       "id": "troy-mauritho",
@@ -726,7 +736,8 @@
       "upn": "will@4pp.dev",
       "department": null,
       "source": "Merged",
-      "kind": "external"
+      "kind": "external",
+      "title": null
     },
     {
       "id": "copy-room",
@@ -1221,9 +1232,11 @@
     "generatedFrom": [
       "users_5_3_2025 7_00_43 PM.csv",
       "App.jsx",
-      "ArtifactCode.jsx"
+      "ArtifactCode.jsx",
+      "updateFromCsv: users_5_4_2025 5_35_20 AM.csv",
+      "updateFromCsv: users_5_3_2025 7_00_43 PM.csv"
     ],
-    "generatedAt": "2025-05-03T19:45:00Z",
-    "hash": "294045b63c3cd1574bc360076452d2295388eed30c578bdac0e8957d3ee05913" 
+    "generatedAt": "2025-05-04T09:29:17.642Z",
+    "hash": "6683bb24838719bdcf5085dc430591c327546a2adc2bb16490ae3ab9a05ec0c6"
   }
 }
