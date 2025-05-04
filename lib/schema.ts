@@ -49,7 +49,7 @@ const BaseContactSchema = z.object({
   roles: z.array(RoleSchema).optional().default([]),
   source: z.enum(["Office365", "App.jsx", "Merged", "ArtifactCode.jsx", "Manual"]), // Added Manual source?
   department: z.string().nullable().optional(),
-  upn: z.string().email().optional(), // Optional for internal?
+  upn: z.string().email().optional().nullable(), // ADDED .nullable()
 });
 
 // Schema for external contacts (synced from O365)

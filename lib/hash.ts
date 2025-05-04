@@ -66,6 +66,13 @@ export function computeHash(contacts: ReadonlyArray<ContactEntity>, locations: R
             contactPoints: [...(contact.contactPoints || [])].sort(compareContactPoints),
             roles: [...(contact.roles || [])].sort(compareRoles)
         };
+        
+        // --- DEBUG: Log the specific object being hashed for obj-a ---
+        if (contact.objectId === 'obj-a') {
+            log.verbose(`[computeHash - ${label}] PRE-STRINGIFY for obj-a: ${JSON.stringify(contactToHash, null, 2)}`);
+        }
+        // --- End DEBUG ---
+
         const stringifiedContact = stableStringify(contactToHash);
         if (stringifiedContact) {
             log.verbose(`[computeHash - ${label}] Hashing Contact (${contact.kind}) ${contact.objectId}: ${stringifiedContact}`);

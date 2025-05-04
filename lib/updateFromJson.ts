@@ -192,21 +192,17 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
     log.verbose(`[mergeEntry] Reached end for ID ${existing.id}. Final computed changed flag: ${changed}`); 
     if (changed) {
         log.verbose(`  [mergeEntry] -> Entered if(changed) block.`);
-        // --- DEBUG: Log the object JUST BEFORE validation --- 
         log.verbose(`  [mergeEntry] Validating updated object for ID ${existing.id}:`, JSON.stringify(updated, null, 2));
-        // --- End DEBUG ---
         const validation = ContactEntitySchema.safeParse(updated);
         if (!validation.success) {
             log.error(`[mergeEntry]: Merged entity FAILED validation for key [${existing.id}]:`);
-            // Log the detailed Zod errors
             log.error("  Validation Errors:", JSON.stringify(validation.error.errors, null, 2)); 
             log.error("  [mergeEntry] Failing object state was:", JSON.stringify(updated, null, 2));
             log.verbose(`  [mergeEntry] -> Validation FAILED. Returning null.`);
             return null; 
         }
-        log.verbose(`  [mergeEntry] -> Validation SUCCEEDED. Returning validated data object.`);
-        log.verbose(`  [mergeEntry] Returned Object:`, JSON.stringify(validation.data, null, 2)); 
-        return validation.data; 
+        log.verbose(`  [mergeEntry] -> Validation SUCCEEDED. Returning the 'updated' object directly.`);
+        return updated;
     } else {
         log.verbose(`  [mergeEntry] -> Entered else block (changed is false). Returning null.`);
         return null;

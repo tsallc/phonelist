@@ -147,21 +147,36 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         const { stdout, stderr, exitCode } = await runScript([
             '--json', liveJsonPath, '--update-from-csv', updateCsvPath, '--out', outputJsonPath
         ]);
+        
         expect(exitCode).toBe(0);
         expect(stderr).toMatch(/(\[WARN\] meta\.hash field detected.*)?$/);
         expect(stdout).toContain('Performing selective update');
-        expect(stdout).toContain('Matched & Updated: 1'); 
         expect(stdout).toContain('❗️ Overall state changes detected:');
+        expect(stdout).toContain('Matched & Updated: 1');
+        expect(stdout).toContain('Skipped (No matching ID found): 1');
         expect(stdout).toContain(`💾 Writing updated canonical JSON to: ${outputJsonPath}`);
         expect(stdout).toContain('✨ Update process complete.');
         expect(await fs.pathExists(outputJsonPath)).toBe(true); 
+        
         const outputData: CanonicalExport = await fs.readJson(outputJsonPath);
         const updatedAlice = outputData.ContactEntities.find((e: ContactEntity) => e.objectId === 'obj-a'); 
-        expect(updatedAlice?.department).toBe('Tech');
-        expect(updatedAlice?.roles?.[0]?.title).toBe('Senior Eng');
-        const mobilePoint = updatedAlice?.contactPoints?.find((cp: ContactPoint) => cp.type === 'mobile');
-        expect(mobilePoint?.value).toBe('111-NEW-111');
-        expect(outputData._meta?.hash).not.toBe('abc'); 
+        expect(updatedAlice).toBeDefined();
+        if (!updatedAlice) return;
+
+        expect(updatedAlice.displayName).toBe('Alice Updated');
+        expect(updatedAlice.roles?.[0]?.title).toBe('Engineer II');
+        const mobilePoint = updatedAlice.contactPoints?.find((cp: ContactPoint) => cp.type === 'mobile');
+        expect(mobilePoint?.value).toBe('123-456-7890');
+
+        expect(updatedAlice.department).toBeUndefined();
+        expect(updatedAlice.upn).toBeNull();
+        
+        const bob = outputData.ContactEntities.find((e: ContactEntity) => e.objectId === 'obj-b');
+        expect(bob?.displayName).toBe('Bob');
+        const internal = outputData.ContactEntities.find((e: ContactEntity) => e.kind === 'internal');
+        expect(internal?.displayName).toBe('Internal Resource');
+
+        expect(outputData._meta?.hash).not.toBe('abc-initial');
     });
 
     it('Update: should run with --dry-run, detect changes based on objectId, and not write files', async () => {

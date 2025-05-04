@@ -190,23 +190,26 @@ async function main() {
 
         // --- Change Reporting --- 
         const updateCount = changes.filter(c => c.type === 'update').length;
-        const noChangeCount = changes.filter(c => c.type === 'no_change' && c.key !== 'unknown').length;
-        const skippedCount = changes.filter(c => c.key === 'unknown').length;
+        const noChangeCount = changes.filter(c => c.type === 'no_change').length;
+        // Skipped rows aren't in changes array, calculate based on input vs processed
+        const processedCount = updateCount + noChangeCount;
+        const skippedCount = csvRows.length - processedCount;
+
         log.info(`📊 Update Summary:`);
         log.info(`   - Rows Processed from CSV: ${csvRows.length}`);
         log.info(`   - Matched & Updated: ${updateCount}`);
         log.info(`   - Matched & No Change: ${noChangeCount}`);
         log.info(`   - Skipped (No matching ID found): ${skippedCount}`);
-        // Note: 'added' and 'removed' counts from diffCanonical reflect full state changes,
-        // while 'changes' from updateFromCsv reflects row-by-row processing.
+
+        // --- FINAL CHECK --- 
+        log.verbose(`[Final Check] Value of hasChanges BEFORE final if/else: ${hasChanges}`);
+        // --- END FINAL CHECK ---
 
         if (hasChanges) {
-            // NOW it's safe to assign the hash to the object to be written
-            updatedCanonicalExport._meta.hash = newHash; 
-            updatedCanonicalExport._meta.generatedFrom = [...new Set([...liveData._meta.generatedFrom, `updateFromCsv: ${path.basename(opts.updateFromCsv)}`])];
-            updatedCanonicalExport._meta.generatedAt = new Date().toISOString();
-            
-            log.verbose(`[canonicalize.ts] ENTERED if(hasChanges) block.`);
+            log.verbose(`[canonicalize.ts] ENTERED if(hasChanges) block.`); 
+            // ... (diffResult logging) ...
+            // Log BEFORE printing the final change message
+            log.verbose("--> Preparing to log: ❗️ Overall state changes detected:");
             log.info(`❗️ Overall state changes detected:`);
             log.info(`   - Entities Added (Overall): ${diffResult.added.length}`);
             log.info(`   - Entities Removed (Overall): ${diffResult.removed.length}`);
@@ -249,11 +252,12 @@ async function main() {
                 process.exit(1);
             }
         } else {
-            // No changes, no need to update meta hash/fields
-            log.verbose(`[canonicalize.ts] ENTERED else block (no changes).`);
-            log.info("✅ No changes detected after update process.");
+            log.verbose(`[canonicalize.ts] ENTERED else block (no changes).`); 
+            // Log BEFORE printing the final no change message
+            log.verbose("--> Preparing to log: ✅ No changes detected");
+            log.info('✅ No changes detected after update process.');
         }
-        log.info("✨ Update process complete.");
+        log.info('✨ Update process complete.');
         return; // Exit after update
     }
 
