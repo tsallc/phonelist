@@ -1,5 +1,6 @@
 import { ContactEntity, CanonicalExport, ContactPoint, Role } from "./schema.js";
 import isEqual from 'lodash/isEqual.js';
+import { rolesMatch } from './updateFromJson.js';
 
 // --- Robust Deep Equality Check ---
 
@@ -140,8 +141,22 @@ export function diff<T extends Record<string, any>>(
         const value1 = (safeObj1 as any)[key];
         const value2 = (safeObj2 as any)[key];
 
-        // Use lodash isEqual for robust comparison
-        if (!isEqual(value1, value2)) {
+        let areDifferent = false;
+        if (key === 'roles') {
+            console.log('[DIFF DEBUG] Comparing roles for key:', key);
+            console.log('  Before:', JSON.stringify(value1));
+            console.log('  After :', JSON.stringify(value2));
+            if (!Array.isArray(value1) || !Array.isArray(value2) || !rolesMatch(value1 as Role[], value2 as Role[])) {
+                areDifferent = true;
+            }
+        } else {
+            // Use lodash isEqual for other properties
+            if (!isEqual(value1, value2)) {
+                areDifferent = true;
+            }
+        }
+
+        if (areDifferent) {
             differences[key] = { before: value1, after: value2 };
         }
     }

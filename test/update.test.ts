@@ -66,12 +66,11 @@ describe('Canonical Data Update from CSV', () => {
         const andreaChange = changes.find(c => c.key === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6');
         
         expect(andreaChange, "Change record for andrea-donayre should exist").toBeDefined();
+        if (!andreaChange?.before || !andreaChange?.after) throw new Error('Missing before/after state for Andrea');
         const changeRecord = andreaChange!;
         expect(changeRecord.type, "Andrea Donayre type should be 'update'").toBe('update');
-        expect(changeRecord.before, "Andrea Before state must exist").toBeDefined();
-        expect(changeRecord.after, "Andrea After state must exist").toBeDefined();
 
-        const andreaDiff = diff(changeRecord.before, changeRecord.after);
+        const andreaDiff = diff(changeRecord.before as ContactEntity, changeRecord.after as ContactEntity);
         console.log("   Diff for Andrea:", JSON.stringify(andreaDiff, null, 2));
 
         expect(andreaDiff.department, "Difference in 'department' expected").toBeDefined();
@@ -79,17 +78,13 @@ describe('Canonical Data Update from CSV', () => {
         expect(andreaDiff.department.after, "Andrea after.department").toBe('Operations');
         
         expect(andreaDiff.contactPoints, "Difference in 'contactPoints' expected").toBeDefined();
-        const afterMobile = andreaChange.after?.contactPoints?.find(cp => cp.type === 'mobile');
+        const afterMobile = changeRecord.after?.contactPoints?.find(cp => cp.type === 'mobile');
         expect(afterMobile?.value, "Andrea after mobile value").toBe('954-555-1212');
 
-        // --- Log the state being tested --- 
-        console.log("DEBUG [Andrea Test] changeRecord.after.roles:", JSON.stringify(andreaChange?.after?.roles));
-        // --- End Log ---
-
-        const finalRole = andreaChange.after?.roles?.[0];
+        console.log("DEBUG [Andrea Test] changeRecord.after.roles:", JSON.stringify(changeRecord.after?.roles));
+        const finalRole = changeRecord.after?.roles?.[0];
         expect(finalRole?.brand, "Andrea final role brand").toBe('cts');
         expect(finalRole?.office, "Andrea final role office").toBe('FTL');
-        // Title should be 'Office Manager' from CSV
         expect(finalRole?.title, "Andrea final role title").toBe('Office Manager'); 
     });
     
@@ -99,20 +94,19 @@ describe('Canonical Data Update from CSV', () => {
         // --- 
         const brianChange = changes.find(c => c.key === 'a200fce3-d32a-4c06-861a-780850009fe1');
         expect(brianChange, "Change record for brian-tiller should exist").toBeDefined();
-        const changeRecord = brianChange!;
+        if (!brianChange?.before || !brianChange?.after) throw new Error('Missing before/after state for Brian');
+        const changeRecord = brianChange!; 
         expect(changeRecord.type).toBe('update');
-        const brianDiff = diff(changeRecord.before, changeRecord.after);
+
+        const brianDiff = diff(changeRecord.before as ContactEntity, changeRecord.after as ContactEntity);
         console.log("   Diff for Brian:", JSON.stringify(brianDiff, null, 2));
 
-        // Roles SHOULD differ now because title changed to null
         expect(brianDiff.roles, "Difference in 'roles' IS expected").toBeDefined(); 
         
-        // Check the final state directly
-        const finalRole = brianChange.after?.roles?.[0];
-        expect(brianChange.after?.roles?.length, "Brian should still have 1 role").toBe(1);
+        const finalRole = changeRecord.after?.roles?.[0];
+        expect(changeRecord.after?.roles?.length, "Brian should still have 1 role").toBe(1);
         expect(finalRole?.brand, "Brian final role brand").toBe('tsa');
         expect(finalRole?.office, "Brian final role office").toBe('PLY');
-        // Title should now be NULL from CSV 
         expect(finalRole?.title, "Brian final role title should be null").toBeNull(); 
     });
 
@@ -134,18 +128,17 @@ describe('Canonical Data Update from CSV', () => {
         const andreaReorderChange = changes.find(c => c.key === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6');
         
         expect(andreaReorderChange, "Change record for reordered Andrea should exist").toBeDefined();
+        if (!andreaReorderChange?.before || !andreaReorderChange?.after) throw new Error('Missing before/after state for Reordered Andrea');
         expect(andreaReorderChange!.type).toBe('update'); 
         
-        console.log("DEBUG [Reorder Test] andreaReorderChange.after.roles:", JSON.stringify(andreaReorderChange?.after?.roles));
+        console.log("DEBUG [Reorder Test] andreaReorderChange.after.roles:", JSON.stringify(andreaReorderChange.after?.roles));
 
-        const andreaReorderDiff = diff(andreaReorderChange!.before, andreaReorderChange!.after);
-        // ... contact point checks ...
+        const andreaReorderDiff = diff(andreaReorderChange.before as ContactEntity, andreaReorderChange.after as ContactEntity);
         
         expect(andreaReorderDiff.displayName, "Difference in 'displayName' expected").toBeDefined();
         const finalRole = andreaReorderChange.after?.roles?.[0];
         expect(finalRole?.brand, "Reordered Andrea final role brand").toBe('cts');
         expect(finalRole?.office, "Reordered Andrea final role office").toBe('FTL');
-        // Title should be null because it wasn't in the reorder CSV
         expect(finalRole?.title, "Reordered Andrea final role title").toBeNull(); 
     });
 

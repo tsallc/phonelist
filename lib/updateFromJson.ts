@@ -10,6 +10,7 @@ import { CanonicalExport, ContactEntity, ContactEntitySchema, ContactPoint, Role
 import { validateCanonical } from "./validate.js"; // Assuming validate exports this
 import { diff } from './diff.js'; // Import diff
 import isEqual from 'lodash/isEqual.js'; // Import lodash isEqual
+import cloneDeep from 'lodash/cloneDeep.js'; // <<< ADDED IMPORT
 import { RawOfficeCsvRow } from './types.js'; // Import RawOfficeCsvRow
 import { log } from "./logger.js"; // Import logger
 
@@ -111,7 +112,7 @@ const normalizeRole = (role: Role): string => {
   return JSON.stringify(normalized);
 };
 
-const rolesMatch = (roles1: Role[], roles2: Role[]): boolean => {
+export const rolesMatch = (roles1: Role[], roles2: Role[]): boolean => {
   if (roles1.length !== roles2.length) {
     log.verbose(`[rolesMatch] Length mismatch: ${roles1.length} vs ${roles2.length}`);
     return false;
@@ -303,6 +304,11 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
         if (!rolesMatch(sortedExistingRoles, sortedFinalRoles)) {
             log.verbose(`    -> roles change DETECTED.`);
             changed = true; // Mark overall change *only if* roles actually differ
+            // --- ADDED TEST DEBUG --- 
+            console.log('[TEST DEBUG] Role mismatch detected for objectId:', incoming['object id']);
+            console.log('  Existing:', JSON.stringify(sortedExistingRoles));
+            console.log('  Final:   ', JSON.stringify(sortedFinalRoles));
+            // --- END DEBUG ---
         }
     } else if (csvOfficeString) {
         // Office string was provided but resulted in NO valid roles or fallbacks
@@ -437,22 +443,34 @@ export function updateFromCsv(
                     // --- ADDED LOG --- 
                     log.verbose(`  [updateFromCsv] About to push changeLog UPDATE. merged.roles: ${JSON.stringify(merged.roles)}`);
                     // --- END LOG --- 
-                    changeLog.push({ type: 'update', key, before: existingEntryFromIndex, after: merged, diff: detailedDiff });
+                    changeLog.push({ 
+                        type: 'update', 
+                        key, 
+                        before: cloneDeep(existingEntryFromIndex), // Deep clone before state
+                        after: cloneDeep(merged), // Deep clone after state
+                        diff: detailedDiff 
+                    });
                 } else {
                     log.verbose(`  [updateFromCsv] -> Entered else block (merged is null).`); 
                     log.verbose(`[updateFromCsv] No changes detected for external key: ${key}. Logging as NO_CHANGE.`);
-                    changeLog.push({ type: 'no_change', key, before: existingEntryFromIndex, after: existingEntryFromIndex });
+                    // --- UPDATED: Use cloneDeep --- 
+                    changeLog.push({ 
+                        type: 'no_change', 
+                        key, 
+                        before: cloneDeep(existingEntryFromIndex), // Clone just in case 
+                        after: cloneDeep(existingEntryFromIndex) // Clone just in case
+                    });
                 }
             } else {
                  log.verbose(`[updateFromCsv] Matched internal entity for key: ${key}. Logging as NO_CHANGE (Internal).`);
-                 changeLog.push({ type: 'no_change', key, before: existingEntryFromIndex, after: existingEntryFromIndex });
+                 changeLog.push({ type: 'no_change', key, before: cloneDeep(existingEntryFromIndex), after: cloneDeep(existingEntryFromIndex) });
             }
-        } else {
+        } else { // No match found in canonicalIndex
             log.warn(`[updateFromCsv] CSV row with objectId [${key}] has no matching entry in canonical data. Skipping.`);
-            // Consider if skipped CSV rows should have a specific ChangeSummary type?
-            // For now, they don't affect the existing data or the standard counts.
+            // Optionally add a 'skipped' entry to changeLog here
+            // changeLog.push({ type: 'skipped', key, after: csvRow });
         }
-    }
+    } // End CSV row loop
 
     // 3. Add 'no_change' entries for original entities NOT processed by the CSV
     log.verbose('[DEBUG updateFromCsv] Entering final loop to add unprocessed entities to changeLog. Processed IDs:', Array.from(processedObjectIds));
@@ -460,7 +478,8 @@ export function updateFromCsv(
         if (!processedObjectIds.has(originalObjectId)) {
             log.verbose(`[DEBUG updateFromCsv] Adding NO_CHANGE for unprocessed ID: ${originalObjectId}`);
             const originalEntry = canonicalIndex[originalObjectId];
-            changeLog.push({ type: 'no_change', key: originalObjectId, before: originalEntry, after: originalEntry });
+            // Clone here too for consistency, though less critical if only logging
+            changeLog.push({ type: 'no_change', key: originalObjectId, before: cloneDeep(originalEntry), after: cloneDeep(originalEntry) });
         }
     }
 
