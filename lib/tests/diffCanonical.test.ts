@@ -4,16 +4,15 @@ import { diffCanonical } from '../diff.js';
 import { CanonicalExport, ContactEntity } from '../schema.js'; // Added .js
 
 // Helper to create a mock ContactEntity
-const createEntity = (id: string, name: string, title: string | null = 'Default Title'): ContactEntity => ({
-  id,
-  displayName: name,
-  contactPoints: [],
-  roles: [{ office: 'PLY', title, priority: 1 }],
-  source: 'Office365',
-  // Add other required fields with defaults if necessary
-  objectId: `obj-${id}`,
+const createEntity = (id: string, objectId: string, title: string | null = 'Test Title'): ContactEntity => ({
   kind: 'external',
-  upn: `${id}@example.com`,
+  id,
+  objectId,
+  displayName: `Test ${id}`,
+  contactPoints: [{ type: 'mobile', value: '123', source: 'Office365' }],
+  roles: title ? [{ office: 'PLY', brand: 'tsa', title, priority: 1 }] : [],
+  source: 'Merged',
+  upn: `${id}@test.com`
 });
 
 // Helper to create a mock CanonicalExport

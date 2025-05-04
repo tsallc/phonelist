@@ -23,6 +23,29 @@ const createValidData = (entities: any[] = [], locations: any[] = []) => ({
     _meta: { generatedFrom: [], generatedAt: 'now', version: 1, hash: 'test-hash' },
 });
 
+// Helper to create a minimal valid ContactEntity
+const createValidEntity = (id: string, kind: 'external' | 'internal', objectId: string): ContactEntity => {
+  const base = {
+    id,
+    objectId,
+    kind,
+    displayName: `Test ${id}`,
+    contactPoints: [],
+    roles: [{ office: 'PLY', brand: 'tsa', title: 'Test', priority: 1 }],
+    source: 'Merged',
+    upn: `${id}@example.com`
+  };
+  if (kind === 'internal') {
+    // ... existing code ...
+  }
+  return base;
+};
+
+// Helper to create an entity with a specific invalidity
+const createInvalidEntity = (id: string, overrides: Partial<ContactEntity>): any => {
+  // ... existing code ...
+};
+
 describe('validateCanonical', () => {
   it('should pass validation for valid data', () => {
     const validData = createValidData([

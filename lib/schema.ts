@@ -13,7 +13,8 @@ export const ContactPointSchema = z.object({
 });
 
 export const RoleSchema = z.object({
-  office: z.enum(["PLY", "FTL"]),
+  office: z.string().nullable(),
+  brand: z.string().nullable(),
   title: z.string().nullable(),
   priority: z.number().int().min(1),
 });

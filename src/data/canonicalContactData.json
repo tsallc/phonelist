@@ -18,6 +18,7 @@
       "roles": [
         {
           "office": "FTL",
+          "brand": "cts",
           "title": "Office Manager",
           "priority": 1
         }
@@ -46,6 +47,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Escrow Officer",
           "priority": 1
         }
@@ -74,6 +76,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": null,
           "priority": 1
         }
@@ -102,6 +105,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "President",
           "priority": 1
         }
@@ -137,6 +141,7 @@
       "roles": [
         {
           "office": "FTL",
+          "brand": "cts",
           "title": null,
           "priority": 1
         }
@@ -160,6 +165,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Director of Sales",
           "priority": 1
         }
@@ -183,6 +189,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Closer",
           "priority": 1
         }
@@ -211,6 +218,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Title Examiner",
           "priority": 1
         }
@@ -239,6 +247,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Escrow Officer",
           "priority": 1
         }
@@ -267,6 +276,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Recording Department",
           "priority": 1
         }
@@ -295,6 +305,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Processor",
           "priority": 1
         }
@@ -323,6 +334,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Closer",
           "priority": 1
         }
@@ -346,6 +358,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Closer",
           "priority": 1
         }
@@ -363,6 +376,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": null,
           "priority": 1
         }
@@ -391,6 +405,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Processor",
           "priority": 1
         }
@@ -414,6 +429,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Accountant",
           "priority": 1
         }
@@ -437,6 +453,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Closer",
           "priority": 1
         }
@@ -478,6 +495,7 @@
       "roles": [
         {
           "office": "FTL",
+          "brand": "cts",
           "title": null,
           "priority": 1
         }
@@ -506,6 +524,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": null,
           "priority": 1
         }
@@ -529,6 +548,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": null,
           "priority": 1
         }
@@ -564,6 +584,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Marketng",
           "priority": 1
         }
@@ -592,11 +613,13 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": null,
           "priority": 1
         },
         {
           "office": "FTL",
+          "brand": "cts",
           "title": null,
           "priority": 2
         }
@@ -635,11 +658,13 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Manager",
           "priority": 1
         },
         {
           "office": "FTL",
+          "brand": "cts",
           "title": "Manager",
           "priority": 2
         }
@@ -668,6 +693,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": null,
           "priority": 1
         }
@@ -691,6 +717,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": null,
           "priority": 1
         }
@@ -714,6 +741,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Shared Resource",
           "priority": 1
         }
@@ -735,6 +763,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Shared Resource",
           "priority": 1
         }
@@ -756,6 +785,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Meeting Room",
           "priority": 1
         }
@@ -777,6 +807,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Meeting Room",
           "priority": 1
         }
@@ -798,6 +829,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Training Room",
           "priority": 1
         }
@@ -819,6 +851,7 @@
       "roles": [
         {
           "office": "PLY",
+          "brand": "tsa",
           "title": "Common Area",
           "priority": 1
         }
@@ -840,6 +873,7 @@
       "roles": [
         {
           "office": "FTL",
+          "brand": "cts",
           "title": "Office Space",
           "priority": 1
         }
@@ -861,6 +895,7 @@
       "roles": [
         {
           "office": "FTL",
+          "brand": "cts",
           "title": "Office Space",
           "priority": 1
         }
@@ -1188,6 +1223,7 @@
       "App.jsx",
       "ArtifactCode.jsx"
     ],
-    "generatedAt": "2025-05-03T19:45:00Z"
+    "generatedAt": "2025-05-03T19:45:00Z",
+    "hash": "294045b63c3cd1574bc360076452d2295388eed30c578bdac0e8957d3ee05913" 
   }
 }

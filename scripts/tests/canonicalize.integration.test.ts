@@ -20,10 +20,10 @@ let mockDir: string; // Directory for mock files
 // Sample initial canonical data
 const initialCanonicalData = {
   ContactEntities: [
-    { id: 'a', displayName: 'Alice Initial', contactPoints: [], roles: [], source: 'Merged', objectId: 'obj-a', kind: 'external' },
-    { id: 'b', displayName: 'Bob Initial', contactPoints: [], roles: [], source: 'Merged', objectId: 'obj-b', kind: 'external' },
-    { id: 'c', displayName: 'Charlie Initial', contactPoints: [], roles: [], source: 'Merged', objectId: 'obj-c', kind: 'external' },
-    { id: 'internal', displayName: 'Internal Conf Room', contactPoints: [], roles: [], source: 'Manual', objectId: 'manual-conf-123', kind: 'internal' },
+    { id: 'a', displayName: 'Alice Initial', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', title: 'Tester', priority: 1 }], source: 'Merged', objectId: 'obj-a', kind: 'external' },
+    { id: 'b', displayName: 'Bob Initial', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', title: 'Tester', priority: 1 }], source: 'Merged', objectId: 'obj-b', kind: 'external' },
+    { id: 'c', displayName: 'Charlie Initial', contactPoints: [], roles: [{ office: 'FTL', brand: 'cts', title: 'Tester', priority: 1 }], source: 'Merged', objectId: 'obj-c', kind: 'external' },
+    { id: 'internal', displayName: 'Internal Conf Room', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', title: 'Meeting Room', priority: 1 }], source: 'Manual', objectId: 'manual-conf-123', kind: 'internal' },
   ],
   Locations: [],
   _meta: { generatedFrom: ['initial-test-setup'], generatedAt: new Date().toISOString(), version: 1 }
@@ -60,7 +60,7 @@ describe('canonicalize.ts CLI Integration Tests - Update Flow', () => {
 test('Update: Should update entries based on CSV, detect changes, and write output', async () => {
     // Setup: Create a simple CSV that updates Alice (obj-a)
     const updateCsvPath = path.join(mockDir, 'update_basic.csv');
-    await fs.writeFile(updateCsvPath, `objectId,displayName\nobj-a,Updated Name A`); 
+    await fs.writeFile(updateCsvPath, `objectId,displayName,Office\nobj-a,Updated Name A,tsa:ply`); 
     const initialContent = await fs.readFile(livePath, 'utf-8');
 
     const { stdout, stderr } = await runScript([
@@ -94,13 +94,15 @@ test('Update: Should update entries based on CSV, detect changes, and write outp
     const finalData: CanonicalExport = JSON.parse(finalContent);
     const entityA = finalData.ContactEntities.find(e => e.objectId === 'obj-a');
     expect(entityA?.displayName).toBe('Updated Name A');
+    expect(entityA?.roles?.[0]?.brand).toBe('tsa');
+    expect(entityA?.roles?.[0]?.office).toBe('PLY');
     expect(finalData._meta.hash).toBeDefined();
     expect(finalData._meta.generatedFrom).toEqual(expect.arrayContaining([expect.stringContaining('updateFromCsv: update_basic.csv')]));
 });
 
 test('Update: --dry-run should detect changes but not write file', async () => {
     const updateCsvPath = path.join(mockDir, 'update_dryrun.csv');
-    await fs.writeFile(updateCsvPath, `objectId,displayName\nobj-b,Updated DryRun Name B`);
+    await fs.writeFile(updateCsvPath, `objectId,displayName,Office\nobj-b,Updated DryRun Name B,tsa:ply`);
     const initialContent = await fs.readFile(livePath, 'utf-8');
 
     const { stdout, stderr } = await runScript([
@@ -133,7 +135,7 @@ test('Update: --dry-run should detect changes but not write file', async () => {
 
 test('Verbose: Should show detailed logs during update', async () => {
     const updateCsvPath = path.join(mockDir, 'update_verbose.csv');
-    await fs.writeFile(updateCsvPath, `objectId,displayName\nobj-c,Updated Verbose Name C`);
+    await fs.writeFile(updateCsvPath, `objectId,displayName,Office,Title\nobj-c,Updated Verbose Name C,cts:ftl,Updated Title`);
 
     const { stdout, stderr } = await runScript([
         '--json', livePath, 
@@ -146,8 +148,9 @@ test('Verbose: Should show detailed logs during update', async () => {
     expect(stdout).toContain('[VERBOSE]');
     expect(stdout).toContain('[canonicalize.ts] First parsed CSV row:');
     expect(stdout).toContain('[mergeEntry] Processing external entity ID c (ObjID: obj-c)');
-    expect(stdout).toContain('[mergeEntry] PRE-COMPARE Field \'displayName\'');
-    expect(stdout).toContain('[mergeEntry] -> Validation SUCCEEDED. Returning the \'updated\' object directly.');
+    expect(stdout).toContain("Parsed role from segment 'cts:ftl': { brand: cts, office: FTL, title: Updated Title }");
+    expect(stdout).toContain('roles change DETECTED');
+    expect(stdout).toContain('displayName change DETECTED');
     expect(stdout).toContain('[canonicalize.ts] Hash Checkpoint 4: hasChanges = true');
     
     // DEBUG: Check stdout before the failing assertion

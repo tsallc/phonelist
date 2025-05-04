@@ -13,6 +13,18 @@ import isEqual from 'lodash/isEqual.js'; // Import lodash isEqual
 import { RawOfficeCsvRow } from './types.js'; // Import RawOfficeCsvRow
 import { log } from "./logger.js"; // Import logger
 
+// Map from Canonical Office Code (UPPERCASE) back to Brand (lowercase)
+// Used during the one-time migration of canonicalContactData.json
+const locationToBrandMap: Record<string, string> = {
+  PLY: 'tsa',
+  FTL: 'cts',
+  REO: 'cts',
+  SGT: 'tt'
+};
+
+// List of valid standalone brand fallback tags (lowercase)
+const validFallbackBrands = new Set(['tsa', 'cts', 'tt']);
+
 // Define a type for summarizing changes
 export interface ChangeSummary {
     type: 'insert' | 'update' | 'delete' | 'no_change'; // Added delete/no_change for future flexibility
@@ -47,8 +59,10 @@ const indexByKey = (rows: ContactEntity[], keyFn: (row: ContactEntity) => string
  */
 function updateContactPoint(contactPoints: ContactPoint[] = [], system: ContactPoint['type'], value: string | null | undefined, source: ContactPoint['source'] = 'Office365'): ContactPoint[] {
   const filtered = contactPoints.filter(pt => pt.type !== system);
+  // Normalize mobile numbers: remove leading '+'
+  const normalizedValue = (system === 'mobile' && value?.startsWith('+')) ? value.substring(1) : value;
   // Only add if value is truthy (not null, undefined, or empty string)
-  return value ? [...filtered, { type: system, value: value.trim(), source }] : filtered;
+  return normalizedValue ? [...filtered, { type: system, value: normalizedValue.trim(), source }] : filtered;
 }
 
 /**
@@ -91,9 +105,9 @@ function normalizeAndSortRoles(roles: ReadonlyArray<Role> | undefined): string[]
  * Avoids overwriting fields that are typically managed manually or from other sources.
  *
  * @param existing The current ContactEntity from the canonical data array.
- * @param incoming A record derived from a single CSV row, where keys are column headers.
+ * @param incoming A record derived from a single CSV row, where keys are likely lowercase headers.
  * @returns The merged and validated ContactEntity if changes were made, otherwise null.
- *          Returns null if the merged entity fails validation.
+ *          Returns null if the merged entity fails validation or no changes detected.
  */
 function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, any>): ContactEntity | null {
     if (existing.kind !== 'external') {
@@ -107,87 +121,143 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
     let changed = false;
 
     // Map canonical keys (used in incoming) to ContactEntity keys
+    // Expect incoming keys to be LOWERCASE from csv-parse
     const keyMap: Partial<Record<keyof RawOfficeCsvRow, keyof ContactEntity>> = {
         "user principal name": "upn",
         "display name": "displayName",
         "department": "department",
         "object id": "objectId",
-        "mobile phone": "contactPoints", // Placeholder: Handle special cases below
-        "title": "roles" // Placeholder: Handle special cases below
+        "mobile phone": "contactPoints", // Handled below
+        "title": "roles", // Handled below (part of role generation)
+        "office": "roles" // Handled below (part of role generation)
     };
 
-    // Iterate through incoming canonical keys
-    for (const canonicalKey in incoming) {
-        if (incoming.hasOwnProperty(canonicalKey)) {
-            const entityKey = keyMap[canonicalKey as keyof RawOfficeCsvRow];
+    // Iterate through incoming canonical keys for simple field updates
+    for (const incomingKey in incoming) {
+        if (incoming.hasOwnProperty(incomingKey)) {
+            const entityKey = keyMap[incomingKey as keyof RawOfficeCsvRow];
 
-            // --- DEBUG: Log comparison --- 
-            const incomingValue = incoming[canonicalKey]?.trim() || null;
-            let existingValue: any = null;
-            if (entityKey && entityKey !== 'contactPoints' && entityKey !== 'roles') { 
-                existingValue = existing[entityKey];
-                // Log BEFORE isEqual comparison
-                log.verbose(`  [mergeEntry] PRE-COMPARE Field '${entityKey}':\n    Existing: ${JSON.stringify(existingValue)}\n    Incoming: ${JSON.stringify(incomingValue)}`); // incomingValue might be null here
-                
-                // *** MODIFIED LOGIC: Only update if incoming is not null OR if explicitly different (handles null->value, value->null, value->value) ***
-                // This prevents overwriting existing values with null just because the CSV column was empty/missing.
-                // It WILL allow setting a field TO null if it previously had a value.
-                const valuesAreDifferent = !isEqual(existingValue, incomingValue);
-
-                if (valuesAreDifferent) {
-                    log.verbose(`    -> Basic field change DETECTED for '${entityKey}'`);
-                    // Apply the incoming value (which could be null)
-                    (updated as any)[entityKey] = incomingValue; 
-                    changed = true;
-                } 
-                // Removed the simple isEqual check that might have been too broad
+            // Skip keys handled separately (roles/contactPoints)
+            if (!entityKey || entityKey === 'contactPoints' || entityKey === 'roles') {
+                continue;
             }
-            // --- End DEBUG ---
+
+            const incomingValue = incoming[incomingKey]?.trim() || null;
+            let existingValue: any = existing[entityKey];
+            
+            log.verbose(`  [mergeEntry] PRE-COMPARE Field '${entityKey}':\n    Existing: ${JSON.stringify(existingValue)}\n    Incoming: ${JSON.stringify(incomingValue)}`);
+            
+            const valuesAreDifferent = !isEqual(existingValue, incomingValue);
+
+            if (valuesAreDifferent) {
+                log.verbose(`    -> Basic field change DETECTED for '${entityKey}'`);
+                (updated as any)[entityKey] = incomingValue;
+                changed = true;
+            } 
         }
     }
 
     // --- Handle Nested Structures --- 
+
     // MobilePhone
     if (incoming.hasOwnProperty('mobile phone')) { 
         const mobileValue = incoming['mobile phone'] || null;
         const updatedContactPoints = updateContactPoint(updated.contactPoints, 'mobile', mobileValue);
-
-        // Compare normalized+sorted string arrays
         const normalizedExistingCP = normalizeAndSortContactPoints(existing.contactPoints);
         const normalizedNewCP = normalizeAndSortContactPoints(updatedContactPoints);
-
         log.verbose(`  [mergeEntry] PRE-COMPARE Field 'contactPoints':\n    Existing (Norm+Sorted): ${JSON.stringify(normalizedExistingCP)}\n    New      (Norm+Sorted): ${JSON.stringify(normalizedNewCP)}`);
-        
-        if (!isEqual(normalizedExistingCP, normalizedNewCP)) { // Compare the normalized arrays
+        if (!isEqual(normalizedExistingCP, normalizedNewCP)) {
              log.verbose(`    -> contactPoints change DETECTED.`);
              updated.contactPoints = updatedContactPoints; 
              changed = true;
         }
     }
 
-    // Title
-    if (incoming.hasOwnProperty('title')) { 
-        const titleValue = incoming['title'] || null; 
-        const primaryOffice = existing.roles?.[0]?.office; // Simplistic assumption
-        if (primaryOffice) {
-             const updatedRoles = updateRole(updated.roles, primaryOffice, titleValue);
+    // --- NEW Role Handling Logic --- 
+    const csvOfficeString = incoming['office'] || null;
+    const csvTitle = incoming['title']?.trim() || null;
+    const existingRoles = existing.roles || [];
+    const parsedCsvRoles: Role[] = [];
+    const parsedFallbackBrands = new Set<string>();
 
-             // Compare normalized+sorted string arrays
-             const normalizedExistingRoles = normalizeAndSortRoles(existing.roles);
-             const normalizedNewRoles = normalizeAndSortRoles(updatedRoles);
+    if (csvOfficeString) {
+        const officeSegments = csvOfficeString.split(';').map((s: string) => s.trim()).filter(Boolean);
 
-             log.verbose(`  [mergeEntry] PRE-COMPARE Field 'roles':\n    Existing (Norm+Sorted): ${JSON.stringify(normalizedExistingRoles)}\n    New      (Norm+Sorted): ${JSON.stringify(normalizedNewRoles)}`);
-             
-             if (!isEqual(normalizedExistingRoles, normalizedNewRoles)) { // Compare the normalized arrays
-                  log.verbose(`    -> roles change DETECTED.`);
-                  updated.roles = updatedRoles; 
-                  changed = true;
-             }
-        } else if (titleValue) {
-            log.warn(`[mergeEntry]: Cannot update Title='${titleValue}' for user ID ${existing.id} because primary office context is missing.`);
+        for (const segment of officeSegments) {
+            if (segment.includes(':')) {
+                const parts = segment.split(':');
+                if (parts.length === 2 && parts[0] && parts[1]) {
+                    const brand = parts[0].toLowerCase();
+                    const office = parts[1].toUpperCase(); // Canonical office is UPPERCASE
+                    // Add role derived from org:location tag
+                    parsedCsvRoles.push({
+                        brand: brand,
+                        office: office,
+                        title: csvTitle, // Use the single title from the CSV row
+                        priority: 1 // Default priority for CSV roles
+                    });
+                    log.verbose(`    [mergeEntry] Parsed role from segment '${segment}': { brand: ${brand}, office: ${office}, title: ${csvTitle} }`);
+                } else {
+                    log.warn(`[mergeEntry] Malformed org:location segment '${segment}' for user ${existing.id}. Ignoring segment.`);
+                }
+            } else {
+                // Check for standalone fallback tags (single or comma-separated)
+                const potentialFallbackBrands = segment.split(',').map((b: string) => b.trim().toLowerCase()).filter(Boolean);
+                let isValidFallback = true;
+                potentialFallbackBrands.forEach((brand: string) => {
+                    if (validFallbackBrands.has(brand)) {
+                        parsedFallbackBrands.add(brand);
+                        log.verbose(`    [mergeEntry] Parsed fallback brand '${brand}' from segment '${segment}'`);
+                    } else {
+                        isValidFallback = false;
+                    }
+                });
+                if (!isValidFallback) {
+                    log.warn(`[mergeEntry] Invalid fallback segment '${segment}' for user ${existing.id}. Contains unknown brands. Ignoring segment.`);
+                }
+            }
         }
     }
     
+    // Determine final roles based on parsed CSV roles and preservation rules
+    const finalRoles: Role[] = [];
+    const addedRoleSignatures = new Set<string>(); // To prevent duplicates if CSV implies same role multiple times
+
+    // 1. Add roles explicitly defined by `org:location` tags in the CSV
+    for (const csvRole of parsedCsvRoles) {
+        const signature = `${csvRole.brand}:${csvRole.office}:${csvRole.title}`; 
+        if (!addedRoleSignatures.has(signature)) {
+            finalRoles.push(csvRole);
+            addedRoleSignatures.add(signature);
+        }
+    }
+
+    // 2. Preserve existing roles if their brand matches a fallback tag from the CSV,
+    //    unless an equivalent role was already added from the CSV.
+    for (const existingRole of existingRoles) {
+        const existingSignature = `${existingRole.brand}:${existingRole.office}:${existingRole.title}`;
+        if (!addedRoleSignatures.has(existingSignature)) { // Don't re-add if already covered by CSV
+            if (existingRole.brand && parsedFallbackBrands.has(existingRole.brand)) {
+                log.verbose(`    [mergeEntry] Preserving existing role due to fallback brand '${existingRole.brand}': ${JSON.stringify(existingRole)}`);
+                finalRoles.push(existingRole);
+                addedRoleSignatures.add(existingSignature); // Mark as added to avoid duplicates if present multiple times
+            }
+        }
+    }
+    
+    // 3. Compare final roles to existing roles (after sorting)
+    const sortedExistingRoles = [...existingRoles].sort(compareRoles);
+    const sortedFinalRoles = [...finalRoles].sort(compareRoles);
+
+    log.verbose(`  [mergeEntry] PRE-COMPARE Field 'roles':\n    Existing (Sorted): ${JSON.stringify(sortedExistingRoles)}\n    New Final (Sorted): ${JSON.stringify(sortedFinalRoles)}`);
+
+    if (!isEqual(sortedExistingRoles, sortedFinalRoles)) {
+        log.verbose(`    -> roles change DETECTED.`);
+        updated.roles = sortedFinalRoles;
+        changed = true;
+    }
+    // --- End NEW Role Handling Logic ---
+
     // --- Final Validation & Return --- 
     log.verbose(`[mergeEntry] Reached end for ID ${existing.id}. Final computed changed flag: ${changed}`); 
     if (changed) {
@@ -221,12 +291,30 @@ function compareContactPoints(a: ContactPoint, b: ContactPoint): number {
 }
 
 function compareRoles(a: Role, b: Role): number {
-    if (!a || !b) return 0; // Handle potential undefined/null
-    if (a.office < b.office) return -1;
-    if (a.office > b.office) return 1;
-    if ((a.title || '') < (b.title || '')) return -1; // Handle null titles
-    if ((a.title || '') > (b.title || '')) return 1;
-    return (a.priority || 0) - (b.priority || 0);
+    if (!a && !b) return 0;
+    if (!a) return -1;
+    if (!b) return 1;
+    
+    // --- UPDATED: Handle nullable office --- 
+    const officeA = a.office ?? ''; // Treat null as empty string for comparison
+    const officeB = b.office ?? '';
+    if (officeA < officeB) return -1;
+    if (officeA > officeB) return 1;
+    
+    // --- ADDED: Compare by brand next --- 
+    const brandA = a.brand ?? '';
+    const brandB = b.brand ?? '';
+    if (brandA < brandB) return -1;
+    if (brandA > brandB) return 1;
+    
+    // Compare by title (handle nulls)
+    const titleA = a.title ?? ''; 
+    const titleB = b.title ?? ''; 
+    if (titleA < titleB) return -1;
+    if (titleA > titleB) return 1;
+    
+    // Compare by priority (handle nulls/undefined)
+    return (a.priority ?? 0) - (b.priority ?? 0);
 }
 
 /**

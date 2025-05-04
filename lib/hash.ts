@@ -5,7 +5,9 @@ import { log } from "./logger.js"; // Import logger
 
 // --- Sorter functions ---
 function compareContactPoints(a: ContactPoint, b: ContactPoint): number {
-    if (!a || !b) return 0; 
+    if (!a && !b) return 0;
+    if (!a) return -1;
+    if (!b) return 1;
     if (a.type < b.type) return -1;
     if (a.type > b.type) return 1;
     if (a.value < b.value) return -1;
@@ -14,12 +16,30 @@ function compareContactPoints(a: ContactPoint, b: ContactPoint): number {
 }
 
 function compareRoles(a: Role, b: Role): number {
-    if (!a || !b) return 0; 
-    if (a.office < b.office) return -1;
-    if (a.office > b.office) return 1;
-    if ((a.title || '') < (b.title || '')) return -1; 
-    if ((a.title || '') > (b.title || '')) return 1;
-    return (a.priority || 0) - (b.priority || 0);
+    if (!a && !b) return 0;
+    if (!a) return -1;
+    if (!b) return 1;
+    
+    // --- UPDATED: Handle nullable office --- 
+    const officeA = a.office ?? ''; // Treat null as empty string for comparison
+    const officeB = b.office ?? '';
+    if (officeA < officeB) return -1;
+    if (officeA > officeB) return 1;
+    
+    // --- ADDED: Compare by brand next --- 
+    const brandA = a.brand ?? '';
+    const brandB = b.brand ?? '';
+    if (brandA < brandB) return -1;
+    if (brandA > brandB) return 1;
+    
+    // Compare by title (handle nulls)
+    const titleA = a.title ?? ''; 
+    const titleB = b.title ?? ''; 
+    if (titleA < titleB) return -1;
+    if (titleA > titleB) return 1;
+    
+    // Compare by priority (handle nulls/undefined)
+    return (a.priority ?? 0) - (b.priority ?? 0);
 }
 // ---------------------------
 
