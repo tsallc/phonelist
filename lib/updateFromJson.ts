@@ -111,7 +111,16 @@ function normalizeAndSortContactPoints(points: ReadonlyArray<ContactPoint> | und
 // function normalizeAndSortRoles(...) { ... }
 
 // --- NEW: Deterministic Role Comparison --- 
-// Helper to remove null/undefined values from a role object for comparison
+/**
+ * Helper to remove null/undefined values from a role object for comparison.
+ * 
+ * Note: This function deliberately excludes title since title is now a top-level
+ * field on ContactEntity, not part of roles. Only brand, office, and priority 
+ * fields are retained for role comparison.
+ * 
+ * @param role The Role object to clean
+ * @returns A partial Role object with only the defined fields to use for comparison
+ */
 const cleanRole = (role: Role | Partial<Role>): Partial<Role> => {
     // Explicitly include only defined fields we care about for equality
     const cleaned: Partial<Role> = {};
@@ -122,6 +131,16 @@ const cleanRole = (role: Role | Partial<Role>): Partial<Role> => {
     return cleaned;
 };
 
+/**
+ * Creates a normalized string representation of a Role for comparison.
+ * This is used by rolesMatch to create comparable strings from role objects.
+ * 
+ * Note: Only compares brand, office, and priority. Title is deliberately excluded
+ * as it's now stored at the entity level.
+ * 
+ * @param role The Role object to normalize
+ * @returns A string representation of the role with consistent key ordering
+ */
 const normalizeRole = (role: Role): string => {
   // Clean the role first, removing nulls
   const cleanedRole = cleanRole(role);
@@ -129,6 +148,22 @@ const normalizeRole = (role: Role): string => {
   return JSON.stringify(cleanedRole, Object.keys(cleanedRole).sort());
 };
 
+/**
+ * Determines if two arrays of roles are functionally equivalent.
+ * 
+ * Note: This comparison only considers brand, office, and priority fields.
+ * Title differences are not considered as title is now stored at the entity level.
+ * 
+ * The comparison:
+ * 1. First checks if arrays have the same length
+ * 2. Then normalizes each role to a string representation
+ * 3. Sorts the normalized strings
+ * 4. Compares the sorted arrays element by element
+ * 
+ * @param roles1 First array of roles to compare
+ * @param roles2 Second array of roles to compare
+ * @returns true if the arrays match based on the defined fields, false otherwise
+ */
 export const rolesMatch = (roles1: Role[], roles2: Role[]): boolean => {
   if (roles1.length !== roles2.length) {
     log.verbose(`[rolesMatch] Length mismatch: ${roles1.length} vs ${roles2.length}`);
@@ -150,6 +185,14 @@ export const rolesMatch = (roles1: Role[], roles2: Role[]): boolean => {
 // --- END NEW --- 
 
 // Ensure normalizeRoleForDiff exists before getRoleDiffs
+/**
+ * Normalizes a Role object for comparison in diffing.
+ * Note: Since title has been moved to the ContactEntity level, it is deliberately excluded from role comparison.
+ * Only brand, office, and priority fields are compared between roles.
+ * 
+ * @param role The Role object to normalize, or null/undefined
+ * @returns A normalized representation with uppercase brand/office for case-insensitive comparison, or null if input is null/undefined
+ */
 function normalizeRoleForDiff(role: Role | null | undefined): Record<string, any> | null {
   if (!role) return null;
   return {
@@ -162,6 +205,14 @@ function normalizeRoleForDiff(role: Role | null | undefined): Record<string, any
 // Define getRoleDiffs function HERE
 /**
  * Compares two arrays of Role objects and returns an array of differences.
+ * 
+ * Important: This comparison ONLY looks at brand, office, and priority.
+ * The title field has been moved to the ContactEntity level and is not part of Role objects anymore.
+ * Title differences should be detected separately using entity-level comparisons.
+ * 
+ * @param beforeRoles Array of roles before the change
+ * @param afterRoles Array of roles after the change
+ * @returns Array of RoleDelta objects describing the differences
  */
 export function getRoleDiffs(beforeRoles: Role[] = [], afterRoles: Role[] = []): RoleDelta[] {
   const diffs: RoleDelta[] = [];
@@ -200,6 +251,24 @@ export function getRoleDiffs(beforeRoles: Role[] = [], afterRoles: Role[] = []):
 
 // --- REWRITTEN mergeEntry implementing UNFUCKING PLAN ---
 // --- UPDATED: Refactored mergeEntry with explicit variable naming and decomposed role logic ---
+/**
+ * Merges data from a CSV row into an existing canonical contact entity.
+ * 
+ * Key behaviors:
+ * 1. Updates simple fields like displayName and department directly.
+ * 2. Updates contactPoints, preserving points of other types.
+ * 3. Processes Office tags to define role structure when present.
+ * 4. Sets title at the ContactEntity level (not on roles) when present in CSV.
+ * 5. Validates the final entity before returning it.
+ * 
+ * Note: Title is now stored at the entity level (ContactEntity.title), not on
+ * individual roles. When a CSV row has a title field, it updates the entity's
+ * title directly, completely independent of role structure/processing.
+ * 
+ * @param existing The existing contact entity to update
+ * @param csvRow The CSV row data to merge
+ * @returns Object containing the updated entity (or null if unchanged), change flag, and role differences
+ */
 function mergeEntry(existing: Readonly<ContactEntity>, csvRow: Record<string, any>): { updated: ContactEntity | null, changed: boolean, roleDiffs: RoleDelta[] } {
     // --- Explicit Variable Definitions from CSV Row ---
     const objectIdFromCsv = csvRow["object id"]; // Primary key for matching
@@ -253,7 +322,9 @@ function mergeEntry(existing: Readonly<ContactEntity>, csvRow: Record<string, an
     }
 
     // --- NEW: Top-Level Title Update ---
-    // Check if 'title' *key* exists in the CSV row, not just if the value is undefined
+    // Only update title if the 'title' key exists in the CSV row
+    // This follows the entity-level title model, where title is stored directly on the ContactEntity
+    // and not on individual roles
     if ('title' in csvRow) { 
         const normalizedExistingTitle = normalize(existing.title);
         if (titleFromCsv !== normalizedExistingTitle) {
