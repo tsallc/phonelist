@@ -11,7 +11,7 @@ import path from "path";
 import { parseCsv } from "../lib/parseCsv.js";
 import { toCanonical } from "../lib/toCanonical.js";
 import { validateCanonical } from "../lib/validate.js";
-import { diffCanonical, DiffResult } from "../lib/diff.js";
+import { diffCanonical, DiffResult, diff } from "../lib/diff.js";
 import { computeHash } from "../lib/hash.js";
 import { exportCsv } from "../lib/exportCsv.js";
 import { CanonicalExport, ContactEntity } from "../lib/schema.js";
@@ -172,8 +172,19 @@ async function main() {
             changes.forEach(change => {
               if (change.type === 'update') {
                 log.verbose(`  [UPDATE] Key: ${change.key}`);
+                if (change.before && change.after) {
+                  const specificDiff = diff(change.before as ContactEntity, change.after as ContactEntity);
+                  if (Object.keys(specificDiff).length > 0) {
+                    log.verbose(`    Changes: ${JSON.stringify(specificDiff, null, 2)}`);
+                  } else {
+                    log.verbose(`    (No significant field changes detected by diff)`);
+                  }
+                } else {
+                  log.verbose(`    (Missing before/after state for diff)`);
+                }
               } else if (change.key === 'unknown') {
-                log.warn(`  [SKIPPED CSV ROW] DisplayName: ${change.after?.displayName || 'N/A'}`);
+                const skippedDisplayName = change.after?.displayName || 'N/A';
+                log.warn(`  [SKIPPED CSV ROW] DisplayName: ${skippedDisplayName} not found in canonical data (ObjectID: ${change.after?.objectId || 'Missing'}).`);
               }
             });
           }
@@ -198,15 +209,23 @@ async function main() {
           process.exit(1);
         }
         log.info('Update process complete.');
+
       } else {
         log.verbose("--> Preparing to log: No changes detected");
         log.info('No changes detected after update process.');
         log.info('Update process complete.');
       }
-      return; // Exit after update
+
+      return;
     }
+
+    log.info("Default action: Validation complete.");
+
   } catch (err: any) {
     log.error(`Error during execution: ${err.message}`);
+    if (err.stack && opts.verbose) {
+      log.error("Stack Trace:", err.stack);
+    }
     process.exit(1);
   }
 }
