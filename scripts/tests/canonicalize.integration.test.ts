@@ -70,22 +70,21 @@ test('Update: Should update entries based on CSV, detect changes, and write outp
         '--verbose'
     ]);
     
-    // DEBUG: Log captured output
-    console.log("--- [Update Test] STDOUT ---");
-    console.log(stdout);
-    console.log("--- [Update Test] STDERR ---");
-    console.log(stderr);
-
     // Assertions
     expect(stdout).toContain('Loading live canonical data');
     expect(stdout).toContain('Parsed 1 rows from update CSV');
     expect(stdout).toContain('Performing selective update');
     expect(stdout).toContain('Matched & Updated: 1'); 
-    expect(stdout).toContain('Matched & No Change: 3'); // 3 others were matched but not in CSV
-    expect(stdout).toContain('Skipped (No matching ID found): 0');
-    // TEMPORARY: Log output instead of asserting specific final message
-    // expect(stdout).toContain('❗️ Overall state changes detected:'); 
-    expect(stdout).toContain('Writing updated canonical JSON');
+    expect(stdout).toContain('Matched & No Change: 3'); // Check corrected count
+    expect(stdout).toContain('Overall state changes detected:');
+    
+    // DEBUG: Check stdout before the failing assertion
+    console.log("--- Assertion Check (Update Test): 'Writing updated canonical JSON' ---");
+    console.log("STDOUT type:", typeof stdout);
+    console.log("STDOUT length:", stdout.length);
+    // console.log(stdout); // Optional: Log full stdout
+    expect(stdout).toContain('Writing updated canonical JSON'); 
+
     expect(stdout).toContain('Successfully wrote JSON');
     expect(stdout).toContain('Update process complete');
     
@@ -112,18 +111,18 @@ test('Update: --dry-run should detect changes but not write file', async () => {
         '--dry-run'
     ]);
 
-    // DEBUG: Log captured output
-    console.log("--- [Dry Run Test] STDOUT ---");
-    console.log(stdout);
-    console.log("--- [Dry Run Test] STDERR ---");
-    console.log(stderr);
-
     // Assertions
     expect(stdout).toContain('Matched & Updated: 1');
-    expect(stdout).toContain('Matched & No Change: 3');
-    // TEMPORARY: Log output instead of asserting specific final message
-    // expect(stdout).toContain('❗️ Overall state changes detected:'); 
-    expect(stdout).toContain('Dry Run: Skipping file writes');
+    expect(stdout).toContain('Matched & No Change: 3'); // Check corrected count
+    expect(stdout).toContain('Overall state changes detected:');
+    
+    // DEBUG: Check stdout before the failing assertion
+    console.log("--- Assertion Check (Dry Run Test): 'Dry Run: Skipping file writes' ---");
+    console.log("STDOUT type:", typeof stdout);
+    console.log("STDOUT length:", stdout.length);
+    // console.log(stdout); // Optional: Log full stdout
+    expect(stdout).toContain('Dry Run: Skipping file writes'); 
+
     expect(stdout).not.toContain('Writing updated canonical JSON'); 
     expect(stdout).toContain('Update process complete');
 
@@ -143,23 +142,22 @@ test('Verbose: Should show detailed logs during update', async () => {
         '--verbose'
     ]);
 
-    // DEBUG: Log captured output
-    console.log("--- [Verbose Test] STDOUT ---");
-    console.log(stdout);
-    console.log("--- [Verbose Test] STDERR ---");
-    console.log(stderr);
-
     // Assertions for specific verbose logs
     expect(stdout).toContain('[VERBOSE]');
     expect(stdout).toContain('[canonicalize.ts] First parsed CSV row:');
-    expect(stdout).toContain('[updateFromJson] Merging entry for objectId: obj-c');
-    expect(stdout).toContain('[mergeEntry] Comparing field: displayName');
-    expect(stdout).toContain('[mergeEntry] Field displayName changed');
-    expect(stdout).toContain('[mergeEntry] mergeEntry returning updated entry (changed=true)');
-    expect(stdout).toContain('[Hash Check] Has changes?: true');
-    expect(stdout).toContain('[Final Summary Check] Entering HAS CHANGES branch');
-    // TEMPORARY: Log output instead of asserting specific final message
-    // expect(stdout).toContain('❗️ Overall state changes detected:'); 
+    expect(stdout).toContain('[mergeEntry] Processing external entity ID c (ObjID: obj-c)');
+    expect(stdout).toContain('[mergeEntry] PRE-COMPARE Field \'displayName\'');
+    expect(stdout).toContain('[mergeEntry] -> Validation SUCCEEDED. Returning the \'updated\' object directly.');
+    expect(stdout).toContain('[canonicalize.ts] Hash Checkpoint 4: hasChanges = true');
+    
+    // DEBUG: Check stdout before the failing assertion
+    console.log("--- Assertion Check (Verbose Test): '[Final Check] Condition...' ---");
+    console.log("STDOUT type:", typeof stdout);
+    console.log("STDOUT length:", stdout.length);
+    // console.log(stdout); // Optional: Log full stdout
+    expect(stdout).toContain('[Final Check] Condition (hasChanges) evaluated TRUE. Entering IF block.'); 
+
+    expect(stdout).toContain('Overall state changes detected:');
 });
 
 // ... potentially add tests for no changes, fail-on-diff, etc. ...

@@ -263,7 +263,9 @@ export function updateFromCsv(
     // 2. Process CSV Rows, build updated map and change log
     const updatedDataMap: Record<string, ContactEntity> = { ...canonicalIndex }; // Start with all existing
     const changeLog: ChangeSummary[] = [];
+    const processedObjectIds = new Set<string>(); // Keep track of IDs found in CSV
     let rowNum = 0;
+
     for (const csvRow of csvRows) {
         rowNum++;
         const key = csvRow["object id"]; 
@@ -273,6 +275,7 @@ export function updateFromCsv(
             continue;
         }
 
+        processedObjectIds.add(key); // Mark this ID as processed
         const existingEntryFromIndex = canonicalIndex[key];
 
         if (existingEntryFromIndex) {
@@ -291,14 +294,29 @@ export function updateFromCsv(
                     changeLog.push({ type: 'no_change', key, before: existingEntryFromIndex, after: existingEntryFromIndex });
                 }
             } else {
-                 log.verbose(`[updateFromCsv] Matched internal entity for key: ${key}. Logging as NO_CHANGE.`);
+                 log.verbose(`[updateFromCsv] Matched internal entity for key: ${key}. Logging as NO_CHANGE (Internal).`);
                  changeLog.push({ type: 'no_change', key, before: existingEntryFromIndex, after: existingEntryFromIndex });
             }
         } else {
             log.warn(`[updateFromCsv] CSV row with objectId [${key}] has no matching entry in canonical data. Skipping.`);
+            // Consider if skipped CSV rows should have a specific ChangeSummary type?
+            // For now, they don't affect the existing data or the standard counts.
         }
     }
 
-    // 3. Return results (convert map back to array)
+    // 3. Add 'no_change' entries for original entities NOT processed by the CSV
+    log.verbose('[DEBUG updateFromCsv] Entering final loop to add unprocessed entities to changeLog. Processed IDs:', Array.from(processedObjectIds));
+    for (const originalObjectId in canonicalIndex) {
+        if (!processedObjectIds.has(originalObjectId)) {
+            log.verbose(`[DEBUG updateFromCsv] Adding NO_CHANGE for unprocessed ID: ${originalObjectId}`);
+            const originalEntry = canonicalIndex[originalObjectId];
+            changeLog.push({ type: 'no_change', key: originalObjectId, before: originalEntry, after: originalEntry });
+        }
+    }
+
+    // --- Add final log before return ---
+    log.verbose('[DEBUG updateFromCsv] Final changeLog before return:', JSON.stringify(changeLog.map(c => ({ key: c.key, type: c.type })))); 
+
+    // 4. Return results (convert map back to array)
     return { updated: Object.values(updatedDataMap), changes: changeLog };
 }

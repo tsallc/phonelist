@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, test } from 'vitest';
 import fs from 'fs-extra';
 import path from 'path';
 import { parseCsv } from '../lib/parseCsv.js'; // Assuming compiled JS
