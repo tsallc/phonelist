@@ -328,12 +328,9 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
              // finalRoles remains clone of existing
         }
     } else {
-        // No Office field in CSV - roles are determined SOLELY by existing data + potential CSV Title override below
-        log.verbose(`[mergeEntry] No Office field in CSV for ${upnForLog}.`);
-        
-        // SPECIAL CASE: If NO Office string, but CSV Title IS present, apply it to ALL existing roles?
-        // Sticking to principle: CSV Title only applies when CSV Office dictates structure.
-        log.verbose(`[mergeEntry] Keeping existing roles as Office field was empty.`);
+        // No Office field in CSV - roles are determined SOLELY by existing data.
+        // The extracted csvTitle is ignored in this case.
+        log.verbose(`[mergeEntry] No Office field in CSV for ${upnForLog}. Keeping existing roles.`);
     }
 
     // --- Compare original roles with the final determined roles state --- 

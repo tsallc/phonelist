@@ -33,7 +33,10 @@
   },
   "include": [
     "lib/**/*.ts",                   /* Include all TypeScript files in lib */
-    "scripts/**/*.ts"                /* Include all TypeScript files in scripts */
+    "scripts/**/*.ts",               /* Include all TypeScript files in scripts */
+    "test/**/*.ts",                  /* Include all TypeScript files in test */
+    "tools/**/*.ts",                 /* Include all TypeScript files in tools */
+    "canonicalize.protocol.ts"       /* Include protocol file in root */
   ],
   "exclude": [
     "node_modules",                  /* Exclude node_modules */

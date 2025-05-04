@@ -1,0 +1,34 @@
+# .eslintignore
+
+# Dependencies
+node_modules
+
+# Build artifacts
+dist
+dist-ssr
+
+# Vite build artifacts
+*.vite
+
+# Test artifacts / Temp files
+coverage
+temp
+*.log
+
+# Dynamically generated test files (if they cause issues)
+# test-update.csv
+# test-reorder.csv
+# update_basic.csv
+# update_dryrun.csv
+# update_verbose.csv
+
+# Config files
+.eslintrc.cjs
+vite.config.js
+postcss.config.js
+tailwind.config.js
+
+# Other
+.vscode/
+.github/
+.idea/ 
