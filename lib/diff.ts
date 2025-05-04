@@ -138,22 +138,19 @@ export function diff<T extends Record<string, any>>(
         const value1 = (safeObj1 as any)[key];
         const value2 = (safeObj2 as any)[key];
 
-        let valuesDiffer = false;
-        if (key === 'roles') {
-            // Use rolesMatch directly for comparison
-            if (!rolesMatch(value1 as Role[] ?? [], value2 as Role[] ?? [])) { 
-                valuesDiffer = true;
-            }
-        } else {
-            // Use lodash isEqual for other properties
-            if (!isEqual(value1, value2)) {
-                valuesDiffer = true;
-            }
-        }
-
-        if (valuesDiffer) {
+        // Use ternary for comparison and assign directly
+        if (
+            key === 'roles'
+            ? !Array.isArray(value1) || 
+              !Array.isArray(value2) || 
+              !rolesMatch(value1 as Role[] ?? [], value2 as Role[] ?? [])
+            : !isEqual(value1, value2)
+        ) {
+            // If roles differ OR other fields differ using isEqual
+            console.log(`[DIFF DEBUG] Difference DETECTED for key: ${key}. Assigning to differences object.`);
             differences[key] = { before: value1, after: value2 };
         }
     }
+
     return differences;
 } 

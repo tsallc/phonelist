@@ -101,8 +101,10 @@ describe('Canonical Data Update from CSV', () => {
         const brianDiff = diff(changeRecord.before as ContactEntity, changeRecord.after as ContactEntity);
         console.log("   Diff for Brian:", JSON.stringify(brianDiff, null, 2));
 
+        // --- RESTORED Assertion: Roles SHOULD differ now because title changed to null --- 
         expect(brianDiff.roles, "Difference in 'roles' IS expected").toBeDefined(); 
         
+        // Check the final state directly
         const finalRole = changeRecord.after?.roles?.[0];
         expect(changeRecord.after?.roles?.length, "Brian should still have 1 role").toBe(1);
         expect(finalRole?.brand, "Brian final role brand").toBe('tsa');

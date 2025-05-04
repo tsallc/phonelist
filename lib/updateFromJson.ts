@@ -99,16 +99,23 @@ function normalizeAndSortContactPoints(points: ReadonlyArray<ContactPoint> | und
 // function normalizeAndSortRoles(...) { ... }
 
 // --- NEW: Deterministic Role Comparison --- 
+// Helper to remove null/undefined values from a role object for comparison
+const cleanRole = (role: Role | Partial<Role>): Partial<Role> => {
+    // Explicitly include only defined fields we care about for equality
+    const cleaned: Partial<Role> = {};
+    if (role.brand !== null && role.brand !== undefined) cleaned.brand = role.brand;
+    if (role.office !== null && role.office !== undefined) cleaned.office = role.office;
+    if (role.title !== null && role.title !== undefined) cleaned.title = role.title;
+    if (role.priority !== null && role.priority !== undefined) cleaned.priority = role.priority;
+    // Return an object with defined keys sorted for consistent stringify
+    return cleaned;
+};
+
 const normalizeRole = (role: Role): string => {
-  // Ensure all keys are present with null defaults for consistent stringification
-  const normalized = {
-    brand: role.brand ?? null,
-    office: role.office ?? null,
-    priority: role.priority ?? 1,
-    title: role.title ?? null
-  };
-  // --- CORRECTED: Use sorted keys for stringify --- 
-  return JSON.stringify(normalized, Object.keys(normalized).sort());
+  // Clean the role first, removing nulls
+  const cleanedRole = cleanRole(role);
+  // Stringify the cleaned object with sorted keys
+  return JSON.stringify(cleanedRole, Object.keys(cleanedRole).sort());
 };
 
 export const rolesMatch = (roles1: Role[], roles2: Role[]): boolean => {
@@ -210,15 +217,14 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
         }
     }
 
-    // --- NEW Role Handling Logic --- 
+    // --- SIMPLIFIED Role Handling Logic --- 
     const csvOfficeString = incoming['office'] || null;
-    // --- UPDATED: Use normalize helper --- 
     const csvTitle = normalize(incoming['title']); 
-    const existingRoles = existing.roles || [];
-    const parsedCsvRoles: Role[] = [];
-    const parsedFallbackBrands = new Set<string>();
-
-    if (csvOfficeString) {
+    const existingRoles = updated.roles || []; // Use roles from the 'updated' copy
+    
+    if (csvOfficeString) { // Only modify roles if CSV provides Office info
+        const parsedCsvRoles: Role[] = [];
+        const parsedFallbackBrands = new Set<string>();
         const officeSegments = csvOfficeString.split(';').map((s: string) => s.trim()).filter(Boolean);
 
         for (const segment of officeSegments) {
@@ -254,72 +260,66 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
                 }
             }
         }
-    }
-    log.verbose(`[mergeEntry] Parsed CSV roles:`, parsedCsvRoles);
-    log.verbose(`[mergeEntry] Parsed fallback brands:`, Array.from(parsedFallbackBrands));
-    
-    // --- Determine final roles based on CSV & Preservation Rules (Code Block 2) --- 
-    const finalRolesCalculation = (): Role[] => { // Wrap calculation in a function
-        const calculatedFinalRoles: Role[] = [];
-        const finalRoleSignatures = new Set<string>();
+        log.verbose(`[mergeEntry] Parsed CSV roles:`, parsedCsvRoles);
+        log.verbose(`[mergeEntry] Parsed fallback brands:`, Array.from(parsedFallbackBrands));
 
-        // 1. Add roles explicitly defined by `org:location` in CSV
-        for (const csvRole of parsedCsvRoles) {
-            const sig = `${csvRole.brand}:${csvRole.office}`;
-            if (!finalRoleSignatures.has(sig)) { 
-                calculatedFinalRoles.push(csvRole); 
-                finalRoleSignatures.add(sig);
-            }
-        }
+        if (parsedCsvRoles.length > 0 || parsedFallbackBrands.size > 0) {
+            // Valid tags found, calculate final roles
+            const finalRolesCalculation = (): Role[] => {
+                const calculatedFinalRoles: Role[] = [];
+                const finalRoleSignatures = new Set<string>();
 
-        // 2. Preserve existing roles if allowed by fallback AND not overwritten by CSV
-        for (const existingRole of existingRoles) {
-            const sig = `${existingRole.brand}:${existingRole.office}`;
-            if (!finalRoleSignatures.has(sig)) { 
-                if (existingRole.brand && parsedFallbackBrands.has(existingRole.brand)) {
-                    log.verbose(`    [mergeEntry] Preserving existing role via fallback '${existingRole.brand}': ${JSON.stringify(existingRole)}`);
-                    calculatedFinalRoles.push(existingRole); 
-                    finalRoleSignatures.add(sig); 
+                // 1. Add roles explicitly defined by `org:location` in CSV
+                for (const csvRole of parsedCsvRoles) {
+                    const sig = `${csvRole.brand}:${csvRole.office}`;
+                    if (!finalRoleSignatures.has(sig)) { 
+                        calculatedFinalRoles.push(csvRole); 
+                        finalRoleSignatures.add(sig);
+                    }
                 }
-            }
-        }
-        return calculatedFinalRoles;
-    };
-    // --- End Code Block 2 ---
-    
-    // --- Conditional Update Logic (Code Block 3 - Preserved and Updated) --- 
-    if (parsedCsvRoles.length > 0 || parsedFallbackBrands.size > 0) {
-        // Valid tags found, calculate final roles and compare
-        const finalRoles = finalRolesCalculation();
-        const sortedExistingRoles = [...existingRoles].sort(compareRoles);
-        const sortedFinalRoles = [...finalRoles].sort(compareRoles);
 
-        // --- CORRECTED AGAIN: Deep Clone finalRoles on assignment --- 
-        updated.roles = cloneDeep(finalRoles); // Use deep clone
-        log.verbose(`    [mergeEntry] Assigned updated.roles with: ${JSON.stringify(updated.roles)}`); 
-        
-        // --- Now, check if this assignment actually represents a change vs original --- 
-        log.verbose(`[mergeEntry] Comparing roles:\n  existing: ${JSON.stringify(sortedExistingRoles)}\n  final(assigned): ${JSON.stringify(sortedFinalRoles)}`);
-        if (!rolesMatch(sortedExistingRoles, sortedFinalRoles)) {
-            log.verbose(`    -> roles change DETECTED.`);
-            changed = true; // Mark overall change *only if* roles actually differ
-            // --- ADDED TEST DEBUG --- 
-            console.log('[TEST DEBUG] Role mismatch detected for objectId:', incoming['object id']);
-            console.log('  Existing:', JSON.stringify(sortedExistingRoles));
-            console.log('  Final:   ', JSON.stringify(sortedFinalRoles));
-            // --- END DEBUG ---
+                // 2. Preserve existing roles if allowed by fallback AND not overwritten by CSV
+                for (const existingRole of existingRoles) {
+                    const sig = `${existingRole.brand}:${existingRole.office}`;
+                    if (!finalRoleSignatures.has(sig)) { 
+                        if (existingRole.brand && parsedFallbackBrands.has(existingRole.brand)) {
+                            log.verbose(`    [mergeEntry] Preserving existing role via fallback '${existingRole.brand}': ${JSON.stringify(existingRole)}`);
+                            calculatedFinalRoles.push(existingRole); 
+                            finalRoleSignatures.add(sig); 
+                        }
+                    }
+                }
+                return calculatedFinalRoles;
+            };
+            const finalRoles = finalRolesCalculation();
+            
+            log.verbose(`[mergeEntry] Comparing roles:\n  existing: ${JSON.stringify(existingRoles)}\n  final   : ${JSON.stringify(finalRoles)}`);
+            
+            // --- ALWAYS ASSIGN and SET CHANGED if valid Office info was parsed --- 
+            updated.roles = [...finalRoles]; // Use explicit copy 
+            log.verbose(`    [mergeEntry] Assigned updated.roles with: ${JSON.stringify(updated.roles)}`); 
+            // Check if assignment actually differs from original 'existing' roles using isEqual for flag
+            if (!isEqual(existing.roles || [], updated.roles)) {
+                 log.verbose(`    -> roles change DETECTED by simple isEqual.`);
+                 changed = true; // Mark overall change 
+            } else {
+                 log.verbose(`    -> roles match by simple isEqual.`);
+                 // Even if roles didn't change, other fields might have, 
+                 // so 'changed' might already be true. 
+                 // We rely on the overall 'changed' flag at the end.
+            }
+        } else {
+             // Office string was provided but resulted in NO valid roles or fallbacks
+             log.warn(`[mergeEntry] User ${existing.id}: Office field '${csvOfficeString}' contained no valid tags. Existing roles will NOT be modified based on this invalid input.`);
+             // No change to updated.roles
         }
-    } else if (csvOfficeString) {
-        // Office string was provided but resulted in NO valid roles or fallbacks
-        log.warn(`[mergeEntry] User ${existing.id}: Office field '${csvOfficeString}' contained no valid tags. Existing roles will NOT be modified based on this invalid input.`);
-        // No change to updated.roles needed, it already holds existingRoles via deep copy
     } else {
         // No Office string provided in CSV, don't touch roles
-        // No change to updated.roles needed
+        // No change to updated.roles
     }
-    // --- End Code Block 3 ---
+    // --- End SIMPLIFIED Role Handling Logic ---
 
-    // --- Final Validation & Return --- 
+    // --- Final Validation & Return (check overall 'changed' flag) --- 
     log.verbose(`[mergeEntry] Reached end for ID ${existing.id}. Final computed changed flag: ${changed}`); 
     if (changed) {
         log.verbose(`  [mergeEntry] -> Entered if(changed) block.`);
@@ -333,52 +333,11 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
             return null; 
         }
         log.verbose(`  [mergeEntry] -> Validation SUCCEEDED. Returning the 'updated' object directly.`);
-        // --- MODIFIED DEBUG LOG --- 
-        log.verbose(`  [mergeEntry] FINAL updated object roles: ${JSON.stringify(updated.roles)}`);
-        // --- END MODIFIED DEBUG LOG --- 
         return updated;
     } else {
         log.verbose(`  [mergeEntry] -> Entered else block (changed is false). Returning null.`);
         return null;
     }
-}
-
-// --- Sorter functions for consistent array comparison ---
-// Note: These are duplicated here and in hash.ts. Consider moving to a shared util file.
-function compareContactPoints(a: ContactPoint, b: ContactPoint): number {
-    if (!a || !b) return 0; // Handle potential undefined/null
-    if (a.type < b.type) return -1;
-    if (a.type > b.type) return 1;
-    if (a.value < b.value) return -1;
-    if (a.value > b.value) return 1;
-    return 0;
-}
-
-function compareRoles(a: Role, b: Role): number {
-    if (!a && !b) return 0;
-    if (!a) return -1;
-    if (!b) return 1;
-    
-    // --- UPDATED: Handle nullable office --- 
-    const officeA = a.office ?? ''; // Treat null as empty string for comparison
-    const officeB = b.office ?? '';
-    if (officeA < officeB) return -1;
-    if (officeA > officeB) return 1;
-    
-    // --- ADDED: Compare by brand next --- 
-    const brandA = a.brand ?? '';
-    const brandB = b.brand ?? '';
-    if (brandA < brandB) return -1;
-    if (brandA > brandB) return 1;
-    
-    // Compare by title (handle nulls)
-    const titleA = a.title ?? ''; 
-    const titleB = b.title ?? ''; 
-    if (titleA < titleB) return -1;
-    if (titleA > titleB) return 1;
-    
-    // Compare by priority (handle nulls/undefined)
-    return (a.priority ?? 0) - (b.priority ?? 0);
 }
 
 /**
