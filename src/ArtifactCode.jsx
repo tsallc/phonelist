@@ -384,7 +384,7 @@ const ROOM_ASSIGNMENTS = {
 };
 
 // Enhanced Raw office data with status field instead of separate empty list
-const RAW_OFFICE_DATA = [
+export const RAW_OFFICE_DATA = [
   // Title Solutions - Front Lobby
   { id: 'solutions-front-desk', name: 'Front Desk', extension: '1000', floor: 'lobby', location: 'solutions', type: 'common', status: 'active' },
   { id: 'solutions-copy-room', name: 'Copy Room', extension: '1100', floor: 'lobby', location: 'solutions', type: 'common', status: 'active' },

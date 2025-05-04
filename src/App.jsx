@@ -12,8 +12,12 @@ import {
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/ui/tabs";
 
-// Contact Directory Component
-const ContactDirectory = () => {
+// Import new components for refactored approach
+import Directory from "./pages/Directory";
+import { ContactDataProvider } from "./contexts/ContactDataContext";
+
+// Legacy Contact Directory Component (will be fully removed when refactor complete)
+const LegacyContactDirectory = () => {
   return (
     <div className="app-container">
       {/* Compact Header */}
@@ -320,7 +324,11 @@ const ContactDirectory = () => {
 
 function App() {
   const [activeTab, setActiveTab] = useState("contact");
-
+  
+  // Feature flag for using new directory component - would come from env or config
+  // Default to true to use the new implementation
+  const [useNewDirectory, setUseNewDirectory] = useState(true);
+  
   return (
     <>
       <Tabs defaultValue="contact" className="w-full" onValueChange={setActiveTab}>
@@ -342,13 +350,32 @@ function App() {
         </TabsList>
         
         <TabsContent value="contact" className="mt-0 p-0">
-          <ContactDirectory />
+          {/* Feature toggle for directory implementation */}
+          {useNewDirectory ? (
+            <ContactDataProvider initialUseCanonical={true}>
+              <Directory />
+            </ContactDataProvider>
+          ) : (
+            <LegacyContactDirectory />
+          )}
         </TabsContent>
         
         <TabsContent value="map" className="mt-0 p-0">
           <ArtifactCode />
         </TabsContent>
       </Tabs>
+      
+      {/* Development-only toggle for directory implementation */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <button 
+            onClick={() => setUseNewDirectory(!useNewDirectory)} 
+            className="bg-gray-800 text-white text-xs px-3 py-1 rounded-full shadow"
+          >
+            {useNewDirectory ? "Using New Directory" : "Using Legacy Directory"}
+          </button>
+        </div>
+      )}
     </>
   );
 }
