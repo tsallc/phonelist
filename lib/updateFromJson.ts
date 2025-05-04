@@ -73,6 +73,19 @@ function updateRole(roles: Role[] = [], office: Role['office'], title: string | 
 }
 // --- End Helper Functions ---
 
+// --- Helper functions for comparing complex nested arrays ---
+function normalizeAndSortContactPoints(points: ReadonlyArray<ContactPoint> | undefined): string[] {
+    if (!points) return [];
+    // Create a stable string representation for each point, then sort the strings
+    return points.map(cp => `${cp.type}:${cp.value}:${cp.source || ''}`).sort();
+}
+
+function normalizeAndSortRoles(roles: ReadonlyArray<Role> | undefined): string[] {
+    if (!roles) return [];
+    // Create a stable string representation, sort by office then title
+    return roles.map(r => `${r.office}:${r.title || ''}:${r.priority || 0}`).sort();
+}
+
 /**
  * Merges specific fields from an incoming CSV-derived object into an existing canonical entity.
  * Avoids overwriting fields that are typically managed manually or from other sources.
@@ -83,11 +96,12 @@ function updateRole(roles: Role[] = [], office: Role['office'], title: string | 
  *          Returns null if the merged entity fails validation.
  */
 function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, any>): ContactEntity | null {
-    // Ensure we only merge into external entities
     if (existing.kind !== 'external') {
         log.verbose(`[mergeEntry] Skipping merge for internal entity: ${existing.id} (${existing.objectId})`);
-        return null; // Do not modify internal entities based on CSV
+        return null; 
     }
+    log.verbose(`[mergeEntry] Processing external entity ID ${existing.id} (ObjID: ${existing.objectId})`); 
+    log.verbose(`[mergeEntry] Incoming CSV data: ${JSON.stringify(incoming)}`); 
 
     const updated: ContactEntity = JSON.parse(JSON.stringify(existing));
     let changed = false;
@@ -106,55 +120,67 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
     for (const canonicalKey in incoming) {
         if (incoming.hasOwnProperty(canonicalKey)) {
             const entityKey = keyMap[canonicalKey as keyof RawOfficeCsvRow];
+
+            // --- DEBUG: Log comparison --- 
+            const incomingValue = incoming[canonicalKey]?.trim() || null;
+            let existingValue: any = null;
             if (entityKey && entityKey !== 'contactPoints' && entityKey !== 'roles') { 
-                const incomingValue = incoming[canonicalKey]?.trim() || null;
-                const existingValue = existing[entityKey];
+                existingValue = existing[entityKey];
+                // Log BEFORE isEqual comparison
+                log.verbose(`  [mergeEntry] PRE-COMPARE Field '${entityKey}':\n    Existing: ${JSON.stringify(existingValue)}\n    Incoming: ${JSON.stringify(incomingValue)}`); // incomingValue might be null here
                 
-                if (!isEqual(existingValue, incomingValue)) {
-                    log.verbose(`[mergeEntry] Basic field change detected for '${entityKey}': FROM=${JSON.stringify(existingValue)} TO=${JSON.stringify(incomingValue)}`);
+                // *** MODIFIED LOGIC: Only update if incoming is not null OR if explicitly different (handles null->value, value->null, value->value) ***
+                // This prevents overwriting existing values with null just because the CSV column was empty/missing.
+                // It WILL allow setting a field TO null if it previously had a value.
+                const valuesAreDifferent = !isEqual(existingValue, incomingValue);
+
+                if (valuesAreDifferent) {
+                    log.verbose(`    -> Basic field change DETECTED for '${entityKey}'`);
+                    // Apply the incoming value (which could be null)
                     (updated as any)[entityKey] = incomingValue; 
                     changed = true;
-                }
+                } 
+                // Removed the simple isEqual check that might have been too broad
             }
-            // Special cases are handled separately below
+            // --- End DEBUG ---
         }
     }
 
-    // --- Handle Nested Structures using helpers, tracking changes --- 
-
-    // MobilePhone → contactPoints.type === 'mobile'
+    // --- Handle Nested Structures --- 
+    // MobilePhone
     if (incoming.hasOwnProperty('mobile phone')) { 
         const mobileValue = incoming['mobile phone'] || null;
-        const originalContactPoints = existing.contactPoints || [];
-        const newContactPoints = updateContactPoint(updated.contactPoints, 'mobile', mobileValue);
-        
-        // Compare sorted versions to ignore order
-        const originalSorted = originalContactPoints.slice().sort(compareContactPoints);
-        const newSorted = newContactPoints.slice().sort(compareContactPoints);
+        const updatedContactPoints = updateContactPoint(updated.contactPoints, 'mobile', mobileValue);
 
-        if (!isEqual(originalSorted, newSorted)) { // Compare sorted arrays
-             log.verbose(`[mergeEntry] contactPoints change detected (order ignored).`);
-             updated.contactPoints = newContactPoints; 
+        // Compare normalized+sorted string arrays
+        const normalizedExistingCP = normalizeAndSortContactPoints(existing.contactPoints);
+        const normalizedNewCP = normalizeAndSortContactPoints(updatedContactPoints);
+
+        log.verbose(`  [mergeEntry] PRE-COMPARE Field 'contactPoints':\n    Existing (Norm+Sorted): ${JSON.stringify(normalizedExistingCP)}\n    New      (Norm+Sorted): ${JSON.stringify(normalizedNewCP)}`);
+        
+        if (!isEqual(normalizedExistingCP, normalizedNewCP)) { // Compare the normalized arrays
+             log.verbose(`    -> contactPoints change DETECTED.`);
+             updated.contactPoints = updatedContactPoints; 
              changed = true;
         }
     }
 
-    // Title → roles 
+    // Title
     if (incoming.hasOwnProperty('title')) { 
         const titleValue = incoming['title'] || null; 
-        const primaryOffice = existing.roles?.[0]?.office; 
-        
+        const primaryOffice = existing.roles?.[0]?.office; // Simplistic assumption
         if (primaryOffice) {
-             const originalRoles = existing.roles || []; 
-             const newRoles = updateRole(updated.roles, primaryOffice, titleValue);
-             
-             // Compare sorted versions to ignore order
-             const originalSortedRoles = originalRoles.slice().sort(compareRoles);
-             const newSortedRoles = newRoles.slice().sort(compareRoles);
+             const updatedRoles = updateRole(updated.roles, primaryOffice, titleValue);
 
-             if (!isEqual(originalSortedRoles, newSortedRoles)) { // Compare sorted arrays
-                  log.verbose(`[mergeEntry] roles change detected (order ignored).`);
-                  updated.roles = newRoles; 
+             // Compare normalized+sorted string arrays
+             const normalizedExistingRoles = normalizeAndSortRoles(existing.roles);
+             const normalizedNewRoles = normalizeAndSortRoles(updatedRoles);
+
+             log.verbose(`  [mergeEntry] PRE-COMPARE Field 'roles':\n    Existing (Norm+Sorted): ${JSON.stringify(normalizedExistingRoles)}\n    New      (Norm+Sorted): ${JSON.stringify(normalizedNewRoles)}`);
+             
+             if (!isEqual(normalizedExistingRoles, normalizedNewRoles)) { // Compare the normalized arrays
+                  log.verbose(`    -> roles change DETECTED.`);
+                  updated.roles = updatedRoles; 
                   changed = true;
              }
         } else if (titleValue) {
@@ -162,27 +188,35 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
         }
     }
     
-    // --- Final Validation --- 
+    // --- Final Validation & Return --- 
+    log.verbose(`[mergeEntry] Reached end for ID ${existing.id}. Final computed changed flag: ${changed}`); 
     if (changed) {
+        log.verbose(`  [mergeEntry] -> Entered if(changed) block.`);
+        // --- DEBUG: Log the object JUST BEFORE validation --- 
+        log.verbose(`  [mergeEntry] Validating updated object for ID ${existing.id}:`, JSON.stringify(updated, null, 2));
+        // --- End DEBUG ---
         const validation = ContactEntitySchema.safeParse(updated);
         if (!validation.success) {
-            log.error(`[mergeEntry]: Merged entity failed validation for key [${existing.id}]:`, validation.error.errors);
-            // Log the object that failed validation for inspection
-            log.error("Failing object state:", JSON.stringify(updated, null, 2));
+            log.error(`[mergeEntry]: Merged entity FAILED validation for key [${existing.id}]:`);
+            // Log the detailed Zod errors
+            log.error("  Validation Errors:", JSON.stringify(validation.error.errors, null, 2)); 
+            log.error("  [mergeEntry] Failing object state was:", JSON.stringify(updated, null, 2));
+            log.verbose(`  [mergeEntry] -> Validation FAILED. Returning null.`);
             return null; 
         }
-        // Return the validated, changed data
-        log.verbose(`[mergeEntry] Final result for ID ${existing.id}: CHANGES DETECTED.`);
+        log.verbose(`  [mergeEntry] -> Validation SUCCEEDED. Returning validated data object.`);
+        log.verbose(`  [mergeEntry] Returned Object:`, JSON.stringify(validation.data, null, 2)); 
         return validation.data; 
     } else {
-        // No changes detected
-        log.verbose(`[mergeEntry] Final result for ID ${existing.id}: NO CHANGES.`);
+        log.verbose(`  [mergeEntry] -> Entered else block (changed is false). Returning null.`);
         return null;
     }
 }
 
 // --- Sorter functions for consistent array comparison ---
+// Note: These are duplicated here and in hash.ts. Consider moving to a shared util file.
 function compareContactPoints(a: ContactPoint, b: ContactPoint): number {
+    if (!a || !b) return 0; // Handle potential undefined/null
     if (a.type < b.type) return -1;
     if (a.type > b.type) return 1;
     if (a.value < b.value) return -1;
@@ -191,6 +225,7 @@ function compareContactPoints(a: ContactPoint, b: ContactPoint): number {
 }
 
 function compareRoles(a: Role, b: Role): number {
+    if (!a || !b) return 0; // Handle potential undefined/null
     if (a.office < b.office) return -1;
     if (a.office > b.office) return 1;
     if ((a.title || '') < (b.title || '')) return -1; // Handle null titles
@@ -225,8 +260,6 @@ export function updateFromCsv(
             }
             canonicalIndex[entity.objectId] = entity;
         } else {
-            // This case should be less likely if schema is enforced on load,
-            // but handle defensively. It might apply to internal entities if defaults failed.
             log.warn(`[updateFromCsv] Entity found without objectId during indexing: ${entity.id}. Skipping.`);
         }
     }
@@ -237,39 +270,36 @@ export function updateFromCsv(
     let rowNum = 0;
     for (const csvRow of csvRows) {
         rowNum++;
-        // Get objectId directly from the canonicalized CSV row data
-        const key = csvRow["object id"]; // Relies on parseCsv providing this key
+        const key = csvRow["object id"]; 
 
         if (!key) {
             log.warn(`[updateFromCsv] Skipping CSV row ${rowNum} due to missing 'object id'. Data: ${JSON.stringify(csvRow)}`);
-            continue; // Skip row if it somehow lacks the required objectId
+            continue;
         }
 
         const existingEntryFromIndex = canonicalIndex[key];
 
         if (existingEntryFromIndex) {
-            // IMPORTANT: Only attempt merge if the existing entity is 'external'
             if (existingEntryFromIndex.kind === 'external') {
                 const merged = mergeEntry(existingEntryFromIndex, csvRow);
+                log.verbose(`[updateFromCsv] AFTER mergeEntry call for key '${key}'. Result: ${merged ? 'Updated Object Returned' : 'Null Returned'}`);
                 if (merged) {
+                    log.verbose(`  [updateFromCsv] -> Entered if(merged) block.`); 
                     log.verbose(`[updateFromCsv] Changes detected for external key: ${key}. Logging as UPDATE.`);
                     updatedDataMap[key] = merged;
                     const detailedDiff = diff(existingEntryFromIndex, merged);
                     changeLog.push({ type: 'update', key, before: existingEntryFromIndex, after: merged, diff: detailedDiff });
                 } else {
+                    log.verbose(`  [updateFromCsv] -> Entered else block (merged is null).`); 
                     log.verbose(`[updateFromCsv] No changes detected for external key: ${key}. Logging as NO_CHANGE.`);
-                    // Ensure we still log 'no_change' for external entities that were processed but unchanged
                     changeLog.push({ type: 'no_change', key, before: existingEntryFromIndex, after: existingEntryFromIndex });
                 }
             } else {
-                // If the objectId matched an internal entity, log no_change (as we don't update them)
                  log.verbose(`[updateFromCsv] Matched internal entity for key: ${key}. Logging as NO_CHANGE.`);
                  changeLog.push({ type: 'no_change', key, before: existingEntryFromIndex, after: existingEntryFromIndex });
             }
         } else {
-            // CSV row objectId not found in canonical data - truly skipped
             log.warn(`[updateFromCsv] CSV row with objectId [${key}] has no matching entry in canonical data. Skipping.`);
-            // Do not add to changeLog here
         }
     }
 

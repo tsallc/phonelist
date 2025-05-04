@@ -26,22 +26,22 @@ const sampleCanonicalJson = {
       id: 'a', displayName: 'Alice', contactPoints: [], 
       roles: [{office: 'PLY', title: 'Eng', priority: 1}], 
       source: 'Office365', upn: 'a@a.com', 
-      objectId: 'obj-a', // External has objectId
-      kind: 'external' // Added kind
+      objectId: 'obj-a', 
+      kind: 'external' // Ensure kind
     },
     {
       id: 'b', displayName: 'Bob', contactPoints: [], 
       roles: [{office: 'FTL', title: 'Mgr', priority: 1}], 
       source: 'Merged', upn: 'b@b.com', 
-      objectId: 'obj-b', // External has objectId
-      kind: 'external' // Added kind
+      objectId: 'obj-b', 
+      kind: 'external' // Ensure kind
     },
     {
       id: 'internal-res', displayName: 'Internal Resource', contactPoints: [],
       roles: [{office: 'PLY', title: 'Utility', priority: 1}],
       source: 'Manual',
-      objectId: 'manual-internal-res-abcdef', // Manual objectId
-      kind: 'internal' // Added kind
+      objectId: 'manual-internal-res-abcdef', 
+      kind: 'internal' // Ensure kind
     }
   ],
   Locations: [],
@@ -52,11 +52,11 @@ const sampleCanonicalJson = {
 const invalidCanonicalJson = {
   ContactEntities: [
     { 
-        id: 'a', displayName: 'Alice', objectId: 'obj-a', kind: 'external', // Added kind
+        id: 'a', displayName: 'Alice', objectId: 'obj-a', kind: 'external', // Ensure kind
         roles: [], contactPoints: [], source: 'Office365' 
     },
     { 
-        id: 'a-dup', displayName: 'Alice Duplicate?', objectId: 'obj-a', kind: 'external', // Added kind
+        id: 'a-dup', displayName: 'Alice Duplicate?', objectId: 'obj-a', kind: 'external', // Ensure kind
         roles: [], contactPoints: [], source: 'Office365' 
     }
   ],
