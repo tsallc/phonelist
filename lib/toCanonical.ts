@@ -1,7 +1,14 @@
 import * as slugifyNs from "slugify";
 import { createHash } from "crypto";
-import { ContactEntity, CanonicalExport, ContactPoint, Role, ContactEntitySchema } from "./schema.js";
+import {
+  ContactEntity,
+  CanonicalExport,
+  ContactPoint,
+  Role,
+  ContactEntitySchema,
+} from "./schema.js";
 import { RawOfficeCsvRow } from "./types.js";
+import { log } from "./logger.js";
 
 const slugify = (slugifyNs as any).default ?? slugifyNs;
 
@@ -11,110 +18,118 @@ function generateSlug(name?: string): string {
   return slugify(name, { lower: true, strict: true });
 }
 
-/**
- * Transforms a single RawOfficeCsvRow into the main part of a ContactEntity.
- * Does not generate the final internal 'id'.
- * Throws error if required fields (like objectId) are missing.
- */
-function rawToPartialContactEntity(row: RawOfficeCsvRow, source: string = 'Office365'): Omit<ContactEntity, 'id'> {
-  const objectId = row["object id"]?.trim();
-  if (!objectId) {
-    throw new Error(`Cannot convert row: Missing required 'object id'. Row: ${JSON.stringify(row)}`);
-  }
-
-  const displayName = row["display name"]?.trim() || undefined;
-  const mobilePhoneValue = row["mobile phone"]?.trim();
-  const upn = row["user principal name"]?.trim() || undefined;
-  const titleValue = row["title"]?.trim();
-  const department = row["department"]?.trim() || undefined;
-
-  const contactPoints: ContactPoint[] = [];
-  if (mobilePhoneValue) {
-    const firstPhone = mobilePhoneValue.split(/[,\/;]/)[0]?.trim();
-    if (firstPhone) {
-      contactPoints.push({ type: "mobile", value: firstPhone, source: source as any });
-    }
-  }
-
-  const roles: Role[] = [];
-  // Basic role creation - assumes PLY office if title exists
-  if (titleValue) {
-    roles.push({ office: "PLY", title: titleValue, priority: 1 });
-  } else {
-    // Add a default null role if title is empty/missing?
-    // Or omit roles entirely? For now, let's add a null title role.
-    // roles.push({ office: "PLY", title: null, priority: 1 });
-  }
-
-  return {
-    displayName,
-    contactPoints,
-    roles,
-    objectId, // Required: string
-    upn,
-    department,
-    source: source as any, // Assuming source is valid for simplicity
-  };
+/** Generates a SHA256 hash for ID collision fallback */
+function hashId(identifier: string, source: string): string {
+  return createHash("sha256").update(identifier + source).digest("hex");
 }
 
 /**
- * Transforms an array of raw CSV row objects into the canonical JSON structure.
- * Handles ID generation (slug/hash), uniqueness checks, and sorting.
+ * Transforms an array of RawOfficeCsvRow objects into an array of full ContactEntity objects,
+ * generating unique internal IDs.
+ * Assumes rows represent external contacts.
  */
+export function rowsToCanonical(rows: RawOfficeCsvRow[], source: string = 'Office365'): ContactEntity[] {
+  const entities: ContactEntity[] = [];
+  const usedIds = new Set<string>();
+
+  for (const row of rows) {
+    try {
+      const objectId = row["object id"]?.trim(); 
+      if (!objectId) {
+        throw new Error(`Missing required 'object id'.`);
+      }
+      const displayName = row["display name"]?.trim() || undefined;
+      const mobilePhone = row["mobile phone"]?.trim() || undefined;
+      const upn = row["user principal name"]?.trim() || undefined;
+      const title = row["title"]?.trim() || undefined;
+      const department = row["department"]?.trim() || undefined;
+
+      const contactPoints: ContactPoint[] = [];
+      if (mobilePhone) {
+        contactPoints.push({ type: "mobile", value: mobilePhone, source: source as ContactPoint['source'] }); // Added type assertion
+      }
+
+      const roles: Role[] = [];
+      if (title) {
+        roles.push({ office: "PLY", title, priority: 1 }); // Still defaulting PLY office
+      }
+
+      let id = generateSlug(displayName);
+      if (usedIds.has(id)) {
+        const fallbackIdentifier = upn || `${displayName}-${objectId?.substring(0,4) || 'no-id'}`;
+        id = hashId(fallbackIdentifier, source);
+      }
+      usedIds.add(id);
+
+      const finalEntity: ContactEntity = {
+        id,
+        kind: "external", // Explicitly set kind
+        objectId,         // Required for external
+        displayName,
+        contactPoints,
+        roles,
+        upn,
+        department,
+        source: source as ContactEntity['source'], // Added type assertion
+      };
+
+      ContactEntitySchema.parse(finalEntity);
+      entities.push(finalEntity);
+    } catch (error: any) {
+      log.error(`Skipping row due to conversion error: ${error.message}`, JSON.stringify(row));
+    }
+  }
+  return entities;
+}
+
+// Note: This function might be legacy or used elsewhere. 
+// It currently calls rowsToCanonical internally.
 export function toCanonical(rawRows: RawOfficeCsvRow[], inputPath: string, verbose: boolean = false): CanonicalExport {
   const contactEntitiesMap = new Map<string, ContactEntity>();
   const potentialSlugs: { [key: string]: number } = {};
   const objectIdSet = new Set<string>();
 
-  // First pass: Prepare entities, check for objectId duplicates, count slug collisions
-  const partialEntities: Omit<ContactEntity, 'id'>[] = [];
-  rawRows.forEach((row, index) => {
-    try {
-      const partialEntity = rawToPartialContactEntity(row);
+  // Generate entities using the primary function
+  const partialEntities: ContactEntity[] = rowsToCanonical(rawRows, "Office365");
 
-      if (objectIdSet.has(partialEntity.objectId)) {
-        console.warn(`[toCanonical] Duplicate objectId '${partialEntity.objectId}' found in input CSV for displayName '${partialEntity.displayName}'. Skipping row ${index + 1}.`);
-        return;
-      }
-      objectIdSet.add(partialEntity.objectId);
-
-      const slug = generateSlug(partialEntity.displayName);
-      potentialSlugs[slug] = (potentialSlugs[slug] || 0) + 1;
-      partialEntities.push(partialEntity);
-
-    } catch (error: any) {
-      console.warn(`[toCanonical] Skipping row ${index + 1} due to error during initial conversion: ${error.message}`);
+  // Process generated entities for ID collision handling and sorting (specific to this function's purpose)
+  partialEntities.forEach((entity) => {
+    // Re-check for duplicate ObjectIDs (might occur if rowsToCanonical skips errors silently but still includes some)
+    if (objectIdSet.has(entity.objectId)) {
+      log.warn(`[toCanonical] Duplicate objectId '${entity.objectId}' detected post-processing for displayName '${entity.displayName}'. Skipping.`);
+      return;
     }
+    objectIdSet.add(entity.objectId);
+
+    // Count slug collisions based on generated 'id' (which might already be a hash)
+    const slug = entity.id; // Use the ID generated by rowsToCanonical
+    potentialSlugs[slug] = (potentialSlugs[slug] || 0) + 1;
   });
 
-  // Second pass: Assign final internal IDs and build final map
-  partialEntities.forEach(partialEntity => {
-    const slug = generateSlug(partialEntity.displayName);
-    let finalId: string;
+  partialEntities.forEach((entity) => {
+    const slug = entity.id; // Use the already generated ID
+    let finalId: string = slug;
     const collisionCount = potentialSlugs[slug] ?? 0;
 
-    if (collisionCount > 1) {
-      if (verbose) console.log(`[toCanonical] Slug collision for '${partialEntity.displayName}'. Using hash of objectId '${partialEntity.objectId}' for internal ID.`);
-      finalId = createHash("sha256").update(partialEntity.objectId).digest("hex").substring(0, 16);
-    } else {
-      finalId = slug;
-    }
-
+    // This collision logic might be redundant if rowsToCanonical handles it robustly,
+    // but keeping for now if this function has a different use case.
+    // If the ID generated by rowsToCanonical (which could be a hash) still collides...
     let uniqueId = finalId;
     let counter = 1;
     while (contactEntitiesMap.has(uniqueId)) {
-      uniqueId = `${finalId}-${++counter}`;
-      console.warn(`[toCanonical] Internal ID collision for '${finalId}', appending counter: '${uniqueId}'`);
+      uniqueId = `${finalId}-${++counter}`; // Append counter
+      log.warn(`[toCanonical] Internal ID collision detected even after initial generation: '${finalId}', appending counter: '${uniqueId}'`);
     }
 
     const finalEntity: ContactEntity = {
-      ...partialEntity,
-      id: uniqueId
+      ...entity,
+      id: uniqueId, // Assign the potentially de-collided ID
     };
 
+    // Re-validate just in case
     const validation = ContactEntitySchema.safeParse(finalEntity);
     if (!validation.success) {
-      console.warn(`[toCanonical] Skipping entity for objectId ${finalEntity.objectId} due to validation error after creation:`, validation.error.errors);
+      log.warn(`[toCanonical] Skipping entity due to validation error after ID de-collision:`, validation.error.errors);
       return;
     }
 
@@ -122,11 +137,9 @@ export function toCanonical(rawRows: RawOfficeCsvRow[], inputPath: string, verbo
   });
 
   const contactEntities = Array.from(contactEntitiesMap.values());
-  contactEntities.sort((a, b) =>
-    (a.displayName ?? '').localeCompare(b.displayName ?? '')
-  );
+  contactEntities.sort((a, b) => (a.displayName ?? '').localeCompare(b.displayName ?? ''));
 
-  if (verbose) console.log(`DEBUG [toCanonical]: Assembled ${contactEntities.length} final entities.`);
+  log.verbose(`DEBUG [toCanonical]: Assembled ${contactEntities.length} final entities.`);
 
   return {
     ContactEntities: contactEntities,

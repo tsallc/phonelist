@@ -12,6 +12,7 @@ const createEntity = (id: string, name: string, title: string | null = 'Default 
   source: 'Office365',
   // Add other required fields with defaults if necessary
   objectId: `obj-${id}`,
+  kind: 'external',
   upn: `${id}@example.com`,
 });
 

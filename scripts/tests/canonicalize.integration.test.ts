@@ -25,31 +25,50 @@ const sampleCanonicalJson = {
     {
       id: 'a', displayName: 'Alice', contactPoints: [], 
       roles: [{office: 'PLY', title: 'Eng', priority: 1}], 
-      source: 'Office365', upn: 'a@a.com', objectId: 'obj-a' // Added objectId
+      source: 'Office365', upn: 'a@a.com', 
+      objectId: 'obj-a', // External has objectId
+      kind: 'external' // Added kind
     },
     {
       id: 'b', displayName: 'Bob', contactPoints: [], 
       roles: [{office: 'FTL', title: 'Mgr', priority: 1}], 
-      source: 'Merged', upn: 'b@b.com', objectId: 'obj-b' // Added objectId
+      source: 'Merged', upn: 'b@b.com', 
+      objectId: 'obj-b', // External has objectId
+      kind: 'external' // Added kind
+    },
+    {
+      id: 'internal-res', displayName: 'Internal Resource', contactPoints: [],
+      roles: [{office: 'PLY', title: 'Utility', priority: 1}],
+      source: 'Manual',
+      objectId: 'manual-internal-res-abcdef', // Manual objectId
+      kind: 'internal' // Added kind
     }
   ],
   Locations: [],
-  _meta: { generatedFrom: ['ref.json'], generatedAt: '2023-01-01', version: 1, hash: 'abc' }
+  _meta: { generatedFrom: ['test.json'], generatedAt: '2023-01-01', version: 1, hash: 'abc-initial' }
 };
 
 // Sample invalid canonical JSON (duplicate objectId)
 const invalidCanonicalJson = {
-  ...sampleCanonicalJson,
   ContactEntities: [
-      ...sampleCanonicalJson.ContactEntities,
-      // Add another entity with the SAME objectId but different id
-      { id: 'a-dup', displayName: 'Alice Dupe', contactPoints: [], roles: [], source: 'Office365', upn: 'a@a.com', objectId: 'obj-a' } 
-  ]
+    { 
+        id: 'a', displayName: 'Alice', objectId: 'obj-a', kind: 'external', // Added kind
+        roles: [], contactPoints: [], source: 'Office365' 
+    },
+    { 
+        id: 'a-dup', displayName: 'Alice Duplicate?', objectId: 'obj-a', kind: 'external', // Added kind
+        roles: [], contactPoints: [], source: 'Office365' 
+    }
+  ],
+  Locations: [],
+  _meta: { generatedFrom: ['test.json'], generatedAt: '2023-01-01', version: 1 }
 };
 
-// Sample O365 CSV for update (MUST include ObjectId)
-const sampleUpdateCsv = `"Display name","Mobile Phone","User principal name","Title","Department","Object ID"
-"Alice","111-NEW-111","a@a.com","Senior Eng","Tech","obj-a"`; 
+// Sample CSV content for update tests
+const sampleUpdateCsv = `"DisplayName","ObjectId","MobilePhone","Title"
+"Alice Updated","obj-a","123-456-7890","Engineer II"
+"Charlie New","obj-c","","Manager"
+`; // obj-c doesn't exist in sampleCanonicalJson, obj-a does
 
 // Function to run the script via node
 const runScript = (args: string[] = []) => {

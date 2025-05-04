@@ -3,51 +3,79 @@ import { describe, it, expect } from 'vitest';
 import { validateCanonical } from '../validate.js';
 import { CanonicalExport, ContactEntity } from '../schema.js';
 
-// Helper creates a *valid* base entity
+// Helper creates a *base* entity, might need more fields for specific tests
 const createBaseEntity = (id: string, name: string): ContactEntity => ({
   id: id,
   displayName: name,
   contactPoints: [],
-  roles: [{ office: 'PLY', title: 'Tester', priority: 1 }],
-  source: 'Office365',
+  roles: [{ office: 'PLY', title: 'Test', priority: 1 }],
+  source: "Office365",
   upn: `${id}@example.com`,
-  objectId: `obj-${id}`,
+  objectId: `obj-${id}`, // Assume external for base helper
+  kind: 'external', // Added kind
   department: null
 });
 
-// Helper creates a *valid* base export
-const createValidData = (entities: ContactEntity[]): CanonicalExport => ({
-  ContactEntities: entities,
-  Locations: [],
-  _meta: {
-    generatedFrom: ['test.csv'],
-    generatedAt: new Date().toISOString(),
-    version: 1,
-    hash: 'valid-hash'
-  },
+// Helper to create a basic valid structure
+const createValidData = (entities: any[] = [], locations: any[] = []) => ({
+    ContactEntities: entities,
+    Locations: locations,
+    _meta: { generatedFrom: [], generatedAt: 'now', version: 1, hash: 'test-hash' },
 });
 
 describe('validateCanonical', () => {
   it('should pass validation for valid data', () => {
-    const validData = createValidData([createBaseEntity('test-1', 'Test User')]);
+    const validData = createValidData([
+        { 
+            id: 'test-1', 
+            displayName: 'Valid Name 1', 
+            objectId: 'obj-1-valid', 
+            kind: 'external', // Added kind
+            roles: [], 
+            contactPoints: [],
+            source: "Office365"
+        },
+         { 
+            id: 'test-2', 
+            displayName: 'Valid Name 2', 
+            objectId: 'manual-test-2-abcdef', 
+            kind: 'internal', // Added kind
+            roles: [], 
+            contactPoints: [],
+            source: "Manual"
+        }
+    ]);
     const result = validateCanonical(validData);
     expect(result.success).toBe(true);
     expect(result.errors).toBeUndefined();
   });
 
-  it('should fail validation for duplicate IDs', () => {
-    const entity1 = createBaseEntity('test-1', 'User One');
-    const entity2 = createBaseEntity('test-1', 'User Two'); // Same ID
-    const invalidData = createValidData([entity1, entity2]);
+  it('should fail validation for duplicate internal IDs', () => {
+    const invalidData = createValidData([
+        { id: 'test-1', objectId: 'obj-1', kind: 'external', source: "Office365" }, // Added required fields
+        { id: 'test-1', objectId: 'obj-2', kind: 'external', source: "Office365" }  // Added required fields
+    ]);
     const result = validateCanonical(invalidData);
     expect(result.success).toBe(false);
     expect(result.errors).toEqual(['Duplicate internal IDs found: test-1']);
   });
 
+  it('should fail validation for duplicate objectIds', () => {
+    const invalidData = createValidData([
+        { id: 'test-a', objectId: 'same-obj-id', kind: 'external', source: "Office365" }, // Added required fields
+        { id: 'test-b', objectId: 'same-obj-id', kind: 'internal', source: "Manual" }  // Added required fields
+    ]);
+    const result = validateCanonical(invalidData);
+    expect(result.success).toBe(false);
+    expect(result.errors).toEqual(['Duplicate objectIds found: same-obj-id']);
+  });
+
   it('should pass validation even if optional fields are missing (e.g., displayName)', () => {
     const entity = { 
         id: 'test-optional', 
-        objectId: 'obj-optional',
+        // displayName is missing 
+        objectId: 'obj-optional', 
+        kind: 'external', // Added kind
         roles: [], 
         contactPoints: [],
         source: "Office365"
@@ -115,13 +143,14 @@ describe('validateCanonical', () => {
     expect(result.errors?.length).toBeGreaterThan(0);
   });
 
-  it('should fail validation for missing required fields (objectId)', () => {
-    // Test focuses ONLY on missing objectId
+  it('should fail validation for missing required fields (objectId only)', () => {
+    // Test focuses ONLY on missing objectId for an external kind
     const invalidData = {
       ContactEntities: [
         { 
             id: 'test-missing-objid', 
             displayName: 'Has DisplayName',
+            kind: 'external', // Kind is present
             // objectId is missing
             roles: [], 
             contactPoints: [],
@@ -144,7 +173,7 @@ describe('validateCanonical', () => {
             id: 'test-missing-req', 
             roles: [], 
             contactPoints: [],
-            // objectId and source are missing
+            // objectId and source and kind are missing
         }
       ],
       Locations: [],
@@ -152,8 +181,10 @@ describe('validateCanonical', () => {
     };
     const result = validateCanonical(invalidData as any);
     expect(result.success).toBe(false);
+    // Expect errors for kind, objectId and source
+    expect(result.errors).toContain("ContactEntities.0.kind - Invalid discriminator value. Expected 'external' | 'internal'"); 
     expect(result.errors).toContain('ContactEntities.0.objectId - Required'); 
     expect(result.errors).toContain('ContactEntities.0.source - Required');
-    expect(result.errors?.length).toBe(2); // Correctly expect 2 errors
+    expect(result.errors?.length).toBe(3); // Expect 3 errors
   });
 }); 

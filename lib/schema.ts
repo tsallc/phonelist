@@ -62,16 +62,8 @@ const ExternalContactSchema = BaseContactSchema.extend({
 // Schema for internal contacts (shared resources, manual entries)
 const InternalContactSchema = BaseContactSchema.extend({
   kind: z.literal("internal"),
-  // Generate a default, stable objectId based on the 'id' (slug) if not provided
-  objectId: z.string().min(1).default(ctx => {
-      // Attempt to access the 'id' field from the input context to generate default
-      // Note: This assumes 'id' is present during parsing if objectId is missing.
-      // Zod's default might run before 'id' is fully parsed/validated depending on order.
-      // A transform might be safer if 'id' is needed reliably for the default.
-      // For now, let's assume 'id' is available or handle potential undefined 'id'
-      const entityId = (ctx as any)?.id || `unknown-${Date.now()}`;
-      return generateInternalObjectId(entityId);
-  }),
+  // objectId is still required, but generation logic is moved elsewhere (e.g., retrofit script)
+  objectId: z.string().min(1), 
   // upn is likely not applicable/optional here
   upn: z.string().email().optional().nullable(),
 });
