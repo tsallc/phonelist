@@ -109,12 +109,11 @@ node dist/canon/scripts/canonicalize.js --json path/to/live_data.json --update-f
 *   Reads the new O365 CSV (`--update-from-csv`), requiring the presence of the `ObjectId` column for matching.
 *   Performs a selective update:
     *   Matches CSV rows to existing entries using the immutable Office 365 `ObjectId`.
-    *   Merges specific fields (like `DisplayName`, `Department`, `MobilePhone`) from the CSV into the canonical data.
-    *   Handles the `Office` and `Title` fields with decoupled logic:
+    *   Merges specific fields (like `DisplayName`, `Department`, `MobilePhone`, `Title`) from the CSV into the canonical data.
+    *   Handles the `Office` field with decoupled logic:
         *   If the CSV `Office` field contains tags (e.g., `cts:ftl`, `tsa`), these tags dictate the `brand` and `office` structure of the canonical `roles` array, potentially replacing existing roles for that entity.
-        *   The CSV `Title` field, if present, is then applied **only** to the roles generated from the CSV `Office` tags. It does not affect roles preserved via fallback or if the `Office` field is empty.
+        *   The `Title` field from CSV is set directly on the ContactEntity, not in the roles.
     *   Handles nested structures (`contactPoints`, `roles`) correctly.
-    *   Preserves other existing data in the canonical JSON.
 *   Compares a deterministic hash of the original data vs. the potentially updated data to detect changes.
 *   If changes are detected and `--dry-run` is **not** specified, writes the updated data to the output JSON file (`--out`, defaults to the input `--json` file).
 *   Use `--dry-run` to preview changes without writing, `--fail-on-diff` to exit with error 1 if changes are detected (useful for CI).

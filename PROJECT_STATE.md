@@ -1,10 +1,10 @@
 # Project State
 
-**Last Updated:** {{TIMESTAMP}} # Updated timestamp
+**Last Updated:** 2024-05-04 # Updated timestamp
 
 ## Current Focus
 
-- **Canonicalizer Script - Test Failures:** Addressing the 2 failing tests identified in `test/update.test.ts` and `scripts/tests/canonicalize.integration.test.ts`. The failures seem related to expectations mismatching the recent "unfucking plan" refactor (decoupling Office/Title) and potential build/environment issues in integration tests.
+- **Canonicalizer Script - Tests Fixed:** The failing tests in `test/update.test.ts` and `scripts/tests/canonicalize.integration.test.ts` have been addressed. The failures were related to the removal of `title` from `Role` objects and moving it to the entity level (`ContactEntity`).
 - **Documentation Update:** Reviewing and updating all relevant `.md` files to accurately reflect the current project state and the canonicalizer's behavior, especially the `--update-from-csv` logic.
 - **React App Refactor:** Temporarily paused while addressing canonicalizer test failures and documentation.
 
@@ -48,12 +48,15 @@
 
 ## Recent Activity
 
-- **Refactored `lib/updateFromJson.ts` (`mergeEntry`)** to decouple Office tag processing from Title assignment ("unfucking plan"). CSV Title now correctly applies *only* when `Office` tags drive role creation. Existing roles are preserved correctly during fallback.
+- **Refactored data model to move `title` from `Role` to `ContactEntity`** to simplify structure and reduce duplication:
+  - Moved `title` field from the `Role` objects to the top-level `ContactEntity` in the schema
+  - Updated all relevant code and tests to work with the new structure
+  - Fixed two failing tests that were related to this refactoring
+  - Added proper cleanup for temporary test files
+
+- **Refactored `lib/updateFromJson.ts` (`mergeEntry`)** to decouple Office tag processing from Title assignment ("unfucking plan"). CSV Title is now set directly on the ContactEntity instead of on roles.
 - **Ran linter (`pnpm run lint`)**: Failed with numerous `prop-types` and other errors primarily in React UI components and legacy JSX files.
-- **Ran tests (`pnpm test`)**: Failed with 2 errors after the refactor:
-    - `test/update.test.ts`: Fails the "reordered Andrea" test. Expectation seems correct (null title), but code unexpectedly yields "Office Manager". Requires test debugging.
-    - `scripts/tests/canonicalize.integration.test.ts`: Fails the "verbose" test. Expects "Updated Title", receives "Tester". Assertion seems correct based on input CSV. Potentially a build/environment issue or subtle bug triggered during integration run. Requires build verification and/or test debugging.
-- **Identified documentation drift:** Confirmed `PROJECT_STATE.md` and likely other docs need updates.
+- **Ran tests (`pnpm test`)**: All tests passing after fixing the title field refactoring issues.
 
 ## Filtered UPNs (Excluded during canonical extraction)
 
@@ -77,16 +80,14 @@
 
 ## Next Steps
 
-1.  **(Documentation)** Complete review and update of `README.md`, `CODEBASE_AUDIT.md`, `REFACTOR_PLAN.md`, and the `canonicalizer_script` rule for accuracy and clarity, reflecting the decoupled update logic.
-2.  **(Testing)** Debug and fix the 2 failing canonicalizer tests.
-3.  **(Linting)** Address the numerous linting errors (likely requires adding `prop-types` or switching components to TypeScript). *[Lower priority]*
-4.  **(Optional Refinement)** Consider further schema hardening or code decomposition for the canonicalizer script.
-5.  **(React)** Proceed with **React App Refactor Phase 1**, using the current `canonicalContactData.json`.
+1.  **(Documentation)** Complete review and update of remaining documentation files for accuracy and clarity, reflecting the decoupled update logic and the new location of the `title` field.
+2.  **(Linting)** Address the numerous linting errors (likely requires adding `prop-types` or switching components to TypeScript). *[Lower priority]*
+3.  **(Optional Refinement)** Consider further schema hardening or code decomposition for the canonicalizer script.
+4.  **(React)** Proceed with **React App Refactor Phase 1**, using the current `canonicalContactData.json`.
 
 ## Blockers/Issues
 
-- **2 Failing Canonicalizer Tests:** Need resolution before trusting the update logic completely.
-- **Documentation Needs Update:** Must be brought in sync with recent changes.
+- **Documentation Needs Update:** Some docs still must be brought in sync with recent changes.
 
 ## Relevant Files & Context
 
