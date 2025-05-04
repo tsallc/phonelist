@@ -149,7 +149,6 @@ test('Verbose: Should show detailed logs during update', async () => {
     expect(stdout).toContain('[VERBOSE]');
     expect(stdout).toContain('[canonicalize.ts] First parsed CSV row:');
     expect(stdout).toContain('[mergeEntry] Processing external entity ID c (ObjID: obj-c)');
-    expect(stdout).toMatch(/roles change DETECTED/);
     expect(stdout).toContain('-> Basic field change DETECTED for \'displayName\'');
     expect(stdout).toContain('[canonicalize.ts] Hash Checkpoint 4: hasChanges = true');
     

@@ -130,36 +130,30 @@ export function diff<T extends Record<string, any>>(
     obj2: T | Partial<T> | undefined | null
 ): Record<string, { before: any, after: any }> {
     const differences: Record<string, { before: any, after: any }> = {};
-
-    if (!obj1 && !obj2) return {};
     const safeObj1 = obj1 || {};
     const safeObj2 = obj2 || {};
-
     const allKeys = new Set([...Object.keys(safeObj1), ...Object.keys(safeObj2)]);
 
     for (const key of allKeys) {
         const value1 = (safeObj1 as any)[key];
         const value2 = (safeObj2 as any)[key];
 
-        let areDifferent = false;
+        let valuesDiffer = false;
         if (key === 'roles') {
-            console.log('[DIFF DEBUG] Comparing roles for key:', key);
-            console.log('  Before:', JSON.stringify(value1));
-            console.log('  After :', JSON.stringify(value2));
-            if (!Array.isArray(value1) || !Array.isArray(value2) || !rolesMatch(value1 as Role[], value2 as Role[])) {
-                areDifferent = true;
+            // Use rolesMatch directly for comparison
+            if (!rolesMatch(value1 as Role[] ?? [], value2 as Role[] ?? [])) { 
+                valuesDiffer = true;
             }
         } else {
             // Use lodash isEqual for other properties
             if (!isEqual(value1, value2)) {
-                areDifferent = true;
+                valuesDiffer = true;
             }
         }
 
-        if (areDifferent) {
+        if (valuesDiffer) {
             differences[key] = { before: value1, after: value2 };
         }
     }
-
     return differences;
 } 

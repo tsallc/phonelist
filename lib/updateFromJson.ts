@@ -101,15 +101,14 @@ function normalizeAndSortContactPoints(points: ReadonlyArray<ContactPoint> | und
 // --- NEW: Deterministic Role Comparison --- 
 const normalizeRole = (role: Role): string => {
   // Ensure all keys are present with null defaults for consistent stringification
-  // Explicitly list keys in a fixed order for stringify
   const normalized = {
     brand: role.brand ?? null,
     office: role.office ?? null,
     priority: role.priority ?? 1,
     title: role.title ?? null
   };
-  // Use JSON.stringify on the object with guaranteed key order
-  return JSON.stringify(normalized);
+  // --- CORRECTED: Use sorted keys for stringify --- 
+  return JSON.stringify(normalized, Object.keys(normalized).sort());
 };
 
 export const rolesMatch = (roles1: Role[], roles2: Role[]): boolean => {
@@ -295,8 +294,8 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
         const sortedExistingRoles = [...existingRoles].sort(compareRoles);
         const sortedFinalRoles = [...finalRoles].sort(compareRoles);
 
-        // --- CORRECTED: Always assign the recalculated roles --- 
-        updated.roles = [...finalRoles]; 
+        // --- CORRECTED AGAIN: Deep Clone finalRoles on assignment --- 
+        updated.roles = cloneDeep(finalRoles); // Use deep clone
         log.verbose(`    [mergeEntry] Assigned updated.roles with: ${JSON.stringify(updated.roles)}`); 
         
         // --- Now, check if this assignment actually represents a change vs original --- 
@@ -429,47 +428,51 @@ export function updateFromCsv(
         }
 
         processedObjectIds.add(key); // Mark this ID as processed
-        const existingEntryFromIndex = canonicalIndex[key];
+        
+        // --- ADDED: Deep clone existing entry to prevent mutation --- 
+        const existingEntryOriginal = canonicalIndex[key];
+        if (!existingEntryOriginal) { 
+            log.warn(`[updateFromCsv] ObjectId ${key} found in index but value is undefined/null? Skipping.`);
+            continue; // Should not happen if indexing worked, but safe check
+        }
+        const existingEntryFromIndex = cloneDeep(existingEntryOriginal);
+        // --- END CLONE ---
 
-        if (existingEntryFromIndex) {
+        if (existingEntryFromIndex) { // Check existence again (though cloneDeep shouldn't nullify)
             if (existingEntryFromIndex.kind === 'external') {
+                // Pass the CLONED existing entry to mergeEntry
                 const merged = mergeEntry(existingEntryFromIndex, csvRow);
                 log.verbose(`[updateFromCsv] AFTER mergeEntry call for key '${key}'. Result: ${merged ? 'Updated Object Returned' : 'Null Returned'}`);
                 if (merged) {
                     log.verbose(`  [updateFromCsv] -> Entered if(merged) block.`); 
                     log.verbose(`[updateFromCsv] Changes detected for external key: ${key}. Logging as UPDATE.`);
                     updatedDataMap[key] = merged;
-                    const detailedDiff = diff(existingEntryFromIndex, merged);
-                    // --- ADDED LOG --- 
+                    const detailedDiff = diff(existingEntryOriginal, merged);
                     log.verbose(`  [updateFromCsv] About to push changeLog UPDATE. merged.roles: ${JSON.stringify(merged.roles)}`);
-                    // --- END LOG --- 
                     changeLog.push({ 
                         type: 'update', 
                         key, 
-                        before: cloneDeep(existingEntryFromIndex), // Deep clone before state
-                        after: cloneDeep(merged), // Deep clone after state
+                        before: existingEntryOriginal, // Use original pre-clone state
+                        after: merged, // Use the potentially modified return value
                         diff: detailedDiff 
                     });
                 } else {
                     log.verbose(`  [updateFromCsv] -> Entered else block (merged is null).`); 
                     log.verbose(`[updateFromCsv] No changes detected for external key: ${key}. Logging as NO_CHANGE.`);
-                    // --- UPDATED: Use cloneDeep --- 
+                    // Use original for both before/after if no change
                     changeLog.push({ 
                         type: 'no_change', 
                         key, 
-                        before: cloneDeep(existingEntryFromIndex), // Clone just in case 
-                        after: cloneDeep(existingEntryFromIndex) // Clone just in case
+                        before: existingEntryOriginal, 
+                        after: existingEntryOriginal 
                     });
                 }
-            } else {
+            } else { // Matched internal entity
                  log.verbose(`[updateFromCsv] Matched internal entity for key: ${key}. Logging as NO_CHANGE (Internal).`);
-                 changeLog.push({ type: 'no_change', key, before: cloneDeep(existingEntryFromIndex), after: cloneDeep(existingEntryFromIndex) });
+                 // Use original for both
+                 changeLog.push({ type: 'no_change', key, before: existingEntryOriginal, after: existingEntryOriginal });
             }
-        } else { // No match found in canonicalIndex
-            log.warn(`[updateFromCsv] CSV row with objectId [${key}] has no matching entry in canonical data. Skipping.`);
-            // Optionally add a 'skipped' entry to changeLog here
-            // changeLog.push({ type: 'skipped', key, after: csvRow });
-        }
+        } // End if(existingEntryFromIndex)
     } // End CSV row loop
 
     // 3. Add 'no_change' entries for original entities NOT processed by the CSV
@@ -477,9 +480,8 @@ export function updateFromCsv(
     for (const originalObjectId in canonicalIndex) {
         if (!processedObjectIds.has(originalObjectId)) {
             log.verbose(`[DEBUG updateFromCsv] Adding NO_CHANGE for unprocessed ID: ${originalObjectId}`);
-            const originalEntry = canonicalIndex[originalObjectId];
-            // Clone here too for consistency, though less critical if only logging
-            changeLog.push({ type: 'no_change', key: originalObjectId, before: cloneDeep(originalEntry), after: cloneDeep(originalEntry) });
+            const originalEntry = canonicalIndex[originalObjectId]; 
+            changeLog.push({ type: 'no_change', key: originalObjectId, before: cloneDeep(originalEntry), after: cloneDeep(originalEntry) }); // Clone here too
         }
     }
 
