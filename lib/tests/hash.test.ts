@@ -7,8 +7,9 @@ import { ContactEntity } from '../schema.js'; // Added .js
 const createEntity = (id: string, name: string, objectIdPrefix = 'obj'): ContactEntity => ({
   id,
   displayName: name,
+  title: 'Test',
   contactPoints: [],
-  roles: [{office: 'PLY', brand: 'tsa', title: 'Test', priority: 1}],
+  roles: [{office: 'PLY', brand: 'tsa', priority: 1}],
   objectId: `${objectIdPrefix}-${id}`, // Ensures objectId is always present
   kind: objectIdPrefix === 'manual' ? 'internal' : 'external', // Ensure kind is set based on prefix
   source: objectIdPrefix === 'manual' ? 'Manual' : 'Office365', // Ensure source is set based on kind

@@ -38,7 +38,8 @@ describe('toCanonical', () => {
     expect(entity.id).toBe('alice-smith');
     expect(entity.displayName).toBe('Alice Smith');
     expect(entity.contactPoints).toEqual([{ type: 'mobile', value: '111-222-3333', source: 'Office365' }]);
-    expect(entity.roles).toEqual([{ office: 'PLY', brand: 'tsa', title: 'Engineer', priority: 1 }]);
+    expect(entity.roles).toEqual([]);
+    expect(entity.title).toBe('Engineer');
     expect(entity.objectId).toBe('obj-1');
     expect(entity.upn).toBe('alice@example.com');
     expect(entity.department).toBe('Tech');

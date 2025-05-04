@@ -91,7 +91,7 @@ function normalizeContactPoints(contactPoints: ContactEntity['contactPoints']) {
  */
 function normalizeRoles(roles: ContactEntity['roles']) {
     if (!roles) return [];
-    // Sort by brand, office, then title, then priority (Match hash.ts logic)
+    // Sort by brand, office, then priority (Match hash.ts logic)
     return [...roles].sort((a, b) => {
         const brandA = a.brand ?? '';
         const brandB = b.brand ?? '';
@@ -99,9 +99,6 @@ function normalizeRoles(roles: ContactEntity['roles']) {
         const officeA = a.office ?? ''; 
         const officeB = b.office ?? '';
         if (officeA !== officeB) return officeA.localeCompare(officeB);
-        const titleA = a.title ?? ''; 
-        const titleB = b.title ?? ''; 
-        if (titleA !== titleB) return titleA.localeCompare(titleB);
         return (a.priority ?? 0) - (b.priority ?? 0);
     });
 }

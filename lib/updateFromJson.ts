@@ -117,7 +117,6 @@ const cleanRole = (role: Role | Partial<Role>): Partial<Role> => {
     const cleaned: Partial<Role> = {};
     if (role.brand !== null && role.brand !== undefined) cleaned.brand = role.brand;
     if (role.office !== null && role.office !== undefined) cleaned.office = role.office;
-    if (role.title !== null && role.title !== undefined) cleaned.title = role.title;
     if (role.priority !== null && role.priority !== undefined) cleaned.priority = role.priority;
     // Return an object with defined keys sorted for consistent stringify
     return cleaned;
@@ -156,7 +155,6 @@ function normalizeRoleForDiff(role: Role | null | undefined): Record<string, any
   return {
     brand: role.brand?.toUpperCase() ?? null,
     office: role.office?.toUpperCase() ?? null,
-    title: role.title === undefined ? '__MISSING__' : (role.title ?? null),
     priority: role.priority ?? 0,
   };
 }
@@ -189,7 +187,7 @@ export function getRoleDiffs(beforeRoles: Role[] = [], afterRoles: Role[] = []):
        continue;
     }
 
-    for (const key of ['brand', 'office', 'title', 'priority'] as (keyof Role)[]) {
+    for (const key of ['brand', 'office', 'priority'] as (keyof Role)[]) {
       const beforeVal = bNorm && key in bNorm ? (bNorm[key] ?? null) : null;
       const afterVal = aNorm && key in aNorm ? (aNorm[key] ?? null) : null;
       if (beforeVal !== afterVal) {
@@ -246,12 +244,25 @@ function mergeEntry(existing: Readonly<ContactEntity>, csvRow: Record<string, an
 
     // --- Title Handling: Distinguish null (not present) vs "" (explicit empty) ---
     const titleFromCsv: string | null = (typeof rawTitleFromCsv === 'string' && rawTitleFromCsv.trim() === '')
-        ? '' // Preserve explicit empty string
+        ? null // Map empty string to null for canonical representation (CHANGED FROM '')
         : normalize(rawTitleFromCsv); // Normalize others (null/undefined/non-empty)
 
+    // Remove Brian debug logs
     if (objectIdForLog === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6') { // Example debug target
         console.log(`DEBUG mergeEntry [${upnForLog} ${objectIdForLog}]: titleFromCsv evaluated to:`, titleFromCsv);
     }
+
+    // --- NEW: Top-Level Title Update ---
+    // Check if 'title' *key* exists in the CSV row, not just if the value is undefined
+    if ('title' in csvRow) { 
+        const normalizedExistingTitle = normalize(existing.title);
+        if (titleFromCsv !== normalizedExistingTitle) {
+            log.verbose(`    -> Field change 'title': ${normalizedExistingTitle} -> ${titleFromCsv}`);
+            mutableUpdated.title = titleFromCsv; // Assign directly (already handled null vs "")
+            changed = true;
+        }
+    }
+    // --- END NEW ---
 
     // --- Simple Field Updates ---
     if (normalizedDisplayNameFromCsv !== normalize(existing.displayName)) {
@@ -343,25 +354,9 @@ function mergeEntry(existing: Readonly<ContactEntity>, csvRow: Record<string, an
     // --- Step 2: Apply CSV Title Override OR Clear Directive --- 
     let rolesToAssign: Role[]; // This will be the final array assigned
     
-    // Check if CSV provided an explicit, non-empty title string
-    if (titleFromCsv !== null && titleFromCsv !== '') {
-        // Explicit title provided -> OVERRIDE
-        log.verbose(`    [mergeEntry ${upnForLog}] Explicit non-empty title ('${titleFromCsv}') found in CSV. Applying as override to all ${baseRoles.length} base roles.`);
-        rolesToAssign = baseRoles.map(role => ({ 
-            ...role, // Keep original brand, office, priority
-            title: titleFromCsv // Apply the override title
-        }));
-    } else {
-        // Title is null (missing/undefined) OR "" (empty/whitespace) -> CLEAR
-        log.verbose(`    [mergeEntry ${upnForLog}] Title missing or empty in CSV. Clearing title (setting to null) for all ${baseRoles.length} base roles.`);
-        rolesToAssign = baseRoles.map(role => ({ 
-            ...role,
-            title: null // Explicitly set title to null
-        }));
-    }
-    // =====================================================
-    // --- End Explicit Role Handling Logic ---
-    // =====================================================
+    // Roles structure is already determined, just use baseRoles directly
+    // No longer setting title on roles
+    rolesToAssign = baseRoles;
 
     // --- Compare original roles with the final determined roles state ---
     const roleDiffs = getRoleDiffs(originalRoles, rolesToAssign);
@@ -391,6 +386,7 @@ function mergeEntry(existing: Readonly<ContactEntity>, csvRow: Record<string, an
              log.error("  Failing object state:", JSON.stringify(updated, null, 2));
              return { updated: null, changed: false, roleDiffs: [] }; // Discard changes on validation failure
         }
+        
         // Return the validated, updated entity and any role differences found
         return { updated, changed: true, roleDiffs };
     } else {

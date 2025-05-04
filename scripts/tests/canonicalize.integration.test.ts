@@ -20,10 +20,10 @@ let mockDir: string; // Directory for mock files
 // Sample initial canonical data
 const initialCanonicalData = {
   ContactEntities: [
-    { id: 'a', displayName: 'Alice Initial', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', title: 'Tester', priority: 1 }], source: 'Merged', objectId: 'obj-a', kind: 'external' },
-    { id: 'b', displayName: 'Bob Initial', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', title: 'Tester', priority: 1 }], source: 'Merged', objectId: 'obj-b', kind: 'external' },
-    { id: 'c', displayName: 'Charlie Initial', contactPoints: [], roles: [{ office: 'FTL', brand: 'cts', title: 'Tester', priority: 1 }], source: 'Merged', objectId: 'obj-c', kind: 'external' },
-    { id: 'internal', displayName: 'Internal Conf Room', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', title: 'Meeting Room', priority: 1 }], source: 'Manual', objectId: 'manual-conf-123', kind: 'internal' },
+    { id: 'a', displayName: 'Alice Initial', title: 'Tester', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', priority: 1 }], source: 'Merged', objectId: 'obj-a', kind: 'external' },
+    { id: 'b', displayName: 'Bob Initial', title: 'Tester', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', priority: 1 }], source: 'Merged', objectId: 'obj-b', kind: 'external' },
+    { id: 'c', displayName: 'Charlie Initial', title: 'Tester', contactPoints: [], roles: [{ office: 'FTL', brand: 'cts', priority: 1 }], source: 'Merged', objectId: 'obj-c', kind: 'external' },
+    { id: 'internal', displayName: 'Internal Conf Room', title: 'Meeting Room', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', priority: 1 }], source: 'Manual', objectId: 'manual-conf-123', kind: 'internal' },
   ],
   Locations: [],
   _meta: { generatedFrom: ['initial-test-setup'], generatedAt: new Date().toISOString(), version: 1 }
@@ -96,7 +96,7 @@ test('Update: Should update entries based on CSV, detect changes, and write outp
     expect(entityA?.displayName).toBe('Updated Name A');
     expect(entityA?.roles?.[0]?.brand).toBe('tsa');
     expect(entityA?.roles?.[0]?.office).toBe('PLY');
-    expect(entityA?.roles?.[0]?.title).toBe('Tester');
+    expect(entityA?.title ?? null).toBeNull();
     expect(finalData._meta.hash).toBeDefined();
     expect(finalData._meta.generatedFrom).toEqual(expect.arrayContaining([expect.stringContaining('updateFromCsv: update_basic.csv')]));
 });
@@ -161,7 +161,7 @@ test('Verbose: Should show detailed logs during update', async () => {
     expect(entityC?.roles?.length).toBe(1);
     expect(entityC?.roles?.[0]?.brand).toBe('cts');
     expect(entityC?.roles?.[0]?.office).toBe('FTL');
-    expect(entityC?.roles?.[0]?.title, "Verbose entity C title should be 'Updated Title'").toBe('Updated Title'); 
+    expect(entityC?.title).toBe('Updated Title');
 
     expect(stdout).toContain('Overall state changes detected:');
 });

@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { parseCsv } from '../lib/parseCsv.js'; // Assuming compiled JS
 import { updateFromCsv, ChangeSummary, getRoleDiffs, RoleDelta } from '../lib/updateFromJson.js'; // Assuming compiled JS
-import { CanonicalExport, ContactEntity, Role } from '../lib/schema.js'; // Assuming compiled JS
+import { CanonicalExport, ContactEntity, Role, ContactPoint } from '../lib/schema.js'; // Assuming compiled JS
 import { diff } from '../lib/diff.js'; // Assuming compiled JS
 import { computeHash } from '../lib/hash.js'; // Assuming compiled JS
 import { cloneDeep } from 'lodash';
@@ -93,7 +93,7 @@ describe('Canonical Data Update from CSV', () => {
             expect(andreaDiff.department.after, "Andrea after.department").toBe('Operations');
         }        
         expect(andreaDiff.contactPoints, "Difference in 'contactPoints' expected").toBeDefined();
-        const afterMobile = andreaChange.after?.contactPoints?.find(cp => cp.type === 'mobile');
+        const afterMobile = andreaChange.after?.contactPoints?.find((cp: ContactPoint) => cp.type === 'mobile');
         expect(afterMobile?.value, "Andrea after mobile value").toBe('954-555-1212');
 
         console.log("DEBUG [Andrea Test] changeRecord.after.roles:", JSON.stringify(andreaChange.after?.roles));
@@ -104,7 +104,7 @@ describe('Canonical Data Update from CSV', () => {
         // CSV has Office=cts:ftl AND Title=Office Manager.
         // The explicit org:loc tag defines the role structure.
         // The csvTitle is then applied to that structure.
-        expect(finalRole?.title, "Andrea final role title should be 'Office Manager'").toBe('Office Manager'); 
+        expect(andreaChange.after?.title, "Andrea after.title should be 'Office Manager'").toBe('Office Manager');
     });
     
     it('should correctly handle Brian Tiller (set Title to empty string)', () => {
@@ -128,25 +128,13 @@ describe('Canonical Data Update from CSV', () => {
         console.log("DEBUG [Brian Test] Before Roles:", JSON.stringify(beforeRoles));
         console.log("DEBUG [Brian Test] After Roles:", JSON.stringify(afterRoles));
         
-        const roleDeltas = getRoleDiffs(beforeRoles, afterRoles);
-        console.log("   Role Deltas for Brian:", JSON.stringify(roleDeltas, null, 2));
-
-        // --- UPDATED ASSERTION (Decoupled Logic + Precise Diffing) ---
-        // A difference *is* expected because the title changes from 'President' to null.
-        expect(roleDeltas.length, "Expected 1 role difference (title)").toBe(1);
-        if (roleDeltas.length === 1 && roleDeltas[0]) {
-            expect(roleDeltas[0].key).toBe('title');
-            expect(roleDeltas[0].before).toBe('President');
-            expect(roleDeltas[0].after).toBeNull();
-        }
-
         // Check the final state directly
         const finalRole = afterRoles[0];
-        expect(afterRoles.length).toBe(1);
+        expect(afterRoles.length).toBe(1); // Should still have one role based on Office tag
         expect(finalRole?.brand).toBe('tsa');
         expect(finalRole?.office).toBe('PLY');
-        // Title should be null because CSV title was empty/clear directive
-        expect(finalRole?.title, "Brian final role title should become null").toBeNull(); 
+        // Check entity title directly
+        expect(brianChange.after?.title ?? null, "Brian after.title should become null").toBeNull(); 
     });
 
     it('should result in an overall hash change for main test', () => {
@@ -194,7 +182,7 @@ describe('Canonical Data Update from CSV', () => {
         expect(finalRole?.brand).toBe('cts');
         expect(finalRole?.office).toBe('FTL');
         // Title should be null because the role was dictated by cts:ftl and csvTitle was missing.
-        expect(finalRole?.title ?? null, "Reordered Andrea final role title should be null").toBeNull();
+        expect(andreaReorderChange.after?.title ?? null, "Reordered Andrea after.title should be null").toBeNull();
     });
 
     it('should correctly update Andrew Ignagni (set Title from CSV)', () => {
@@ -216,7 +204,7 @@ describe('Canonical Data Update from CSV', () => {
         const finalRole = afterRoles[0];
         expect(finalRole?.brand).toBe('tsa');
         expect(finalRole?.office).toBe('PLY');
-        expect(finalRole?.title).toBe('Escrow Officer'); // Title comes from CSV
+        expect(andrewChange.after?.title).toBe('Escrow Officer');
     });
 
     it('should correctly update Kathy Case (set Title from CSV)', () => {
@@ -238,7 +226,7 @@ describe('Canonical Data Update from CSV', () => {
         const finalRole = afterRoles[0];
         expect(finalRole?.brand).toBe('tsa');
         expect(finalRole?.office).toBe('PLY');
-        expect(finalRole?.title).toBe('Processor'); // Title comes from CSV
+        expect(kathyChange.after?.title).toBe('Processor');
     });
 
 }); // Close the describe block

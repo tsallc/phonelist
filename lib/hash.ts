@@ -32,12 +32,6 @@ function compareRoles(a: Role, b: Role): number {
     if (brandA < brandB) return -1;
     if (brandA > brandB) return 1;
     
-    // Compare by title (handle nulls and undefined explicitly)
-    const titleA = a.title === undefined ? '__MISSING__' : (a.title ?? '__NULL__'); 
-    const titleB = b.title === undefined ? '__MISSING__' : (b.title ?? '__NULL__');
-    if (titleA < titleB) return -1;
-    if (titleA > titleB) return 1;
-    
     // Compare by priority (handle nulls/undefined)
     return (a.priority ?? 0) - (b.priority ?? 0);
 }
@@ -82,9 +76,10 @@ export function computeHash(contacts: ReadonlyArray<ContactEntity>, locations: R
             upn: contact.upn,
             department: contact.department,
             source: contact.source,
+            title: contact.title, // <<< ADDED: Include top-level title in hash object
             // Ensure nested arrays are always present and sorted
             contactPoints: [...(contact.contactPoints || [])].sort(compareContactPoints),
-            roles: [...(contact.roles || [])].sort(compareRoles)
+            roles: [...(contact.roles || [])].sort(compareRoles) // <<< compareRoles no longer uses title
         };
         
         // --- DEBUG: Log the specific object being hashed for obj-a ---

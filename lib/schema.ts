@@ -7,20 +7,16 @@ const generateInternalObjectId = (id: string) => `manual-${id}-${createHash("sha
 
 // Zod Schemas
 export const ContactPointSchema = z.object({
-  type: z.enum(["mobile", "desk-extension"]),
-  value: z.string(),
-  source: z.enum(["Office365", "App.jsx", "ArtifactCode.jsx"]),
+  type: z.enum(["mobile", "office", "email", "linkedin", "desk-extension"]),
+  value: z.string().min(1),
+  source: z.string().optional(),
 });
 
 // Define the schema for a role
 export const RoleSchema = z.object({
-  // Re-add validation for office codes, allowing null
-  office: z.union([z.enum(["PLY", "FTL", "REO", "SGT"]), z.null()]), 
-  brand: z.string().nullable(),      // Added brand field
-  // Note: Title is descriptive metadata. It is NOT typically derived from the O365 'Office' field during updates.
-  // It *can* be updated if the CSV 'Title' field is processed, but this is currently decoupled.
-  title: z.string().nullable(),      // Already nullable
-  priority: z.number().int().min(1)  // Assuming priority is still required
+  brand: z.string().min(1),
+  office: z.string().min(1),
+  priority: z.number().int().min(1),
 });
 
 const DeskSchema = z.object({
@@ -50,6 +46,7 @@ export const CanonicalMetaSchema = z.object({
 const BaseContactSchema = z.object({
   id: z.string().min(1), // Internal identifier (e.g., slug)
   displayName: z.string().min(1).optional(),
+  title: z.string().nullable().optional(),
   contactPoints: z.array(ContactPointSchema).optional().default([]),
   roles: z.array(RoleSchema).optional().default([]),
   source: z.enum(["Office365", "App.jsx", "Merged", "ArtifactCode.jsx", "Manual"]), // Added Manual source?

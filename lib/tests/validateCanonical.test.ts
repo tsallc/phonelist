@@ -7,8 +7,9 @@ import { CanonicalExport, ContactEntity } from '../schema.js';
 const createBaseEntity = (id: string, name: string): ContactEntity => ({
   id: id,
   displayName: name,
+  title: 'Test',
   contactPoints: [],
-  roles: [{ office: 'PLY', brand: 'tsa', title: 'Test', priority: 1 }],
+  roles: [{ office: 'PLY', brand: 'tsa', priority: 1 }],
   source: "Office365",
   upn: `${id}@example.com`,
   objectId: `obj-${id}`, // Assume external for base helper
@@ -30,8 +31,9 @@ const createValidEntity = (id: string, kind: 'external' | 'internal', objectId: 
     objectId,
     kind,
     displayName: `Test ${id}`,
+    title: 'Test',
     contactPoints: [],
-    roles: [{ office: 'PLY' as const, brand: 'tsa', title: 'Test', priority: 1 }],
+    roles: [{ office: 'PLY' as const, brand: 'tsa', priority: 1 }],
     source: 'Merged' as const,
     upn: `${id}@example.com`
   };
@@ -140,9 +142,10 @@ describe('validateCanonical', () => {
     expect(result.errors?.[0]).toContain('ContactEntities - Expected array');
   });
 
-  it('should fail validation for invalid enum values (e.g., invalid office)', () => {
+  it('should fail validation for invalid role types (e.g., non-integer priority)', () => { 
     const entity = createBaseEntity('test-1', 'Test User');
-    const invalidRole = { office: 'INVALID_OFFICE', brand: null, title: 'Bad Role', priority: 1 };
+    // Create a role with an invalid priority type
+    const invalidRole = { office: 'PLY', brand: 'tsa', priority: 1.5 }; // Invalid priority
     const invalidEntity: any = { 
         ...entity, 
         roles: [invalidRole] 
@@ -150,10 +153,11 @@ describe('validateCanonical', () => {
     const invalidData = createValidData([invalidEntity]);
     const result = validateCanonical(invalidData as any);
     expect(result.success).toBe(false);
-    const officeError = result.errors?.find(e => e.includes('.roles.0.office'));
-    expect(officeError).toBeDefined();
-    // Check for "Invalid input" message
-    expect(officeError).toContain('Invalid input');
+    // Find the error related to the priority field
+    const priorityError = result.errors?.find(e => e.includes('.roles.0.priority'));
+    expect(priorityError).toBeDefined();
+    // Check for the expected Zod error message for integer validation
+    expect(priorityError).toContain('Expected integer, received float'); 
   });
 
    it('should fail validation for malformed _meta object', () => {

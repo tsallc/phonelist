@@ -9,8 +9,9 @@ const createEntity = (id: string, objectId: string, title: string | null = 'Test
   id,
   objectId,
   displayName: `Test ${id}`,
+  title: title,
   contactPoints: [{ type: 'mobile', value: '123', source: 'Office365' }],
-  roles: title ? [{ office: 'PLY', brand: 'tsa', title, priority: 1 }] : [],
+  roles: [{ office: 'PLY', brand: 'tsa', priority: 1 }],
   source: 'Merged',
   upn: `${id}@test.com`
 });

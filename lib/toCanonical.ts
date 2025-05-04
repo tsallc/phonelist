@@ -50,9 +50,6 @@ export function rowsToCanonical(rows: RawOfficeCsvRow[], source: string = 'Offic
       }
 
       const roles: Role[] = [];
-      if (title) {
-        roles.push({ office: "PLY", brand: "tsa", title, priority: 1 });
-      }
 
       let id = generateSlug(displayName);
       if (usedIds.has(id)) {
@@ -66,6 +63,7 @@ export function rowsToCanonical(rows: RawOfficeCsvRow[], source: string = 'Offic
         kind: "external", // Explicitly set kind
         objectId,         // Required for external
         displayName,
+        title,
         contactPoints,
         roles,
         upn,
@@ -73,8 +71,12 @@ export function rowsToCanonical(rows: RawOfficeCsvRow[], source: string = 'Offic
         source: source as ContactEntity['source'], // Added type assertion
       };
 
-      ContactEntitySchema.parse(finalEntity);
-      entities.push(finalEntity);
+      const validationResult = ContactEntitySchema.safeParse(finalEntity);
+      if (!validationResult.success) {
+        log.error(`Skipping row due to validation error: ${validationResult.error.message}`, JSON.stringify(row));
+        continue; // Skip this row
+      }
+      entities.push(validationResult.data);
     } catch (error: any) {
       log.error(`Skipping row due to conversion error: ${error.message}`, JSON.stringify(row));
     }

@@ -26,7 +26,7 @@ export async function exportCsv(entities: ContactEntity[], outPath: string): Pro
     "Object ID": e.objectId ?? "",
     "User Principal Name": e.upn ?? "",
     // Assumption: Export the title from the *first* role listed.
-    "Title": e.roles[0]?.title ?? "",
+    "Title": e.title ?? "",
     "Department": e.department ?? "",
   }));
 
