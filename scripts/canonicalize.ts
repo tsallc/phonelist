@@ -169,21 +169,22 @@ async function main() {
             JSON.parse(JSON.stringify(updatedCanonicalExport.Locations)), 
             "Updated"
         );
-        updatedCanonicalExport._meta.hash = newHash; 
-        updatedCanonicalExport._meta.generatedFrom = [...new Set([...liveData._meta.generatedFrom, `updateFromCsv: ${path.basename(opts.updateFromCsv)}`])];
-        updatedCanonicalExport._meta.generatedAt = new Date().toISOString();
+        // DO NOT assign hash here yet!
+        // updatedCanonicalExport._meta.hash = newHash; 
+        // ... update other meta fields ...
         log.info(`   - New Hash: ${newHash}`);
 
         log.info(`🔄 Comparing updated data with original live version...`);
         const diffResult = diffCanonical(liveData, updatedCanonicalExport); 
         
-        // <<<< CRITICAL: Use initialComputedHash, never trust liveData._meta.hash >>>>
-        const originalHashForCompare = initialComputedHash; 
-        log.verbose(`[canonicalize.ts] Hash Checkpoint 1: initialComputedHash = ${initialComputedHash}`);
-        log.verbose(`[canonicalize.ts] Hash Checkpoint 2: originalHashForCompare = ${originalHashForCompare}`);
-        log.verbose(`[canonicalize.ts] Hash Checkpoint 3: newHash = ${newHash}`);
+        // <<<< CRITICAL: Use initialComputedHash directly, never trust liveData._meta.hash >>>>
+        const originalHashForCompare = initialComputedHash; // Assign directly
+        // Removed Checkpoint logs for brevity now
+        // log.verbose(`[canonicalize.ts] Hash Checkpoint 1: initialComputedHash = ${initialComputedHash}`);
+        // log.verbose(`[canonicalize.ts] Hash Checkpoint 2: originalHashForCompare = ${originalHashForCompare}`);
+        // log.verbose(`[canonicalize.ts] Hash Checkpoint 3: newHash = ${newHash}`);
 
-        log.verbose(`[canonicalize.ts] Comparing Hashes: InitialComputed='${originalHashForCompare}' New='${newHash}'`); 
+        log.verbose(`[canonicalize.ts] Comparing Hashes: Initial='${originalHashForCompare}' New='${newHash}'`); // Corrected log label
         const hasChanges = originalHashForCompare !== newHash;
         log.verbose(`[canonicalize.ts] Hash Checkpoint 4: hasChanges = ${hasChanges}`);
 
@@ -200,6 +201,11 @@ async function main() {
         // while 'changes' from updateFromCsv reflects row-by-row processing.
 
         if (hasChanges) {
+            // NOW it's safe to assign the hash to the object to be written
+            updatedCanonicalExport._meta.hash = newHash; 
+            updatedCanonicalExport._meta.generatedFrom = [...new Set([...liveData._meta.generatedFrom, `updateFromCsv: ${path.basename(opts.updateFromCsv)}`])];
+            updatedCanonicalExport._meta.generatedAt = new Date().toISOString();
+            
             log.verbose(`[canonicalize.ts] ENTERED if(hasChanges) block.`);
             log.info(`❗️ Overall state changes detected:`);
             log.info(`   - Entities Added (Overall): ${diffResult.added.length}`);
@@ -243,6 +249,7 @@ async function main() {
                 process.exit(1);
             }
         } else {
+            // No changes, no need to update meta hash/fields
             log.verbose(`[canonicalize.ts] ENTERED else block (no changes).`);
             log.info("✅ No changes detected after update process.");
         }

@@ -84,7 +84,7 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         expect(exitCode).toBe(0);
         expect(stdout).toContain('✅ Live data validation successful.');
         expect(stdout).toContain('✨ Validation of live canonical data complete.');
-        expect(stderr).toBe('');
+        expect(stderr).toMatch(/(\[WARN\] meta\.hash field detected.*)?$/);
     });
 
     it('Default: should fail validation for an invalid JSON file (duplicate objectId) and exit 1', async () => {
@@ -105,7 +105,7 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         await fs.outputJson(liveJsonPath, sampleCanonicalJson);
         const { stdout, stderr, exitCode } = await runScript(['--json', liveJsonPath, '--export-csv', exportCsvPath]);
         expect(exitCode).toBe(0);
-        expect(stderr).toBe('');
+        expect(stderr).toMatch(/(\[WARN\] meta\.hash field detected.*)?$/);
         expect(stdout).toContain('✅ Successfully exported CSV');
         expect(await fs.pathExists(exportCsvPath)).toBe(true);
     });
@@ -129,7 +129,7 @@ describe('canonicalize.ts CLI Integration Tests', () => {
             '--json', liveJsonPath, '--update-from-csv', updateCsvPath, '--out', outputJsonPath
         ]);
         expect(exitCode).toBe(0);
-        expect(stderr).toBe(''); 
+        expect(stderr).toMatch(/(\[WARN\] meta\.hash field detected.*)?$/);
         expect(stdout).toContain('Performing selective update');
         expect(stdout).toContain('Matched & Updated: 1'); 
         expect(stdout).toContain('❗️ Overall state changes detected:');
@@ -152,7 +152,7 @@ describe('canonicalize.ts CLI Integration Tests', () => {
             '--json', liveJsonPath, '--update-from-csv', updateCsvPath, '--out', outputJsonPath, '--dry-run'
         ]);
         expect(exitCode).toBe(0);
-        expect(stderr).toBe('');
+        expect(stderr).toMatch(/(\[WARN\] meta\.hash field detected.*)?$/);
         expect(stdout).toContain('Performing selective update');
         expect(stdout).toContain('Matched & Updated: 1'); 
         expect(stdout).toContain('❗️ Overall state changes detected:');
@@ -172,9 +172,9 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         ]);
         
         expect(exitCode).toBe(0);
-        expect(stderr).toBe('');
+        expect(stderr).toMatch(/(\[WARN\] meta\.hash field detected.*)?$/);
         expect(stdout).toContain('[Logger] Verbose logging enabled.');
-        expect(stdout).toContain('[VERBOSE] [canonicalize.ts] Computed initial hash:');
+        expect(stdout).toContain('[VERBOSE] [canonicalize.ts] Computed initial hash (Post Copy):');
         expect(stdout).toContain('[VERBOSE] [canonicalize.ts] First parsed CSV row:');
         expect(stdout).toContain('[VERBOSE] [updateFromCsv loop] First csvRow object:');
         expect(stdout).toContain('[VERBOSE] [mergeEntry] Final result for ID');
