@@ -4,13 +4,24 @@ export function validateCanonical(data: unknown): { success: boolean; errors?: a
   try {
     const parsed = CanonicalExportSchema.parse(data as any);
 
+    // Check for duplicate internal IDs
     const ids = parsed.ContactEntities.map((c: ContactEntity) => c.id);
-    const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
-    if (duplicates.length) {
+    const duplicateIds = ids.filter((id, idx) => ids.indexOf(id) !== idx);
+    if (duplicateIds.length) {
       return {
         success: false,
-        errors: [`Duplicate IDs found: ${[...new Set(duplicates)].join(", ")}`],
+        errors: [`Duplicate internal IDs found: ${[...new Set(duplicateIds)].join(", ")}`],
       };
+    }
+
+    // Check for duplicate objectIds
+    const objectIds = parsed.ContactEntities.map((c: ContactEntity) => c.objectId).filter(Boolean); // Filter out potential undefined/null before check
+    const duplicateObjectIds = objectIds.filter((oid, idx) => objectIds.indexOf(oid) !== idx);
+    if (duplicateObjectIds.length) {
+        return {
+            success: false,
+            errors: [`Duplicate objectIds found: ${[...new Set(duplicateObjectIds)].join(", ")}`],
+        };
     }
 
     return { success: true };

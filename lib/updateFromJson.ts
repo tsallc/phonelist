@@ -11,6 +11,7 @@ import { validateCanonical } from "./validate.js"; // Assuming validate exports 
 import { diff } from './diff.js'; // Import diff
 import isEqual from 'lodash/isEqual.js'; // Import lodash isEqual
 import { RawOfficeCsvRow } from './types.js'; // Import RawOfficeCsvRow
+import { log } from "./logger.js"; // Import logger
 
 // Define a type for summarizing changes
 export interface ChangeSummary {
@@ -28,7 +29,7 @@ const indexByKey = (rows: ContactEntity[], keyFn: (row: ContactEntity) => string
     Object.fromEntries(rows.map(row => {
         const key = keyFn(row);
         if (!key) {
-            console.warn(`WARN: Entity found with missing key during indexing:`, row);
+            log.warn(`WARN: Entity found with missing key during indexing:`, row);
         }
         return [key, row];
     }).filter(([key]) => key)); // Filter out entries where key extraction failed
@@ -95,19 +96,16 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
         "title": "roles" // Placeholder: Handle special cases below
     };
 
-    // Iterate through the keys provided in the INCOMING canonical data
+    // Iterate through incoming canonical keys
     for (const canonicalKey in incoming) {
         if (incoming.hasOwnProperty(canonicalKey)) {
-            
             const entityKey = keyMap[canonicalKey as keyof RawOfficeCsvRow];
-            
-            // Handle direct mapping for basic fields
             if (entityKey && entityKey !== 'contactPoints' && entityKey !== 'roles') { 
                 const incomingValue = incoming[canonicalKey]?.trim() || null;
                 const existingValue = existing[entityKey];
                 
                 if (!isEqual(existingValue, incomingValue)) {
-                    console.log(`DEBUG [mergeEntry] Basic field change detected for '${entityKey}': FROM=${JSON.stringify(existingValue)} TO=${JSON.stringify(incomingValue)}`);
+                    log.verbose(`[mergeEntry] Basic field change detected for '${entityKey}': FROM=${JSON.stringify(existingValue)} TO=${JSON.stringify(incomingValue)}`);
                     (updated as any)[entityKey] = incomingValue; 
                     changed = true;
                 }
@@ -129,7 +127,7 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
         const newSorted = newContactPoints.slice().sort(compareContactPoints);
 
         if (!isEqual(originalSorted, newSorted)) { // Compare sorted arrays
-             console.log(`DEBUG [mergeEntry] contactPoints change detected (order ignored).`);
+             log.verbose(`[mergeEntry] contactPoints change detected (order ignored).`);
              updated.contactPoints = newContactPoints; 
              changed = true;
         }
@@ -149,12 +147,12 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
              const newSortedRoles = newRoles.slice().sort(compareRoles);
 
              if (!isEqual(originalSortedRoles, newSortedRoles)) { // Compare sorted arrays
-                  console.log(`DEBUG [mergeEntry] roles change detected (order ignored).`);
+                  log.verbose(`[mergeEntry] roles change detected (order ignored).`);
                   updated.roles = newRoles; 
                   changed = true;
              }
         } else if (titleValue) {
-            console.warn(`WARN [mergeEntry]: Cannot update Title='${titleValue}' for user ID ${existing.id} because primary office context is missing.`);
+            log.warn(`[mergeEntry]: Cannot update Title='${titleValue}' for user ID ${existing.id} because primary office context is missing.`);
         }
     }
     
@@ -162,17 +160,17 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
     if (changed) {
         const validation = ContactEntitySchema.safeParse(updated);
         if (!validation.success) {
-            console.error(`ERROR [mergeEntry]: Merged entity failed validation for key [${existing.id}]:`, validation.error.errors);
+            log.error(`[mergeEntry]: Merged entity failed validation for key [${existing.id}]:`, validation.error.errors);
             // Log the object that failed validation for inspection
-            console.error("Failing object state:", JSON.stringify(updated, null, 2));
+            log.error("Failing object state:", JSON.stringify(updated, null, 2));
             return null; 
         }
         // Return the validated, changed data
-        console.log(`DEBUG [mergeEntry] Final result for ID ${existing.id}: CHANGES DETECTED.`);
+        log.verbose(`[mergeEntry] Final result for ID ${existing.id}: CHANGES DETECTED.`);
         return validation.data; 
     } else {
         // No changes detected
-        console.log(`DEBUG [mergeEntry] Final result for ID ${existing.id}: NO CHANGES.`);
+        log.verbose(`[mergeEntry] Final result for ID ${existing.id}: NO CHANGES.`);
         return null;
     }
 }
@@ -221,11 +219,11 @@ export function updateFromCsv(
     for (const entity of canonicalDataCopy) {
         if (entity.objectId) {
             if (canonicalIndex[entity.objectId]) {
-                console.warn(`[updateFromCsv] Duplicate objectId found in existing canonical data: ${entity.objectId}. Overwriting entry.`);
+                log.warn(`[updateFromCsv] Duplicate objectId found in existing canonical data: ${entity.objectId}. Overwriting entry.`);
             }
             canonicalIndex[entity.objectId] = entity;
         } else {
-            console.warn(`[updateFromCsv] Entity with id '${entity.id}' missing objectId in existing data. Cannot be updated.`);
+            log.warn(`[updateFromCsv] Entity with id '${entity.id}' missing objectId in existing data. Cannot be updated.`);
         }
     }
     
@@ -236,39 +234,30 @@ export function updateFromCsv(
     let rowNum = 0;
     for (const csvRow of csvRows) {
         rowNum++;
-        // --- DEBUG: Log csvRow inside the loop ---
-        if (rowNum === 1) { // Log only the first row structure within the loop
-            console.log(`DEBUG [updateFromCsv loop] First csvRow object:`, JSON.stringify(csvRow, null, 2));
+        // Log first csv row (verbose)
+        if (rowNum === 1) { 
+            log.verbose(`[updateFromCsv loop] First csvRow object:`, JSON.stringify(csvRow, null, 2));
         }
-        // --- End DEBUG ---
         
-        // Get objectId directly from the canonicalized CSV row object
-        const key = csvRow["object id"]; // Key is now objectId
-
+        const key = csvRow["object id"]; 
         if (!key) {
-             // This should theoretically not happen if parseCsv enforced it, but check anyway
-             console.error(`[updateFromCsv] ERROR: CSV row number ${rowNum} is missing the required 'object id' after parsing. Skipping.`);
-             changeLog.push({ type: 'no_change', key: 'unknown_object_id', before: undefined, after: csvRow, diff: {'error': {before: 'N/A', after: 'Missing object id in parsed CSV row'}}});
+             log.error(`[updateFromCsv] ERROR: CSV row number ${rowNum} is missing the required 'object id' after parsing. Skipping.`);
             continue;
         }
-
         const existingEntryFromIndex = canonicalIndex[key]; 
-
         if (existingEntryFromIndex) {
             const merged = mergeEntry(existingEntryFromIndex, csvRow);
             if (merged) {
-                console.log(`DEBUG [updateFromCsv] Changes detected for objectId: ${key}. Logging as UPDATE.`);
+                log.verbose(`[updateFromCsv] Changes detected for objectId: ${key}. Logging as UPDATE.`);
                 updatedDataMap[key] = merged;
                 const detailedDiff = diff(existingEntryFromIndex, merged); 
                 changeLog.push({ type: 'update', key, before: existingEntryFromIndex, after: merged, diff: detailedDiff });
             } else {
-                 console.log(`DEBUG [updateFromCsv] No changes detected for objectId: ${key}. Logging as NO_CHANGE.`);
+                 log.verbose(`[updateFromCsv] No changes detected for objectId: ${key}. Logging as NO_CHANGE.`);
                  changeLog.push({ type: 'no_change', key, before: existingEntryFromIndex, after: existingEntryFromIndex }); 
             }
         } else {
-            // Entry does not exist in canonical data -> Log as potential insert (or ignore)
-             console.warn(`[updateFromCsv] CSV row with objectId [${key}] has no matching entry in canonical data. Skipping potential insert.`);
-             changeLog.push({ type: 'no_change', key, before: undefined, after: csvRow, diff: {'info': {before: 'N/A (Not in canonical)', after: 'Skipped potential insert'}} });
+             log.warn(`[updateFromCsv] CSV row with objectId [${key}] has no matching entry in canonical data. Skipping potential insert.`);
         }
     }
 

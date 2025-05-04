@@ -41,21 +41,39 @@ describe('validateCanonical', () => {
     const invalidData = createValidData([entity1, entity2]);
     const result = validateCanonical(invalidData);
     expect(result.success).toBe(false);
-    expect(result.errors).toEqual(['Duplicate IDs found: test-1']);
+    expect(result.errors).toEqual(['Duplicate internal IDs found: test-1']);
+  });
+
+  it('should pass validation even if optional fields are missing (e.g., displayName)', () => {
+    const entity = { 
+        id: 'test-optional', 
+        objectId: 'obj-optional',
+        roles: [], 
+        contactPoints: [],
+        source: "Office365"
+    };
+    const validData = createValidData([entity as any]);
+    const result = validateCanonical(validData);
+    expect(result.success).toBe(true);
+    expect(result.errors).toBeUndefined();
   });
 
   it('should fail validation for missing required fields (e.g., displayName)', () => {
-    const entity = createBaseEntity('test-1', 'Test User');
-    const invalidEntity = { ...entity };
-    delete (invalidEntity as any).displayName; 
-    // We need to pass the modified entity within a valid CanonicalExport structure
     const invalidData = {
-        ...createValidData([]), // Use base structure
-        ContactEntities: [invalidEntity] // Add the invalid entity
-    }
-    const result = validateCanonical(invalidData);
+      ContactEntities: [
+        { 
+            id: 'test-missing-req', 
+            roles: [], 
+            contactPoints: [],
+        }
+      ],
+      Locations: [],
+      _meta: { generatedFrom: [], generatedAt: 'now', version: 1 },
+    };
+    const result = validateCanonical(invalidData as any);
     expect(result.success).toBe(false);
-    expect(result.errors).toEqual(['ContactEntities.0.displayName - Required']);
+    expect(result.errors).toContain('ContactEntities.0.objectId - Required'); 
+    expect(result.errors).toContain('ContactEntities.0.source - Required');
   });
 
   it('should fail validation for incorrect types (e.g., ContactEntities not an array)', () => {
@@ -98,15 +116,16 @@ describe('validateCanonical', () => {
   });
 
   it('should fail validation for missing required fields (objectId)', () => {
+    // Test focuses ONLY on missing objectId
     const invalidData = {
       ContactEntities: [
         { 
-            id: 'test', 
-            displayName: 'Valid Name', 
-            // objectId is missing 
+            id: 'test-missing-objid', 
+            displayName: 'Has DisplayName',
+            // objectId is missing
             roles: [], 
             contactPoints: [],
-            source: "Office365"
+            source: "Office365" // Source is present
         }
       ],
       Locations: [],
@@ -114,6 +133,27 @@ describe('validateCanonical', () => {
     };
     const result = validateCanonical(invalidData as any);
     expect(result.success).toBe(false);
-    expect(result.errors).toEqual(['ContactEntities.0.objectId - Required']); // Updated expected error
+    expect(result.errors).toContain('ContactEntities.0.objectId - Required');
+    expect(result.errors?.length).toBe(1); // Expect ONLY the objectId error
+  });
+
+  it('should fail validation for multiple missing required fields', () => {
+    const invalidData = {
+      ContactEntities: [
+        { 
+            id: 'test-missing-req', 
+            roles: [], 
+            contactPoints: [],
+            // objectId and source are missing
+        }
+      ],
+      Locations: [],
+      _meta: { generatedFrom: [], generatedAt: 'now', version: 1 },
+    };
+    const result = validateCanonical(invalidData as any);
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain('ContactEntities.0.objectId - Required'); 
+    expect(result.errors).toContain('ContactEntities.0.source - Required');
+    expect(result.errors?.length).toBe(2); // Correctly expect 2 errors
   });
 }); 

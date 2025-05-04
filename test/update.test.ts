@@ -13,6 +13,7 @@ const testCsvPath = path.resolve('test-update.csv'); // Use the CSV at the root 
 const testReorderCsvPath = path.resolve('test-reorder.csv'); // New CSV for reorder test
 const expectedUpdates = 4;
 const expectedSkips = 3;
+const expectedNoChanges = 0;
 
 // --- Test Setup & Data Loading (using beforeAll) ---
 let liveData: CanonicalExport;
@@ -80,16 +81,17 @@ beforeAll(async () => {
 describe('Canonical Data Update from CSV', () => {
 
     it('should correctly identify the number of updates, skips, and no-changes for main test', () => {
-        const changes = updateResult.changes;
-        console.log("   DEBUG [Test 1]: changes array length:", changes.length);
+        const changes = updateResult.changes; 
         const updateCount = changes.filter(c => c.type === 'update').length;
-        const noChangeCount = changes.filter(c => c.type === 'no_change' && c.key !== 'unknown').length;
-        const skippedCount = changes.filter(c => c.key === 'unknown').length;
+        const noChangeCount = changes.filter(c => c.type === 'no_change').length; // Count actual no_change logs
+        // Skips are now implicitly handled by comparing total rows vs logged changes
+        const processedCount = updateCount + noChangeCount;
+        const skippedCount = csvRows.length - processedCount; // Calculate skips based on difference
 
-        console.log(`   Counts - Updates: ${updateCount}, No Changes: ${noChangeCount}, Skipped: ${skippedCount}`);
+        console.log(`   Counts - Updates: ${updateCount}, No Changes: ${noChangeCount}, Skipped: ${skippedCount} (Calculated)`);
         expect(updateCount, `Expected ${expectedUpdates} updates`).toBe(expectedUpdates);
-        expect(skippedCount, `Expected ${expectedSkips} skips`).toBe(expectedSkips);
-        expect(noChangeCount, `Expected 0 no-changes`).toBe(0);
+        expect(skippedCount, `Expected ${expectedSkips} skips`).toBe(expectedSkips); 
+        expect(noChangeCount, `Expected ${expectedNoChanges} no-changes`).toBe(expectedNoChanges);
     });
 
     it('should correctly update fields for a specific user (Andrea Donayre) in main test', () => {
