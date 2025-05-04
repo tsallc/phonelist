@@ -31,7 +31,7 @@
 │   ├── hash.ts
 │   ├── diff.ts
 │   ├── exportCsv.ts
-│   └── updateFromJson.ts # (Placeholder for update logic)
+│   └── updateFromJson.ts # Implements selective update logic
 ├── logs/           # Diff logs from canonicalizer
 ├── node_modules/
 ├── public/
@@ -81,8 +81,8 @@
 
 *   **React App:** (See previous audit - functionality unchanged, but data source deprecated).
 *   **Canonicalizer Script (`scripts/canonicalize.ts`):**
-    *   CLI tool to validate, export (to O365 CSV), and potentially update (`--update-from-csv` placeholder) the live `canonicalContactData.json`.
-    *   Uses helper modules in `lib/` for parsing, validation, hashing, diffing, etc.
+    *   CLI tool to validate, export (to O365 CSV), and selectively update (`--update-from-csv`) the live `canonicalContactData.json`.
+    *   Uses helper modules in `lib/` for parsing, validation, hashing, diffing, updating etc.
 
 ## 6. Data Management (Current State)
 
@@ -98,9 +98,9 @@
 
 ## 10. Conclusion
 
-The project contains the `tsa-phone-list` React app (pending refactor) and the `phonelist-canonicalizer` utility script. The canonical source of truth is `src/data/canonicalContactData.json` (merged data). The canonicalizer script is functionally complete and tested for its role as a validator and O365 CSV exporter for this live data file, serving as a stop-gap for maintaining O365 sync. The `--update-from-csv` feature is not yet implemented. The project is ready for final documentation review or implementation of the update feature, before proceeding with the React app refactor.
+The project contains the `tsa-phone-list` React app (pending refactor) and the `phonelist-canonicalizer` utility script. The canonical source of truth is `src/data/canonicalContactData.json` (merged data). The canonicalizer script is functionally complete and tested for its role as a validator, O365 CSV exporter, and selective updater for this live data file, serving as a stop-gap for maintaining O365 sync. The `--update-from-csv` feature is implemented and tested. The project is ready for final documentation review or implementation of the update feature, before proceeding with the React app refactor.
 
-**Next Action (Canonicalizer):** Decide whether to implement update logic or proceed to React refactor.
+**Next Action (Canonicalizer):** Review documentation and consider optional refinements.
 **Next Action (React App Refactor):** Begin Phase 1 (Schemas, Data Loading) based on `canonicalContactData.json`.
 
 **Next Action (Canonicalizer):** Implement Phase 4 (Output Gen) & Phase 5 (CLI).
