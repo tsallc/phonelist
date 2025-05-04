@@ -6,6 +6,7 @@ import { updateFromCsv, ChangeSummary, getRoleDiffs, RoleDelta } from '../lib/up
 import { CanonicalExport, ContactEntity, Role } from '../lib/schema.js'; // Assuming compiled JS
 import { diff } from '../lib/diff.js'; // Assuming compiled JS
 import { computeHash } from '../lib/hash.js'; // Assuming compiled JS
+import { cloneDeep } from 'lodash';
 
 // --- Test Configuration ---
 const canonicalJsonPath = path.resolve('src/data/canonicalContactData.json');
@@ -58,7 +59,10 @@ beforeAll(async () => {
 describe('Canonical Data Update from CSV', () => {
 
     it('should correctly identify the number of updates, skips, and no-changes for main test', () => {
-        const { changes } = updateFromCsv(csvRows, canonicalEntities);
+        // --- FIX: Clone data for isolation ---
+        const testEntities = cloneDeep(canonicalEntities);
+        // --- End Fix ---
+        const { changes } = updateFromCsv(csvRows, testEntities); // Use cloned data
         const updateCount = changes.filter(c => c.type === 'update').length;
         const noChangeCount = changes.filter(c => c.type === 'no_change').length;
         // Note: Expected counts might change if Brian is no longer considered an update
@@ -71,7 +75,10 @@ describe('Canonical Data Update from CSV', () => {
     });
 
     it('should correctly update fields for a specific user (Andrea Donayre) in main test', () => {
-        const { changes } = updateFromCsv(csvRows, canonicalEntities);
+        // --- FIX: Clone data for isolation ---
+        const testEntities = cloneDeep(canonicalEntities);
+        // --- End Fix ---
+        const { changes } = updateFromCsv(csvRows, testEntities); // Use cloned data
         const andreaChange = changes.find(c => c.key === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6')!;
         expect(andreaChange, "Change record for andrea-donayre should exist").toBeDefined();
         if (!andreaChange?.before || !andreaChange?.after) throw new Error('Missing before/after state for Andrea');
@@ -100,8 +107,11 @@ describe('Canonical Data Update from CSV', () => {
         expect(finalRole?.title, "Andrea final role title should be 'Office Manager'").toBe('Office Manager'); 
     });
     
-    it('should correctly handle Brian Tiller (preserve Title)', () => {
-        const { changes } = updateFromCsv(csvRows, canonicalEntities);
+    it('should correctly handle Brian Tiller (set Title to empty string)', () => {
+        // --- FIX: Clone data for isolation ---
+        const testEntities = cloneDeep(canonicalEntities);
+        // --- End Fix ---
+        const { changes } = updateFromCsv(csvRows, testEntities); // Use cloned data
         const brianChange = changes.find(c => c.key === 'a200fce3-d32a-4c06-861a-780850009fe1');
         expect(brianChange, "Change record for brian-tiller should exist").toBeDefined();
         if (!brianChange?.before || !brianChange?.after) throw new Error('Missing before/after state for Brian');
@@ -135,13 +145,16 @@ describe('Canonical Data Update from CSV', () => {
         expect(afterRoles.length).toBe(1);
         expect(finalRole?.brand).toBe('tsa');
         expect(finalRole?.office).toBe('PLY');
-        // Title should be null because Office tag dictated the role and CSV title was empty/null.
+        // Title should be null because CSV title was empty/clear directive
         expect(finalRole?.title, "Brian final role title should become null").toBeNull(); 
     });
 
     it('should result in an overall hash change for main test', () => {
+        // --- FIX: Clone data for isolation ---
+        const testEntities = cloneDeep(canonicalEntities);
+        // --- End Fix ---
         // --- Run update logic LOCALLY for this test ---
-        const { updated } = updateFromCsv(csvRows, canonicalEntities);
+        const { updated } = updateFromCsv(csvRows, testEntities); // Use cloned data
         const finalCanonicalExport = { ...liveData, ContactEntities: updated };
         const finalHash = computeHash(finalCanonicalExport.ContactEntities, finalCanonicalExport.Locations);
         // --- 
@@ -150,12 +163,15 @@ describe('Canonical Data Update from CSV', () => {
         expect(finalHash, "Final hash should not equal original hash").not.toBe(originalHash);
     });
 
-    it('should correctly handle reordered Andrea (preserve Title)', () => {
+    it('should correctly handle reordered Andrea (set Title to null when missing from CSV)', () => {
+        // --- FIX: Clone data for isolation ---
+        const testEntities = cloneDeep(canonicalEntities);
+        // --- End Fix ---
         // Reorder CSV only has Office=cts:ftl, no Title column mentioned
         // --- DEBUG LOGGING ---
         console.log("DEBUG [Reorder Test] Input CSV Row:", JSON.stringify(csvRowsReorder[0]));
         // --- END DEBUG ---
-        const { changes } = updateFromCsv(csvRowsReorder, canonicalEntities);
+        const { changes } = updateFromCsv(csvRowsReorder, testEntities); // Use cloned data
         const andreaReorderChange = changes.find(c => c.key === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6');
         
         expect(andreaReorderChange, "Change record for reordered Andrea should exist").toBeDefined();
@@ -179,6 +195,50 @@ describe('Canonical Data Update from CSV', () => {
         expect(finalRole?.office).toBe('FTL');
         // Title should be null because the role was dictated by cts:ftl and csvTitle was missing.
         expect(finalRole?.title ?? null, "Reordered Andrea final role title should be null").toBeNull();
+    });
+
+    it('should correctly update Andrew Ignagni (set Title from CSV)', () => {
+        // --- FIX: Clone data for isolation ---
+        const testEntities = cloneDeep(canonicalEntities);
+        // --- End Fix ---
+        const { changes } = updateFromCsv(csvRows, testEntities); // Use cloned data
+        const andrewChange = changes.find(c => c.key === '3f6fd6c1-a95d-4dea-89f3-08901b2a513b');
+        expect(andrewChange, "Change record for andrew-ignagni should exist").toBeDefined();
+        if (!andrewChange?.after) throw new Error('Missing after state for Andrew');
+
+        // CSV has Office=tsa:ply and Title=Escrow Officer.
+        // Expect update type because title changes from null -> Escrow Officer
+        expect(andrewChange.type).toBe('update');
+
+        const afterRoles = andrewChange.after?.roles || [];
+        console.log("DEBUG [Andrew Test] After Roles:", JSON.stringify(afterRoles));
+        expect(afterRoles.length).toBe(1);
+        const finalRole = afterRoles[0];
+        expect(finalRole?.brand).toBe('tsa');
+        expect(finalRole?.office).toBe('PLY');
+        expect(finalRole?.title).toBe('Escrow Officer'); // Title comes from CSV
+    });
+
+    it('should correctly update Kathy Case (set Title from CSV)', () => {
+        // --- FIX: Clone data for isolation ---
+        const testEntities = cloneDeep(canonicalEntities);
+        // --- End Fix ---
+        const { changes } = updateFromCsv(csvRows, testEntities); // Use cloned data
+        const kathyChange = changes.find(c => c.key === '5f322c80-1e10-432c-b186-bb6a8548fd41');
+        expect(kathyChange, "Change record for kathy-case should exist").toBeDefined();
+        if (!kathyChange?.after) throw new Error('Missing after state for Kathy');
+
+        // CSV has Office=tsa:ply and Title=Processor.
+        // Expect update type because title changes from null -> Processor
+        expect(kathyChange.type).toBe('update');
+
+        const afterRoles = kathyChange.after?.roles || [];
+        console.log("DEBUG [Kathy Test] After Roles:", JSON.stringify(afterRoles));
+        expect(afterRoles.length).toBe(1);
+        const finalRole = afterRoles[0];
+        expect(finalRole?.brand).toBe('tsa');
+        expect(finalRole?.office).toBe('PLY');
+        expect(finalRole?.title).toBe('Processor'); // Title comes from CSV
     });
 
 }); // Close the describe block

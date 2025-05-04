@@ -171,6 +171,11 @@ export function getRoleDiffs(beforeRoles: Role[] = [], afterRoles: Role[] = []):
   const afterNorm = afterRoles.map(normalizeRoleForDiff);
   const length = Math.max(beforeNorm.length, afterNorm.length);
 
+  // --- Add Diagnostic Logging ---
+  log.verbose(`[getRoleDiffs] Normalized BEFORE: ${JSON.stringify(beforeNorm)}`);
+  log.verbose(`[getRoleDiffs] Normalized AFTER: ${JSON.stringify(afterNorm)}`);
+  // --- End Logging ---
+
   for (let i = 0; i < length; i++) {
     const b = beforeRoles[i]; 
     const a = afterRoles[i]; 
@@ -196,188 +201,200 @@ export function getRoleDiffs(beforeRoles: Role[] = [], afterRoles: Role[] = []):
 }
 
 // --- REWRITTEN mergeEntry implementing UNFUCKING PLAN ---
-function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, any>): { updated: ContactEntity | null, changed: boolean, roleDiffs: RoleDelta[] } {
-    const objectIdFromExisting = existing.objectId;
-    const objectIdFromIncoming = incoming["object id"];
-    const objectIdForLog = objectIdFromExisting || objectIdFromIncoming || 'UNKNOWN';
-    const upnForLog = existing.upn || incoming["user principal name"] || 'UNKNOWN';
+// --- UPDATED: Refactored mergeEntry with explicit variable naming and decomposed role logic ---
+function mergeEntry(existing: Readonly<ContactEntity>, csvRow: Record<string, any>): { updated: ContactEntity | null, changed: boolean, roleDiffs: RoleDelta[] } {
+    // --- Explicit Variable Definitions from CSV Row ---
+    const objectIdFromCsv = csvRow["object id"]; // Primary key for matching
+    const upnFromCsv = csvRow["user principal name"]; // Mostly for logging/lookup
+    const displayNameFromCsv = csvRow['display name'];
+    const departmentFromCsv = csvRow['department'];
+    const rawMobilePhoneFromCsv = csvRow['mobile phone']; // Keep raw for update helper
+    const rawTitleFromCsv = csvRow['title']; // Keep raw to distinguish null vs ""
+    const officeTagFieldFromCsv = csvRow['office']?.trim() || null; // Drives role parsing
 
-    // --- DEBUG LOGGING for specific test case ---
-    if (objectIdForLog === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6') {
-        console.log(`DEBUG mergeEntry [Andrea ${objectIdForLog}]: Received incoming row:`, JSON.stringify(incoming));
+    // --- Consistent Logging Identifiers ---
+    const objectIdForLog = existing.objectId || objectIdFromCsv || 'UNKNOWN_OID';
+    const upnForLog = existing.upn || upnFromCsv || 'UNKNOWN_UPN';
+
+    // --- DEBUG LOGGING ---
+    if (objectIdForLog === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6') { // Example debug target
+        console.log(`DEBUG mergeEntry [${upnForLog} ${objectIdForLog}]: Received csvRow:`, JSON.stringify(csvRow));
     }
     // --- END DEBUG ---
 
+    // --- Guard: Only process external entities ---
     if (existing.kind !== 'external') {
-        log.verbose(`[mergeEntry] Skipping merge for internal entity: ${upnForLog} (${objectIdForLog})`);
+        log.verbose(`[mergeEntry] Skipping merge for non-external entity: ${upnForLog} (${objectIdForLog})`);
         return { updated: null, changed: false, roleDiffs: [] };
     }
     log.verbose(`[mergeEntry] Processing external entity ${upnForLog} (${objectIdForLog})`);
 
     let changed = false;
-    const updated = cloneDeep(existing);
-    const mutableUpdated = updated as Mutable<ContactEntity>; // Cast for modification
+    const updated = cloneDeep(existing); // Start with a mutable copy
+    const mutableUpdated = updated as Mutable<ContactEntity>;
 
-    // Helper to normalize empty strings/undefined to null for comparison/checks
+    // --- Normalization Helper (Handles null/undefined/empty string -> null) ---
     const normalize = (value: any): string | null => {
         const trimmed = typeof value === 'string' ? value.trim() : value;
         return (trimmed === null || trimmed === undefined || trimmed === '') ? null : String(trimmed);
     };
-    
-    // Extract CSV Title *once*
-    const csvTitle = normalize(incoming['title']); // Will be null if empty/missing
 
-    // --- DEBUG LOGGING for specific test case ---
-    if (objectIdForLog === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6') {
-        console.log(`DEBUG mergeEntry [Andrea ${objectIdForLog}]: Extracted csvTitle:`, csvTitle);
+    // --- Normalize Simple Fields for Comparison ---
+    const normalizedDisplayNameFromCsv = normalize(displayNameFromCsv);
+    const normalizedDepartmentFromCsv = normalize(departmentFromCsv);
+    // Note: upn and objectId are keys, less likely to change via this merge, handle separately if needed.
+
+    // --- Title Handling: Distinguish null (not present) vs "" (explicit empty) ---
+    const titleFromCsv: string | null = (typeof rawTitleFromCsv === 'string' && rawTitleFromCsv.trim() === '')
+        ? '' // Preserve explicit empty string
+        : normalize(rawTitleFromCsv); // Normalize others (null/undefined/non-empty)
+
+    if (objectIdForLog === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6') { // Example debug target
+        console.log(`DEBUG mergeEntry [${upnForLog} ${objectIdForLog}]: titleFromCsv evaluated to:`, titleFromCsv);
     }
-    // --- END DEBUG ---
 
-    // --- Simple Field Updates --- 
-    const keyMap: Partial<Record<keyof RawOfficeCsvRow, keyof ContactEntity>> = {
-        "user principal name": "upn", "display name": "displayName", "department": "department",
-        "object id": "objectId", "mobile phone": "contactPoints", "title": "roles" 
-    };
-    for (const incomingKey in incoming) {
-         if (incoming.hasOwnProperty(incomingKey)) {
-            const entityKey = keyMap[incomingKey as keyof RawOfficeCsvRow];
-            if (!entityKey || entityKey === 'contactPoints' || entityKey === 'roles') continue;
-            const incomingValue = normalize(incoming[incomingKey]);
-            let existingValue: any = normalize((existing as any)[entityKey]);
-            if (incomingValue !== existingValue) {
-                log.verbose(`    -> Basic field change DETECTED for '${entityKey}': ${existingValue} -> ${incomingValue}`);
-                (mutableUpdated as any)[entityKey] = incoming[incomingKey]?.trim() || null;
-                changed = true;
-            }
-        }
+    // --- Simple Field Updates ---
+    if (normalizedDisplayNameFromCsv !== normalize(existing.displayName)) {
+        log.verbose(`    -> Field change 'displayName': ${normalize(existing.displayName)} -> ${normalizedDisplayNameFromCsv}`);
+        mutableUpdated.displayName = displayNameFromCsv?.trim() || null; // Assign raw trimmed value
+        changed = true;
+    }
+    if (normalizedDepartmentFromCsv !== normalize(existing.department)) {
+        log.verbose(`    -> Field change 'department': ${normalize(existing.department)} -> ${normalizedDepartmentFromCsv}`);
+        mutableUpdated.department = departmentFromCsv?.trim() || null; // Assign raw trimmed value
+        changed = true;
     }
 
     // --- ContactPoints Update ---
-    if (incoming.hasOwnProperty('mobile phone')) {
-        const mobileValue = incoming['mobile phone'] || null;
-        const updatedContactPoints = updateContactPoint(mutableUpdated.contactPoints, 'mobile', mobileValue);
+    if (csvRow.hasOwnProperty('mobile phone')) { // Check if key exists in CSV row
+        const updatedContactPoints = updateContactPoint(mutableUpdated.contactPoints, 'mobile', rawMobilePhoneFromCsv); // Pass raw value
         const normalizedExistingCP = normalizeAndSortContactPoints(existing.contactPoints);
         const normalizedNewCP = normalizeAndSortContactPoints(updatedContactPoints);
         if (!isEqual(normalizedExistingCP, normalizedNewCP)) {
-             log.verbose(`    -> contactPoints change DETECTED.`);
+             log.verbose(`    -> Field change 'contactPoints' (mobile): Detected difference.`);
              mutableUpdated.contactPoints = updatedContactPoints;
              changed = true;
         }
     }
 
-    // --- DECOUPLED Role Handling Logic ---
-    const csvOfficeString = incoming['office']?.trim() || null;
+    // =====================================================
+    // --- Explicit Role Handling Logic ---
+    // =====================================================
     const originalRoles = existing.roles || [];
-    let finalRoles: Role[] = []; // Initialize as empty
+    let baseRoles: Role[] = []; // Roles before final title override is considered
 
-    if (csvOfficeString) {
-        // Office field IS present in CSV - this dictates role structure (brand/office)
-        const parsedRolesFromOfficeTags: Omit<Role, 'title'>[] = []; // Parsed roles initially have no title
+    // --- Step 1: Determine Base Role Structures (from Office tags OR original) ---
+    if (officeTagFieldFromCsv) {
+        const parsedRolesFromOfficeTags: Omit<Role, 'title' | 'priority'>[] = [];
         const parsedFallbackBrands = new Set<string>();
 
-        // Parse the Office field
-        const officeSegments = csvOfficeString.split(';').map((s: string) => s.trim()).filter(Boolean);
+        // Parse the Office Tag Field (unchanged)
+        const officeSegments = officeTagFieldFromCsv.split(';').map((s: string) => s.trim()).filter(Boolean);
         for (const segment of officeSegments) {
-            if (segment.includes(':')) {
+            if (segment.includes(':')) { // Format: brand:office
                 const parts = segment.split(':');
                 if (parts.length === 2 && parts[0] && parts[1]) {
-                    const brand = parts[0].toLowerCase();
-                    const office = parts[1].toUpperCase();
-                    // Push role structure WITHOUT title
-                    parsedRolesFromOfficeTags.push({ brand, office, priority: 1 }); 
-                } else { log.warn(`[mergeEntry] Malformed org:location segment '${segment}' for user ${upnForLog}. Ignoring segment.`); }
-            } else { 
+                    parsedRolesFromOfficeTags.push({ brand: parts[0].toLowerCase(), office: parts[1].toUpperCase() });
+                } else { log.warn(`[mergeEntry ${upnForLog}] Malformed org:location segment '${segment}'. Ignoring.`); }
+            } else { // Format: brand1,brand2 (fallback list)
                  const potentialFallbackBrands = segment.split(',').map((b: string) => b.trim().toLowerCase()).filter(Boolean);
-                 let isValidFallback = true;
-                 potentialFallbackBrands.forEach((brand: string) => { 
-                    if (validFallbackBrands.has(brand)) { parsedFallbackBrands.add(brand); } 
-                    else { isValidFallback = false; }
+                 potentialFallbackBrands.forEach((brand: string) => {
+                    if (validFallbackBrands.has(brand)) { parsedFallbackBrands.add(brand); }
+                    else { log.warn(`[mergeEntry ${upnForLog}] Invalid fallback brand '${brand}' in segment '${segment}'. Ignoring brand.`); }
                  });
-                 if (!isValidFallback) { log.warn(`[mergeEntry] Invalid fallback segment '${segment}' for user ${upnForLog}. Contains unknown brands. Ignoring segment.`); }
             }
         }
 
-        // Only proceed if valid directives were found
+        // Calculate Roles if valid tags/fallbacks found
         if (parsedRolesFromOfficeTags.length > 0 || parsedFallbackBrands.size > 0) {
-            
-            // Build the final list of roles based on CSV directives + fallbacks
-            const calculatedRoles: Role[] = [];
-            const finalRoleSignatures = new Set<string>();
+            const roleSignaturesProcessed = new Set<string>();
 
-            // 1. Add roles explicitly defined by `org:location` tags.
-            //    Apply the CSV Title ONLY to THESE roles, if csvTitle exists.
-            for (const parsedRole of parsedRolesFromOfficeTags) {
-                 const sig = `${parsedRole.brand}:${parsedRole.office}`;
-                 if (!finalRoleSignatures.has(sig)) {
-                     const roleToAdd: Role = { 
-                         ...parsedRole, 
-                         // Apply csvTitle here IF it exists, otherwise title remains undefined->null later
-                         title: csvTitle 
-                     };
-                     calculatedRoles.push(roleToAdd);
-                     finalRoleSignatures.add(sig);
-                     log.verbose(`    [mergeEntry] Adding role from Office tag: ${sig}, Title from CSV: ${csvTitle ?? 'N/A'}`);
-                 }
-            }
+            // 1a. Roles derived directly from office tags (structure only)
+            const calculatedOfficeRoles: Role[] = parsedRolesFromOfficeTags.map(roleTag => ({
+                brand: roleTag.brand, office: roleTag.office, priority: 1, title: null // Start with null title
+            }));
+            calculatedOfficeRoles.forEach(role => roleSignaturesProcessed.add(`${role.brand}:${role.office}`));
 
-            // 2. Preserve existing roles ONLY if allowed by a fallback tag AND not already added/overwritten.
-            //    These roles KEEP their original title.
+            // 1b. Fallback roles (preserving original structure and title *for now*)
+            const fallbackRoles: Role[] = [];
             for (const existingRole of originalRoles) {
-                 const sig = `${existingRole.brand}:${existingRole.office}`;
-                 if (!finalRoleSignatures.has(sig)) { // If not already handled by explicit CSV tag
-                     if (existingRole.brand && parsedFallbackBrands.has(existingRole.brand)) {
-                         log.verbose(`    [mergeEntry] Preserving existing role via fallback '${existingRole.brand}': ${JSON.stringify(existingRole)}`);
-                         // --- FIXED: Push a clone of the existing role, preserving title ---
-                         calculatedRoles.push(cloneDeep(existingRole)); 
-                         finalRoleSignatures.add(sig);
-                     }
-                 }
+                const sig = `${existingRole.brand}:${existingRole.office}`;
+                if (!roleSignaturesProcessed.has(sig) && existingRole.brand && parsedFallbackBrands.has(existingRole.brand)) {
+                    log.verbose(`    [mergeEntry ${upnForLog}] Identifying fallback role '${sig}' for potential preservation.`);
+                    fallbackRoles.push(cloneDeep(existingRole)); // Preserve original fully
+                    roleSignaturesProcessed.add(sig);
+                }
             }
-            
-            // Overwrite finalRoles with the calculated state
-            finalRoles = calculatedRoles; 
-            log.verbose(`[mergeEntry] Roles calculated based on CSV Office/Title/Fallback: ${JSON.stringify(finalRoles)}`);
+            // Combine roles from tags and fallbacks to form the base set
+            baseRoles = [...calculatedOfficeRoles, ...fallbackRoles];
+            log.verbose(`[mergeEntry ${upnForLog}] Base roles determined from Office/Fallback: ${JSON.stringify(baseRoles)}`);
+
         } else {
-             log.warn(`[mergeEntry] User ${upnForLog}: Office field '${csvOfficeString}' contained no valid tags. Roles will NOT be modified.`);
-             // finalRoles remains clone of existing
-             finalRoles = cloneDeep(originalRoles); // Fallback to original if CSV tags were invalid
+             // Office field had content, but no valid tags -> use original roles as base
+             log.warn(`[mergeEntry ${upnForLog}] Office field ('${officeTagFieldFromCsv}') contained no valid tags. Using original roles as base.`);
+             baseRoles = cloneDeep(originalRoles);
         }
     } else {
-        // No Office field in CSV - roles are determined SOLELY by existing data.
-        // The extracted csvTitle is ignored in this case.
-        log.verbose(`[mergeEntry] No Office field in CSV for ${upnForLog}. Keeping existing roles.`);
-        finalRoles = cloneDeep(originalRoles); // Use original roles if no CSV office string
+        // No Office Tag Field in CSV -> use original roles as base
+        log.verbose(`[mergeEntry ${upnForLog}] No Office field in CSV. Using original roles as base.`);
+        baseRoles = cloneDeep(originalRoles);
     }
 
-    // --- Compare original roles with the final determined roles state --- 
-    const roleDiffs = getRoleDiffs(originalRoles, finalRoles);
+    // --- Step 2: Apply CSV Title Override OR Clear Directive --- 
+    let rolesToAssign: Role[]; // This will be the final array assigned
+    
+    // Check if CSV provided an explicit, non-empty title string
+    if (titleFromCsv !== null && titleFromCsv !== '') {
+        // Explicit title provided -> OVERRIDE
+        log.verbose(`    [mergeEntry ${upnForLog}] Explicit non-empty title ('${titleFromCsv}') found in CSV. Applying as override to all ${baseRoles.length} base roles.`);
+        rolesToAssign = baseRoles.map(role => ({ 
+            ...role, // Keep original brand, office, priority
+            title: titleFromCsv // Apply the override title
+        }));
+    } else {
+        // Title is null (missing/undefined) OR "" (empty/whitespace) -> CLEAR
+        log.verbose(`    [mergeEntry ${upnForLog}] Title missing or empty in CSV. Clearing title (setting to null) for all ${baseRoles.length} base roles.`);
+        rolesToAssign = baseRoles.map(role => ({ 
+            ...role,
+            title: null // Explicitly set title to null
+        }));
+    }
+    // =====================================================
+    // --- End Explicit Role Handling Logic ---
+    // =====================================================
+
+    // --- Compare original roles with the final determined roles state ---
+    const roleDiffs = getRoleDiffs(originalRoles, rolesToAssign);
     if (roleDiffs.length > 0) {
-        log.verbose(`[mergeEntry] Role differences DETECTED by getRoleDiffs...`);
-        changed = true; 
+        // Use rolesMatch for a simple boolean log, getRoleDiffs provides detail later
+        if (!rolesMatch(originalRoles, rolesToAssign)) { // rolesMatch uses cleaner comparison
+            log.verbose(`    -> Field change 'roles': Detected difference.`);
+            changed = true;
+        } else {
+             log.verbose(`    -> Field change 'roles': getRoleDiffs found differences, but rolesMatch did not. Review comparison logic. Diff: ${JSON.stringify(roleDiffs)}`);
+             // Decide if this discrepancy should still mark as changed
+             changed = true; // Defaulting to true if diffs found
+        }
     }
 
-    // --- DEBUG LOGGING ---
-    if (objectIdForLog === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6') {
-        console.log(`DEBUG mergeEntry [Andrea ${objectIdForLog}]: finalRoles BEFORE assignment to mutableUpdated:`, JSON.stringify(finalRoles));
-    }
-    // --- END DEBUG ---
+    // --- Assign Final Roles State ---
+    log.verbose(`[mergeEntry ${upnForLog}] Final roles to assign: ${JSON.stringify(rolesToAssign)}`);
+    mutableUpdated.roles = rolesToAssign; // Assign the calculated roles
 
-    // --- Always assign the determined finalRoles state --- 
-    mutableUpdated.roles = finalRoles;
-    log.verbose(`[mergeEntry] Assigned final roles state to mutableUpdated: ${JSON.stringify(mutableUpdated.roles)}`); 
-
-    // --- Final Validation & Return --- 
-    log.verbose(`[mergeEntry] Reached end for ${upnForLog}. Final computed changed flag: ${changed}`);
-    if (changed) { 
+    // --- Final Validation & Return ---
+    log.verbose(`[mergeEntry ${upnForLog}] End of processing. Final 'changed' flag: ${changed}`);
+    if (changed) {
         const validation = ContactEntitySchema.safeParse(updated);
         if (!validation.success) {
-             log.error(`[mergeEntry]: Merged entity FAILED validation for key [${upnForLog} / ${objectIdForLog}]:`);
+             log.error(`[mergeEntry ${upnForLog}] Merged entity FAILED validation:`);
              log.error("  Validation Errors:", JSON.stringify(validation.error.errors, null, 2));
-             log.error("  [mergeEntry] Failing object state was:", JSON.stringify(updated, null, 2));
-             return { updated: null, changed: false, roleDiffs: [] };
+             log.error("  Failing object state:", JSON.stringify(updated, null, 2));
+             return { updated: null, changed: false, roleDiffs: [] }; // Discard changes on validation failure
         }
-        return { updated, changed: true, roleDiffs }; 
+        // Return the validated, updated entity and any role differences found
+        return { updated, changed: true, roleDiffs };
     } else {
+        // No changes detected or changes were discarded
         return { updated: null, changed: false, roleDiffs: [] };
     }
 }
@@ -397,91 +414,95 @@ export function updateFromCsv(
     csvRows: Record<string, any>[],
     originalCanonicalData: ReadonlyArray<ContactEntity>
 ): { updated: ContactEntity[], changes: ChangeSummary[] } {
-    
-    // Initialize updatedDataMap with clones
-    const canonicalIndex: Record<string, ContactEntity> = {}; 
-    const updatedDataMap: Record<string, ContactEntity> = {};
+
+    // Initialize maps and logs
+    const canonicalIndex: Record<string, ContactEntity> = {}; // Index of original data by objectId
+    const updatedDataMap: Record<string, ContactEntity> = {}; // Working copy of data, indexed by objectId
     const changeLog: ChangeSummary[] = [];
-    const processedObjectIds = new Set<string>();
+    const processedObjectIds = new Set<string>(); // Track IDs found in the CSV
+
+    // Populate maps with clones of original data
     for (const entity of originalCanonicalData) {
         if (entity.objectId) {
-            canonicalIndex[entity.objectId] = entity;
-            updatedDataMap[entity.objectId] = cloneDeep(entity);
-        } else { /* log warn */ }
+            canonicalIndex[entity.objectId] = entity; // Store original reference
+            updatedDataMap[entity.objectId] = cloneDeep(entity); // Store working clone
+        } else {
+            log.warn(`[updateFromCsv] Found entity without objectId during indexing. Skipping.`, entity.id ? { id: entity.id } : {});
+        }
     }
 
     let rowNum = 0;
     for (const csvRow of csvRows) {
         rowNum++;
-        const key = csvRow["object id"]; 
-        if (!key) { /* log warn, continue */ continue; }
-        processedObjectIds.add(key);
+        const objectIdFromCsv = csvRow["object id"]; // Use explicit name
+        const upnFromCsv = csvRow["user principal name"]; // Use explicit name
 
-        const existingEntryOriginal = canonicalIndex[key];
-        // Use the *working copy* from updatedDataMap for the merge attempt
-        const currentWorkingEntry = updatedDataMap[key]; 
+        if (!objectIdFromCsv) {
+            log.warn(`[updateFromCsv Row ${rowNum}] Skipping row due to missing 'object id'.`, upnFromCsv ? { upn: upnFromCsv } : {});
+            continue;
+        }
+        processedObjectIds.add(objectIdFromCsv);
+
+        const existingEntryOriginal = canonicalIndex[objectIdFromCsv];
+        const currentWorkingEntry = updatedDataMap[objectIdFromCsv]; // Get the *current state* of the working copy
 
         if (!existingEntryOriginal || !currentWorkingEntry) {
-            log.warn(`[updateFromCsv] Cannot find original or working entry for ObjectId ${key}. Skipping.`);
+            log.warn(`[updateFromCsv Row ${rowNum}] Cannot find original or working entry for ObjectId ${objectIdFromCsv}. Skipping row.`);
             continue;
         }
 
+        // --- Process Merge ---
         if (currentWorkingEntry.kind === 'external') {
-            // Pass the working entry to mergeEntry
+            // Pass the current working entry and the CSV row to mergeEntry
             const mergeResult = mergeEntry(currentWorkingEntry, csvRow);
-            log.verbose(`[updateFromCsv] AFTER mergeEntry call for key '${key}'. Result changed: ${mergeResult.changed}`);
+            log.verbose(`[updateFromCsv ${objectIdFromCsv}] mergeEntry result: changed=${mergeResult.changed}, hasUpdated=${!!mergeResult.updated}`);
 
-            // --- CORRECTED HANDLING of mergeResult --- 
-            if (mergeResult.changed && mergeResult.updated) { // Check if updated is not null
-                log.info(`[updateFromCsv] Changes detected for external key: ${key}. Logging as UPDATE.`);
-                // Assign the non-null updated entity from the result
-                updatedDataMap[key] = mergeResult.updated; 
-                
-                // Diff original against the updated entity from the result
+            if (mergeResult.changed && mergeResult.updated) {
+                log.info(`[updateFromCsv ${objectIdFromCsv}] Changes detected & validated. Updating entry.`);
+                // *** CRITICAL: Update the working map with the validated result from mergeEntry ***
+                updatedDataMap[objectIdFromCsv] = mergeResult.updated;
+
+                // Calculate diff against the *original* state for logging
                 const detailedDiff = diff(existingEntryOriginal, mergeResult.updated);
-                log.verbose(`[updateFromCsv] Diff for ${key}:`, detailedDiff);
+                log.verbose(`[updateFromCsv ${objectIdFromCsv}] Diff details:`, detailedDiff);
                 if (mergeResult.roleDiffs.length > 0) {
-                  log.verbose(`[updateFromCsv] Role Deltas for ${key}:`, mergeResult.roleDiffs);
+                  log.verbose(`[updateFromCsv ${objectIdFromCsv}] Role Deltas:`, mergeResult.roleDiffs);
                 }
 
-                changeLog.push({ 
-                    type: 'update', 
-                    key, 
-                    before: existingEntryOriginal, 
-                    // Clone the updated entity from the result for the log
-                    after: cloneDeep(mergeResult.updated), 
-                    diff: detailedDiff 
+                changeLog.push({
+                    type: 'update',
+                    key: objectIdFromCsv,
+                    before: existingEntryOriginal, // Log original state
+                    after: cloneDeep(mergeResult.updated), // Log the state *after* successful merge
+                    diff: detailedDiff
                 });
             } else {
-                // No change detected OR validation failed in mergeEntry (updated is null)
-                log.verbose(`[updateFromCsv] No changes detected OR validation failed for external key: ${key}. Logging as NO_CHANGE.`);
-                changeLog.push({ 
-                    type: 'no_change', 
-                    key, 
-                    before: existingEntryOriginal, 
-                    after: existingEntryOriginal // Log original state
+                // No change detected by mergeEntry OR validation failed (updated is null)
+                log.verbose(`[updateFromCsv ${objectIdFromCsv}] No changes detected or validation failed. Logging as NO_CHANGE.`);
+                changeLog.push({
+                    type: 'no_change',
+                    key: objectIdFromCsv,
+                    before: existingEntryOriginal,
+                    after: existingEntryOriginal // Log original state as no change occurred/was kept
                 });
             }
-            // --- END CORRECTION ---
         } else { // Internal entity
-             log.verbose(`[updateFromCsv] Matched internal entity for key: ${key}. Logging as NO_CHANGE (Internal).`);
-             changeLog.push({ type: 'no_change', key, before: existingEntryOriginal, after: existingEntryOriginal });
+             log.verbose(`[updateFromCsv ${objectIdFromCsv}] Matched internal entity. Logging as NO_CHANGE (Internal).`);
+             changeLog.push({ type: 'no_change', key: objectIdFromCsv, before: existingEntryOriginal, after: existingEntryOriginal });
         }
     } // End CSV row loop
 
-    // 3. Add 'no_change' entries for original entities NOT processed by the CSV
-    log.verbose('[DEBUG updateFromCsv] Entering final loop to add unprocessed entities to changeLog. Processed IDs:', Array.from(processedObjectIds));
+    // --- Log Entities Not Present in CSV ---
+    log.verbose(`[updateFromCsv] Checking for canonical entries not present in the processed CSV ObjectIds.`);
     for (const originalObjectId in canonicalIndex) {
         if (!processedObjectIds.has(originalObjectId)) {
-            log.verbose(`[DEBUG updateFromCsv] Adding NO_CHANGE for unprocessed ID: ${originalObjectId}`);
-            const originalEntry = canonicalIndex[originalObjectId]; 
-            changeLog.push({ type: 'no_change', key: originalObjectId, before: cloneDeep(originalEntry), after: cloneDeep(originalEntry) }); // Clone here too
+            log.verbose(`[updateFromCsv ${originalObjectId}] Not found in CSV. Logging as NO_CHANGE (Unprocessed).`);
+            const originalEntry = canonicalIndex[originalObjectId];
+            changeLog.push({ type: 'no_change', key: originalObjectId, before: cloneDeep(originalEntry), after: cloneDeep(originalEntry) });
         }
     }
 
-    // --- Add final log before return ---
-    log.verbose('[DEBUG updateFromCsv] Final changeLog before return:', JSON.stringify(changeLog.map(c => ({ key: c.key, type: c.type })))); 
-
-    // 4. Return results (convert map back to array)
-    return { updated: Object.values(updatedDataMap), changes: changeLog };
+    // --- Final Log & Return ---
+    log.verbose(`[updateFromCsv] Final changeLog summary:`, JSON.stringify(changeLog.map(c => ({ key: c.key, type: c.type }))));
+    return { updated: Object.values(updatedDataMap), changes: changeLog }; // Return array from the final state of the working map
 }
