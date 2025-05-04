@@ -1,0 +1,36 @@
+---
+description: Specifies conventions for structured logging (using lib/logger) and the testing strategy (unit, integration).
+glob:
+  - lib/**/*.ts
+  - scripts/**/*.ts # Includes scripts/tests
+  - test/**/*.ts
+autoApply: true
+---
+# Logging & Testing Structure
+
+This rule outlines the conventions for logging and testing within the `phonelist-canonicalizer` components.
+
+## Logging
+
+*   **Utility:** A central logger is defined in [lib/logger.ts](mdc:lib/logger.ts).
+*   **Levels:**
+    *   `log.verbose(msg, ...args)`: For detailed debug info, internal steps. Enabled by `--verbose` flag in [scripts/canonicalize.ts](mdc:scripts/canonicalize.ts).
+    *   `log.info(msg, ...args)`: For standard progress messages, milestones. Always shown.
+    *   `log.warn(msg, ...args)`: For non-fatal issues, skipped data, potential problems. Always shown. Prefixed with `[WARN]`.
+    *   `log.error(msg, ...args)`: For fatal errors, validation failures causing exit. Always shown. Prefixed with `[ERROR]`.
+*   **Usage:** Replace all raw `console.*` calls with the appropriate `log.*` method.
+
+## Testing
+
+*   **Framework:** Uses `vitest`. Run via `pnpm test`.
+*   **Build Requirement:** Tests execute against compiled JavaScript in `dist/canon/`. **MUST** run `pnpm build:canon` before `pnpm test`.
+*   **Structure:**
+    *   **Unit Tests:** Located alongside the code they test (e.g., `lib/tests/`, `scripts/tests/`). Focus on isolated function/module behavior. Mock dependencies (like `fs`). Examples: [lib/tests/parseCsv.test.ts](mdc:lib/tests/parseCsv.test.ts), [lib/tests/validateCanonical.test.ts](mdc:lib/tests/validateCanonical.test.ts).
+    *   **Update Logic Tests:** Specific unit/integration tests for the CSV update flow located in `test/update.test.ts`. Loads real canonical data and simulates updates.
+    *   **CLI Integration Tests:** Located in `scripts/tests/canonicalize.integration.test.ts`. Executes the compiled `canonicalize.js` script as a subprocess using `execa`. Verifies command-line arguments, exit codes, file I/O, and high-level stdout/stderr content in a temporary directory.
+*   **Assertions:**
+    *   Use `vitest`'s `expect`.
+    *   For integration tests checking stdout/stderr, use `toContain` for key messages and `toMatch` for patterns (like optional warnings) rather than exact string equality.
+
+
+
