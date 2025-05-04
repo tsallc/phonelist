@@ -9,6 +9,7 @@ const createEntity = (id: string, name: string): ContactEntity => ({
   displayName: name,
   contactPoints: [],
   roles: [{ office: 'PLY', title: 'Test', priority: 1 }],
+  objectId: `obj-${id}`,
   source: 'Office365',
   upn: `${id}@example.com`,
 });

@@ -4,6 +4,7 @@ import { execa } from 'execa';
 import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
+import { ContactEntity, ContactPoint, CanonicalExport } from '../../lib/schema.js';
 
 // Path to the compiled script
 const scriptPath = path.resolve(process.cwd(), 'dist/canon/scripts/canonicalize.js');
@@ -18,31 +19,36 @@ let updateCsvPath: string;
 let exportCsvPath: string;
 let outputJsonPath: string;
 
-// Sample valid canonical JSON content (based on reference_example, but simpler)
+// Sample valid canonical JSON content
 const sampleCanonicalJson = {
   ContactEntities: [
     {
       id: 'a', displayName: 'Alice', contactPoints: [], 
-      roles: [{office: 'PLY', title: 'Eng', priority: 1}], source: 'Office365', upn: 'a@a.com'
+      roles: [{office: 'PLY', title: 'Eng', priority: 1}], 
+      source: 'Office365', upn: 'a@a.com', objectId: 'obj-a'
     },
     {
       id: 'b', displayName: 'Bob', contactPoints: [], 
-      roles: [{office: 'FTL', title: 'Mgr', priority: 1}], source: 'Merged', upn: 'b@b.com'
+      roles: [{office: 'FTL', title: 'Mgr', priority: 1}], 
+      source: 'Merged', upn: 'b@b.com', objectId: 'obj-b'
     }
   ],
   Locations: [],
   _meta: { generatedFrom: ['ref.json'], generatedAt: '2023-01-01', version: 1, hash: 'abc' }
 };
 
-// Sample invalid canonical JSON (duplicate ID)
+// Sample invalid canonical JSON (duplicate objectId)
 const invalidCanonicalJson = {
   ...sampleCanonicalJson,
-  ContactEntities: [...sampleCanonicalJson.ContactEntities, sampleCanonicalJson.ContactEntities[0]]
+  ContactEntities: [
+      ...sampleCanonicalJson.ContactEntities,
+      { ...sampleCanonicalJson.ContactEntities[0], id: 'a-dup' }
+  ]
 };
 
-// Sample O365 CSV for update
-const sampleUpdateCsv = `"Display name","Mobile Phone","User principal name","Title","Department"
-"Alice","111-NEW-111","a@a.com","Senior Eng","Tech"`; // Update Alice
+// Sample O365 CSV for update (MUST include ObjectId)
+const sampleUpdateCsv = `"Display name","Mobile Phone","User principal name","Title","Department","Object ID"
+"Alice","111-NEW-111","a@a.com","Senior Eng","Tech","obj-a"`; // Update Alice
 
 // Function to run the script via node
 const runScript = (args: string[] = []) => {
@@ -92,7 +98,7 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         
         expect(exitCode).toBe(1);
         expect(stderr).toContain('❌ Live data validation failed');
-        expect(stderr).toContain('Duplicate IDs found: a'); // Specific error
+        expect(stderr).toContain('Duplicate objectIds found: obj-a');
     });
 
     it('Default: should exit 1 if JSON file does not exist', async () => {
@@ -128,24 +134,38 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         expect(await fs.pathExists(exportCsvPath)).toBe(true);
     });
 
-     // --- Test Update Mode (Placeholder Logic) --- 
-    it('Update: should run with placeholder logic and report no changes', async () => {
+     // --- Test Update Mode (NEW Logic) --- 
+    it('Update: should run, detect changes based on objectId, and write output', async () => {
         await fs.outputJson(liveJsonPath, sampleCanonicalJson);
         await fs.writeFile(updateCsvPath, sampleUpdateCsv);
         
         const { stdout, stderr, exitCode } = await runScript([
             '--json', liveJsonPath, 
             '--update-from-csv', updateCsvPath, 
-            '--out', outputJsonPath // Use separate output for test
+            '--out', outputJsonPath 
         ]);
         
         expect(exitCode).toBe(0);
-        expect(stderr).toContain('⚠️ updateFromJson: Logic not implemented');
-        expect(stdout).toContain('✅ No changes detected after update process');
-        expect(await fs.pathExists(outputJsonPath)).toBe(false); // Should not write if no changes
+        expect(stderr).toBe(''); 
+        expect(stdout).toContain('Performing selective update');
+        expect(stdout).toContain('📊 Update Summary:');
+        expect(stdout).toContain('Matched & Updated: 1'); 
+        expect(stdout).toContain('❗️ Overall state changes detected:');
+        expect(stdout).toContain(`💾 Writing updated canonical JSON to: ${outputJsonPath}`);
+        expect(stdout).toContain(`📝 Writing detailed update change log to:`);
+        expect(stdout).toContain('✨ Update process complete.');
+        expect(await fs.pathExists(outputJsonPath)).toBe(true); 
+        
+        const outputData: CanonicalExport = await fs.readJson(outputJsonPath);
+        const updatedAlice = outputData.ContactEntities.find((e: ContactEntity) => e.objectId === 'obj-a'); 
+        expect(updatedAlice?.department).toBe('Tech');
+        expect(updatedAlice?.roles?.[0]?.title).toBe('Senior Eng');
+        const mobilePoint = updatedAlice?.contactPoints?.find((cp: ContactPoint) => cp.type === 'mobile');
+        expect(mobilePoint?.value).toBe('111-NEW-111');
+        expect(outputData._meta?.hash).not.toBe('abc'); 
     });
 
-    it('Update: should run with --dry-run and not write files', async () => {
+    it('Update: should run with --dry-run, detect changes based on objectId, and not write files', async () => {
         await fs.outputJson(liveJsonPath, sampleCanonicalJson);
         await fs.writeFile(updateCsvPath, sampleUpdateCsv);
         
@@ -157,14 +177,18 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         ]);
         
         expect(exitCode).toBe(0);
-        expect(stderr).toContain('⚠️ updateFromJson: Logic not implemented'); 
-        // expect(stdout).toContain('🚫 Dry Run: Skipping file writes.'); // This log might not appear if no changes are detected
-        expect(stdout).toContain('✅ No changes detected after update process');
-        expect(await fs.pathExists(outputJsonPath)).toBe(false);
+        expect(stderr).toBe('');
+        expect(stdout).toContain('Performing selective update');
+        expect(stdout).toContain('📊 Update Summary:');
+        expect(stdout).toContain('Matched & Updated: 1'); 
+        expect(stdout).toContain('❗️ Overall state changes detected:');
+        expect(stdout).toContain('🚫 Dry Run: Skipping file writes.'); 
+        expect(stdout).toContain('✨ Update process complete.');
+        expect(await fs.pathExists(outputJsonPath)).toBe(false); 
     });
 
     // --- Test Verbose Flag ---
-    it('Verbose: should output DEBUG logs when --verbose is used', async () => {
+    it('Verbose: should output specific DEBUG logs when --verbose is used during update', async () => {
         await fs.outputJson(liveJsonPath, sampleCanonicalJson);
         await fs.writeFile(updateCsvPath, sampleUpdateCsv);
         
@@ -172,12 +196,17 @@ describe('canonicalize.ts CLI Integration Tests', () => {
             '--json', liveJsonPath, 
             '--update-from-csv', updateCsvPath, 
             '--out', outputJsonPath,
-            '--verbose' // Add verbose flag
+            '--dry-run', 
+            '--verbose' 
         ]);
         
         expect(exitCode).toBe(0);
-        expect(stderr).toContain('⚠️ updateFromJson: Logic not implemented');
-        expect(stdout).toContain('DEBUG [updateFromJson]: Starting selective update'); // Check for verbose log
-        expect(stdout).toContain('✅ No changes detected after update process');
+        expect(stderr).toBe('');
+        expect(stdout).toContain('DEBUG [canonicalize.ts] Mapping CSV UPN');
+        expect(stdout).toContain('DEBUG [updateFromCsv loop] First csvRow object:');
+        expect(stdout).toContain('DEBUG [mergeEntry] Final result for ID');
+        expect(stdout).toContain('DEBUG [updateFromCsv] Changes detected for objectId');
+        expect(stdout).toContain('🚫 Dry Run: Skipping file writes.'); 
+        expect(stdout).toContain('✨ Update process complete.');
     });
 }); 

@@ -39,10 +39,10 @@ export const CanonicalMetaSchema = z.object({
 
 export const ContactEntitySchema = z.object({
   id: z.string().min(1),
-  displayName: z.string().min(1),
+  displayName: z.string().min(1).optional(),
   contactPoints: z.array(ContactPointSchema).optional().default([]),
   roles: z.array(RoleSchema).optional().default([]),
-  objectId: z.string().optional(),
+  objectId: z.string().min(1),
   upn: z.string().email().optional(),
   department: z.string().nullable().optional(),
   source: z.enum(["Office365", "App.jsx", "Merged", "ArtifactCode.jsx"]),

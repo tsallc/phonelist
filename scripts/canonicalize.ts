@@ -14,8 +14,8 @@ import { validateCanonical } from "../lib/validate.js";
 import { diffCanonical, DiffResult } from "../lib/diff.js"; // Import DiffResult type
 import { computeHash } from "../lib/hash.js";
 import { exportCsv } from "../lib/exportCsv.js";
-import { CanonicalExport } from "../lib/schema.js"; // Import CanonicalExport type
-import { updateFromJson } from "../lib/updateFromJson.js"; // Import for new logic
+import { CanonicalExport, ContactEntity } from "../lib/schema.js"; // Import CanonicalExport and ContactEntity
+import { updateFromCsv, ChangeSummary } from "../lib/updateFromJson.js"; // Import new function and type
 
 const program = new Command();
 
@@ -90,14 +90,47 @@ async function main() {
             process.exit(1);
         }
         console.log(`📄 Reading CSV data for update from: ${opts.updateFromCsv}`);
-        const rawUpdateRows = await parseCsv(opts.updateFromCsv);
-        console.log(`🔍 Parsed ${rawUpdateRows.length} rows from update CSV.`);
+        // Assuming parseCsv returns Record<string, any>[] (array of objects with headers as keys)
+        const csvRows: Record<string, any>[] = await parseCsv(opts.updateFromCsv);
+        console.log(`🔍 Parsed ${csvRows.length} rows from update CSV.`);
+        // --- DEBUG: Log first parsed CSV row --- 
+        if (csvRows.length > 0) {
+            console.log("DEBUG [canonicalize.ts] First parsed CSV row:", JSON.stringify(csvRows[0], null, 2));
+        }
+        // --- End DEBUG ---
+
+        // --- Create the ID Mapper (NO LONGER NEEDED) --- 
+        // console.log("🗺️  Building map from UPN/Email to Canonical ID for matching...");
+        // const canonicalEntities = liveData.ContactEntities;
+        // const upnToIdMap = new Map<string, string>();
+        // ... (map building logic removed) ...
+        // console.log(`   - Map created with ${upnToIdMap.size} entries.`);
+        // const csvToCanonicalIdMapper = (csvRow: Record<string, any>): string | undefined | null => { ... };
+        // --- End ID Mapper --- 
         
-        console.log(`⚙️  Performing selective update...`);
-        const updatedLiveData = updateFromJson(liveData, rawUpdateRows, opts.verbose);
+        console.log(`⚙️  Performing selective update using updateFromCsv...`);
+        let updatedEntities: ContactEntity[];
+        let changes: ChangeSummary[];
+        try {
+            // Call updateFromCsv WITHOUT the mapper function
+            const result = updateFromCsv(csvRows, liveData.ContactEntities); // Removed mapper argument
+            updatedEntities = result.updated;
+            changes = result.changes;
+        } catch (validationError: any) {
+            console.error(`❌ Error during updateFromCsv execution (likely validation failure):`);
+            console.error(validationError.message || validationError);
+            process.exit(1);
+        }
         
+        // Construct the full updated object for validation, hashing, and writing
+        const updatedCanonicalExport: CanonicalExport = {
+            ...liveData, // Preserve Locations, existing _meta fields
+            ContactEntities: updatedEntities,
+        };
+
         console.log(`🛡️  Validating updated data structure...`);
-        const updateValidation = validateCanonical(updatedLiveData);
+        // Now validate the full updated structure
+        const updateValidation = validateCanonical(updatedCanonicalExport);
         if (!updateValidation.success) {
             console.error("❌ Updated data validation failed:");
             updateValidation.errors?.forEach(err => console.error(`   - ${err}`))
@@ -106,37 +139,67 @@ async function main() {
         console.log(`✅ Updated data validation successful.`);
 
         console.log(`🧮 Computing hash of updated data...`);
-        const newHash = computeHash(updatedLiveData.ContactEntities, updatedLiveData.Locations);
-        updatedLiveData._meta.hash = newHash; // Update hash in the object
-        // TODO: Consider updating generatedFrom and generatedAt in _meta?
+        const newHash = computeHash(updatedCanonicalExport.ContactEntities, updatedCanonicalExport.Locations);
+        updatedCanonicalExport._meta.hash = newHash; // Update hash in the object
+        // Update other meta fields if necessary
+        updatedCanonicalExport._meta.generatedFrom = [...new Set([...liveData._meta.generatedFrom, `updateFromCsv: ${path.basename(opts.updateFromCsv)}`])];
+        updatedCanonicalExport._meta.generatedAt = new Date().toISOString();
         console.log(`   - New Hash: ${newHash}`);
 
         console.log(`🔄 Comparing updated data with original live version...`);
-        const diffResult = diffCanonical(liveData, updatedLiveData); // Compare original vs updated
-        const hasChanges = liveData._meta.hash !== newHash; // Compare hashes
+        const diffResult = diffCanonical(liveData, updatedCanonicalExport); 
+        const originalHashForCompare = liveData._meta?.hash; // Use potentially existing hash
+        console.log(`   DEBUG [canonicalize.ts] Comparing Hashes: Original='${originalHashForCompare}' New='${newHash}'`); // Added log
+        const hasChanges = originalHashForCompare !== newHash;
+
+        // --- Change Reporting --- 
+        const updateCount = changes.filter(c => c.type === 'update').length;
+        const noChangeCount = changes.filter(c => c.type === 'no_change' && c.key !== 'unknown').length;
+        const skippedCount = changes.filter(c => c.key === 'unknown').length;
+        console.log(`📊 Update Summary:`);
+        console.log(`   - Rows Processed from CSV: ${csvRows.length}`);
+        console.log(`   - Matched & Updated: ${updateCount}`);
+        console.log(`   - Matched & No Change: ${noChangeCount}`);
+        console.log(`   - Skipped (No matching ID found): ${skippedCount}`);
+        // Note: 'added' and 'removed' counts from diffCanonical reflect full state changes,
+        // while 'changes' from updateFromCsv reflects row-by-row processing.
 
         if (hasChanges) {
-            console.log(`❗️ Changes detected by update:`);
-            console.log(`   - Added: ${diffResult?.added.length ?? 'N/A'}`);
-            console.log(`   - Removed: ${diffResult?.removed.length ?? 'N/A'}`);
-            console.log(`   - Changed: ${diffResult?.changedCount ?? 'N/A'}`);
+            console.log(`❗️ Overall state changes detected:`);
+            console.log(`   - Entities Added (Overall): ${diffResult.added.length}`);
+            console.log(`   - Entities Removed (Overall): ${diffResult.removed.length}`);
+            console.log(`   - Entities Changed (Overall): ${diffResult.changedCount}`);
 
             if (opts.dryRun) {
                 console.log(`🚫 Dry Run: Skipping file writes.`);
+                // Optionally print more detailed change summary for dry run
+                 if (opts.verbose) {
+                    console.log("Detailed Changes (Dry Run):");
+                    changes.forEach(change => {
+                        if (change.type === 'update') {
+                            console.log(`  [UPDATE] Key: ${change.key}`);
+                             // Optionally print diff if available and verbose
+                             // if(change.diff) console.log(JSON.stringify(change.diff, null, 2));
+                        } else if (change.key === 'unknown') {
+                             console.warn(`  [SKIPPED] CSV Row DisplayName: ${change.after?.displayName || 'N/A'}`);
+                        }
+                    });
+                }
             } else {
                 if (opts.verbose) {
-                    console.log(`DEBUG: Object to be written contains ${updatedLiveData.ContactEntities.length} ContactEntities.`); 
+                    console.log(`DEBUG: Object to be written contains ${updatedCanonicalExport.ContactEntities.length} ContactEntities.`); 
                 }
                 console.log(`💾 Writing updated canonical JSON to: ${opts.out}`);
-                await fs.outputJson(opts.out, updatedLiveData, { spaces: 2 }); 
+                await fs.outputJson(opts.out, updatedCanonicalExport, { spaces: 2 }); 
                 console.log(`✅ Successfully wrote JSON.`);
                 
                 const logDir = path.resolve("logs");
                 const logFileName = `diff-update-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
                 const logPath = path.join(logDir, logFileName);
-                console.log(`📝 Writing update diff log to: ${logPath}`);
-                await fs.outputJson(logPath, diffResult ?? {}, { spaces: 2 }); 
-                console.log(`✅ Successfully wrote diff log.`);
+                console.log(`📝 Writing detailed update change log to: ${logPath}`);
+                // Log the 'changes' array from updateFromCsv for more specific update details
+                await fs.outputJson(logPath, { summary: diffResult, details: changes }, { spaces: 2 }); 
+                console.log(`✅ Successfully wrote detailed log.`);
             }
 
             if (opts.failOnDiff) {
