@@ -1,5 +1,9 @@
 // lib/schema.ts
 import { z } from "zod";
+import { createHash } from "crypto"; // For default internal objectId
+
+// Helper for default internal objectId
+const generateInternalObjectId = (id: string) => `manual-${id}-${createHash("sha256").update(id).digest("hex").substring(0, 8)}`;
 
 // Zod Schemas
 export const ContactPointSchema = z.object({
@@ -37,16 +41,46 @@ export const CanonicalMetaSchema = z.object({
   hash: z.string().optional(),
 });
 
-export const ContactEntitySchema = z.object({
-  id: z.string().min(1),
+// Base schema containing common fields
+const BaseContactSchema = z.object({
+  id: z.string().min(1), // Internal identifier (e.g., slug)
   displayName: z.string().min(1).optional(),
   contactPoints: z.array(ContactPointSchema).optional().default([]),
   roles: z.array(RoleSchema).optional().default([]),
-  objectId: z.string().min(1),
-  upn: z.string().email().optional(),
+  source: z.enum(["Office365", "App.jsx", "Merged", "ArtifactCode.jsx", "Manual"]), // Added Manual source?
   department: z.string().nullable().optional(),
-  source: z.enum(["Office365", "App.jsx", "Merged", "ArtifactCode.jsx"]),
+  upn: z.string().email().optional(), // Optional for internal?
 });
+
+// Schema for external contacts (synced from O365)
+const ExternalContactSchema = BaseContactSchema.extend({
+  kind: z.literal("external"),
+  objectId: z.string().min(1), // REQUIRED for external
+  // upn might be considered required for external? z.string().email()
+});
+
+// Schema for internal contacts (shared resources, manual entries)
+const InternalContactSchema = BaseContactSchema.extend({
+  kind: z.literal("internal"),
+  // Generate a default, stable objectId based on the 'id' (slug) if not provided
+  objectId: z.string().min(1).default(ctx => {
+      // Attempt to access the 'id' field from the input context to generate default
+      // Note: This assumes 'id' is present during parsing if objectId is missing.
+      // Zod's default might run before 'id' is fully parsed/validated depending on order.
+      // A transform might be safer if 'id' is needed reliably for the default.
+      // For now, let's assume 'id' is available or handle potential undefined 'id'
+      const entityId = (ctx as any)?.id || `unknown-${Date.now()}`;
+      return generateInternalObjectId(entityId);
+  }),
+  // upn is likely not applicable/optional here
+  upn: z.string().email().optional().nullable(),
+});
+
+// The main discriminated union schema
+export const ContactEntitySchema = z.discriminatedUnion("kind", [
+  ExternalContactSchema,
+  InternalContactSchema
+]);
 
 export const CanonicalExportSchema = z.object({
   ContactEntities: z.array(ContactEntitySchema),

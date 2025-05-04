@@ -1,6 +1,6 @@
 import { CanonicalExportSchema, ContactEntity, CanonicalExport } from "./schema.js";
 
-export function validateCanonical(data: unknown): { success: boolean; errors?: any[] } {
+export function validateCanonical(data: unknown): { success: boolean; errors?: string[] } {
   try {
     const parsed = CanonicalExportSchema.parse(data as any);
 
@@ -14,8 +14,8 @@ export function validateCanonical(data: unknown): { success: boolean; errors?: a
       };
     }
 
-    // Check for duplicate objectIds
-    const objectIds = parsed.ContactEntities.map((c: ContactEntity) => c.objectId).filter(Boolean); // Filter out potential undefined/null before check
+    // Check for duplicate objectIds (considering both kinds, as even manual ones should be unique)
+    const objectIds = parsed.ContactEntities.map((c: ContactEntity) => c.objectId).filter(Boolean);
     const duplicateObjectIds = objectIds.filter((oid, idx) => objectIds.indexOf(oid) !== idx);
     if (duplicateObjectIds.length) {
         return {
@@ -23,6 +23,20 @@ export function validateCanonical(data: unknown): { success: boolean; errors?: a
             errors: [`Duplicate objectIds found: ${[...new Set(duplicateObjectIds)].join(", ")}`],
         };
     }
+
+    // Specific check: Ensure all 'external' kind entities have a non-empty objectId
+    // (This might be redundant if the schema parsing catches it, but good for explicit validation)
+    const externalMissingObjectId = parsed.ContactEntities.filter(
+        c => c.kind === 'external' && !c.objectId
+    );
+    if (externalMissingObjectId.length > 0) {
+        return {
+            success: false,
+            errors: [`External contacts missing required objectId: ${externalMissingObjectId.map(c => c.id).join(", ")}`],
+        };
+    }
+
+    // Add any other custom validation rules here...
 
     return { success: true };
   } catch (e: any) {

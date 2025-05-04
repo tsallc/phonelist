@@ -83,6 +83,12 @@ function updateRole(roles: Role[] = [], office: Role['office'], title: string | 
  *          Returns null if the merged entity fails validation.
  */
 function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, any>): ContactEntity | null {
+    // Ensure we only merge into external entities
+    if (existing.kind !== 'external') {
+        log.verbose(`[mergeEntry] Skipping merge for internal entity: ${existing.id} (${existing.objectId})`);
+        return null; // Do not modify internal entities based on CSV
+    }
+
     const updated: ContactEntity = JSON.parse(JSON.stringify(existing));
     let changed = false;
 
@@ -205,62 +211,68 @@ function compareRoles(a: Role, b: Role): number {
  */
 export function updateFromCsv(
     csvRows: Record<string, any>[],
-    originalCanonicalData: ReadonlyArray<ContactEntity>, 
-    // Mapper function is no longer needed, as we assume objectId is present in csvRows
-    // csvToCanonicalIdMapper: (csvRow: Record<string, any>) => string | undefined | null 
+    originalCanonicalData: ReadonlyArray<ContactEntity>
 ): { updated: ContactEntity[], changes: ChangeSummary[] } {
 
     const canonicalDataCopy = JSON.parse(JSON.stringify(originalCanonicalData));
 
     // 1. Index Canonical Data by 'objectId'
-    const keyFn = (row: ContactEntity) => row.objectId; // Use objectId as the key
-    // Need to handle potential missing objectId in existing data if schema wasn't enforced before
     const canonicalIndex: Record<string, ContactEntity> = {};
     for (const entity of canonicalDataCopy) {
         if (entity.objectId) {
             if (canonicalIndex[entity.objectId]) {
-                log.warn(`[updateFromCsv] Duplicate objectId found in existing canonical data: ${entity.objectId}. Overwriting entry.`);
+                log.warn(`[updateFromCsv] Duplicate objectId found in canonical data during indexing: ${entity.objectId}. Overwriting entry.`);
             }
             canonicalIndex[entity.objectId] = entity;
         } else {
-            log.warn(`[updateFromCsv] Entity with id '${entity.id}' missing objectId in existing data. Cannot be updated.`);
+            // This case should be less likely if schema is enforced on load,
+            // but handle defensively. It might apply to internal entities if defaults failed.
+            log.warn(`[updateFromCsv] Entity found without objectId during indexing: ${entity.id}. Skipping.`);
         }
     }
-    
-    const updatedDataMap = { ...canonicalIndex }; 
-    const changeLog: ChangeSummary[] = [];
 
-    // 2. Process CSV Rows
+    // 2. Process CSV Rows, build updated map and change log
+    const updatedDataMap: Record<string, ContactEntity> = { ...canonicalIndex }; // Start with all existing
+    const changeLog: ChangeSummary[] = [];
     let rowNum = 0;
     for (const csvRow of csvRows) {
         rowNum++;
-        // Log first csv row (verbose)
-        if (rowNum === 1) { 
-            log.verbose(`[updateFromCsv loop] First csvRow object:`, JSON.stringify(csvRow, null, 2));
-        }
-        
-        const key = csvRow["object id"]; 
+        // Get objectId directly from the canonicalized CSV row data
+        const key = csvRow["object id"]; // Relies on parseCsv providing this key
+
         if (!key) {
-             log.error(`[updateFromCsv] ERROR: CSV row number ${rowNum} is missing the required 'object id' after parsing. Skipping.`);
-            continue;
+            log.warn(`[updateFromCsv] Skipping CSV row ${rowNum} due to missing 'object id'. Data: ${JSON.stringify(csvRow)}`);
+            continue; // Skip row if it somehow lacks the required objectId
         }
-        const existingEntryFromIndex = canonicalIndex[key]; 
+
+        const existingEntryFromIndex = canonicalIndex[key];
+
         if (existingEntryFromIndex) {
-            const merged = mergeEntry(existingEntryFromIndex, csvRow);
-            if (merged) {
-                log.verbose(`[updateFromCsv] Changes detected for objectId: ${key}. Logging as UPDATE.`);
-                updatedDataMap[key] = merged;
-                const detailedDiff = diff(existingEntryFromIndex, merged); 
-                changeLog.push({ type: 'update', key, before: existingEntryFromIndex, after: merged, diff: detailedDiff });
+            // IMPORTANT: Only attempt merge if the existing entity is 'external'
+            if (existingEntryFromIndex.kind === 'external') {
+                const merged = mergeEntry(existingEntryFromIndex, csvRow);
+                if (merged) {
+                    log.verbose(`[updateFromCsv] Changes detected for external key: ${key}. Logging as UPDATE.`);
+                    updatedDataMap[key] = merged;
+                    const detailedDiff = diff(existingEntryFromIndex, merged);
+                    changeLog.push({ type: 'update', key, before: existingEntryFromIndex, after: merged, diff: detailedDiff });
+                } else {
+                    log.verbose(`[updateFromCsv] No changes detected for external key: ${key}. Logging as NO_CHANGE.`);
+                    // Ensure we still log 'no_change' for external entities that were processed but unchanged
+                    changeLog.push({ type: 'no_change', key, before: existingEntryFromIndex, after: existingEntryFromIndex });
+                }
             } else {
-                 log.verbose(`[updateFromCsv] No changes detected for objectId: ${key}. Logging as NO_CHANGE.`);
-                 changeLog.push({ type: 'no_change', key, before: existingEntryFromIndex, after: existingEntryFromIndex }); 
+                // If the objectId matched an internal entity, log no_change (as we don't update them)
+                 log.verbose(`[updateFromCsv] Matched internal entity for key: ${key}. Logging as NO_CHANGE.`);
+                 changeLog.push({ type: 'no_change', key, before: existingEntryFromIndex, after: existingEntryFromIndex });
             }
         } else {
-             log.warn(`[updateFromCsv] CSV row with objectId [${key}] has no matching entry in canonical data. Skipping potential insert.`);
+            // CSV row objectId not found in canonical data - truly skipped
+            log.warn(`[updateFromCsv] CSV row with objectId [${key}] has no matching entry in canonical data. Skipping.`);
+            // Do not add to changeLog here
         }
     }
 
-    // 3. Return results
+    // 3. Return results (convert map back to array)
     return { updated: Object.values(updatedDataMap), changes: changeLog };
 }
