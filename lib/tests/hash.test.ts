@@ -3,14 +3,18 @@ import { describe, it, expect } from 'vitest';
 import { computeHash } from '../hash.js';
 import { ContactEntity } from '../schema.js'; // Added .js
 
-// Helper to create mock entities (simplified)
-const createEntity = (id: string, name: string): ContactEntity => ({
+// Helper to create a mock entity
+const createEntity = (id: string, name: string, objectIdPrefix = 'obj'): ContactEntity => ({
   id,
   displayName: name,
+  title: 'Test',
   contactPoints: [],
-  roles: [{ office: 'PLY', title: 'Test', priority: 1 }],
-  source: 'Office365',
-  upn: `${id}@example.com`,
+  roles: [{office: 'PLY', brand: 'tsa', priority: 1}],
+  objectId: `${objectIdPrefix}-${id}`, // Ensures objectId is always present
+  kind: objectIdPrefix === 'manual' ? 'internal' : 'external', // Ensure kind is set based on prefix
+  source: objectIdPrefix === 'manual' ? 'Manual' : 'Office365', // Ensure source is set based on kind
+  upn: objectIdPrefix === 'manual' ? undefined : `${id}@example.com`, // Ensure upn logic is correct
+  department: undefined, // Add other optional fields if needed for testing
 });
 
 describe('computeHash', () => {

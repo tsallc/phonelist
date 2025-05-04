@@ -18,7 +18,6 @@
       "roles": [
         {
           "office": "FTL",
-          "brand": "cts",
           "title": "Office Manager",
           "priority": 1
         }
@@ -47,7 +46,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Escrow Officer",
           "priority": 1
         }
@@ -73,14 +71,7 @@
           "source": "App.jsx"
         }
       ],
-      "roles": [
-        {
-          "office": "PLY",
-          "brand": "tsa",
-          "title": null,
-          "priority": 1
-        }
-      ],
+      "roles": [],
       "objectId": "01f91650-6b68-4e1f-9114-9b6fc8157d86",
       "upn": "Becca@trutitleinc.com",
       "department": null,
@@ -105,7 +96,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "President",
           "priority": 1
         }
@@ -138,14 +128,7 @@
           "source": "ArtifactCode.jsx"
         }
       ],
-      "roles": [
-        {
-          "office": "FTL",
-          "brand": "cts",
-          "title": null,
-          "priority": 1
-        }
-      ],
+      "roles": [],
       "objectId": "8dfbe371-5cec-4da3-ac79-7c7606cd4182",
       "upn": "chad@coastaltitlellc.com",
       "department": null,
@@ -165,7 +148,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Director of Sales",
           "priority": 1
         }
@@ -189,7 +171,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Closer",
           "priority": 1
         }
@@ -218,7 +199,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Title Examiner",
           "priority": 1
         }
@@ -247,7 +227,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Escrow Officer",
           "priority": 1
         }
@@ -276,7 +255,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Recording Department",
           "priority": 1
         }
@@ -305,7 +283,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Processor",
           "priority": 1
         }
@@ -334,7 +311,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Closer",
           "priority": 1
         }
@@ -358,7 +334,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Closer",
           "priority": 1
         }
@@ -373,14 +348,7 @@
       "id": "lexi-tiller",
       "displayName": "Lexi Tiller",
       "contactPoints": [],
-      "roles": [
-        {
-          "office": "PLY",
-          "brand": "tsa",
-          "title": null,
-          "priority": 1
-        }
-      ],
+      "roles": [],
       "objectId": "5a3998b9-a9ba-4140-bf42-de7007378f8d",
       "upn": "ltiller@titlesolutionsllc.com",
       "department": null,
@@ -405,7 +373,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Processor",
           "priority": 1
         }
@@ -429,7 +396,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Accountant",
           "priority": 1
         }
@@ -453,7 +419,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Closer",
           "priority": 1
         }
@@ -467,13 +432,7 @@
     {
       "id": "peter-joelson",
       "displayName": "Peter Joelson",
-      "contactPoints": [
-        {
-          "type": "mobile",
-          "value": "248-961-4201",
-          "source": "App.jsx"
-        }
-      ],
+      "contactPoints": [],
       "roles": [],
       "objectId": "68f94748-a3ef-4886-a519-ca9f393e9c03",
       "upn": "PJoelson@titlesolutionsllc.com",
@@ -492,14 +451,7 @@
           "source": "ArtifactCode.jsx"
         }
       ],
-      "roles": [
-        {
-          "office": "FTL",
-          "brand": "cts",
-          "title": null,
-          "priority": 1
-        }
-      ],
+      "roles": [],
       "objectId": "0244d102-e28c-47f5-8b48-36a17bbfcc5f",
       "upn": "Rachel@coastaltitlellc.com",
       "department": null,
@@ -521,14 +473,7 @@
           "source": "App.jsx"
         }
       ],
-      "roles": [
-        {
-          "office": "PLY",
-          "brand": "tsa",
-          "title": null,
-          "priority": 1
-        }
-      ],
+      "roles": [],
       "objectId": "73ba471c-f5b6-443b-8e5d-3904d7bb0799",
       "upn": "RMuroff@titlesolutionsllc.com",
       "department": null,
@@ -545,14 +490,7 @@
           "source": "App.jsx"
         }
       ],
-      "roles": [
-        {
-          "office": "PLY",
-          "brand": "tsa",
-          "title": null,
-          "priority": 1
-        }
-      ],
+      "roles": [],
       "objectId": "398bb132-b869-4236-b32b-e3660537b61a",
       "upn": "sfleming@titlesolutionsllc.com",
       "department": null,
@@ -584,7 +522,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Marketng",
           "priority": 1
         }
@@ -612,14 +549,7 @@
       ],
       "roles": [
         {
-          "office": "PLY",
-          "brand": "tsa",
-          "title": null,
-          "priority": 1
-        },
-        {
           "office": "FTL",
-          "brand": "cts",
           "title": null,
           "priority": 2
         }
@@ -658,13 +588,11 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Manager",
           "priority": 1
         },
         {
           "office": "FTL",
-          "brand": "cts",
           "title": "Manager",
           "priority": 2
         }
@@ -690,14 +618,7 @@
           "source": "App.jsx"
         }
       ],
-      "roles": [
-        {
-          "office": "PLY",
-          "brand": "tsa",
-          "title": null,
-          "priority": 1
-        }
-      ],
+      "roles": [],
       "objectId": "3fda63be-70dc-41fa-94d6-1bc358c0ca90",
       "upn": "Troy@trutitleinc.com",
       "department": null,
@@ -714,14 +635,7 @@
           "source": "ArtifactCode.jsx"
         }
       ],
-      "roles": [
-        {
-          "office": "PLY",
-          "brand": "tsa",
-          "title": null,
-          "priority": 1
-        }
-      ],
+      "roles": [],
       "objectId": "a497e58c-114a-432f-b412-ab4215fb3137",
       "upn": "will@4pp.dev",
       "department": null,
@@ -741,7 +655,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Shared Resource",
           "priority": 1
         }
@@ -763,7 +676,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Shared Resource",
           "priority": 1
         }
@@ -785,7 +697,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Meeting Room",
           "priority": 1
         }
@@ -807,7 +718,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Meeting Room",
           "priority": 1
         }
@@ -829,7 +739,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Training Room",
           "priority": 1
         }
@@ -851,7 +760,6 @@
       "roles": [
         {
           "office": "PLY",
-          "brand": "tsa",
           "title": "Common Area",
           "priority": 1
         }
@@ -873,7 +781,6 @@
       "roles": [
         {
           "office": "FTL",
-          "brand": "cts",
           "title": "Office Space",
           "priority": 1
         }
@@ -895,7 +802,6 @@
       "roles": [
         {
           "office": "FTL",
-          "brand": "cts",
           "title": "Office Space",
           "priority": 1
         }
@@ -1221,9 +1127,10 @@
     "generatedFrom": [
       "users_5_3_2025 7_00_43 PM.csv",
       "App.jsx",
-      "ArtifactCode.jsx"
+      "ArtifactCode.jsx",
+      "updateFromCsv: users_5_3_2025 7_00_43 PM.csv"
     ],
-    "generatedAt": "2025-05-03T19:45:00Z",
-    "hash": "294045b63c3cd1574bc360076452d2295388eed30c578bdac0e8957d3ee05913" 
+    "generatedAt": "2025-05-04T02:52:23.506Z",
+    "hash": "01a58c86d2b1cb4b39199098cb97bfad11fb99269b2b628c246711568fa607e4"
   }
 }

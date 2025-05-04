@@ -25,6 +25,7 @@
         *   `id`: Unique identifier (system-generated UUID, UPN/ObjectID from Entra, or manual ID).
         *   `entityType`: Enum/string ('person', 'organization', 'system_resource').
         *   `source`: Enum/string ('manual', 'entra', 'vendor_api', 'system_defined').
+        *   `title`: The person or entity's job title or role title (e.g., "CEO", "Closer", "IT Support").
         *   `tags`: Array of strings (e.g., 'internal', 'external', 'vendor', 'department:Finance', 'critical_partner').
         *   `names`: Array of `Name` objects (legal, display, alias).
         *   `roleAssignments`: Array of `RoleAssignment` objects (linking Entity to Role + temporal/priority info).
@@ -40,10 +41,10 @@
         *   `function`: Primary operational function (e.g., 'Closing', 'Executive Management', 'IT Support', 'Abstracting', 'Finance Approval').
         *   `jurisdiction`: Geographic/legal region primary focus (e.g., 'MI', 'FL', 'OaklandCounty', 'Federal'). *Optional.*
         *   `coverage`: Array of jurisdictions/areas supported (e.g., ['MI', 'FL', 'National']).
-        *   `title`: Common display title (e.g., "Closer", "CEO", "IT Helpdesk"). *[Display Aid]*
         *   `tags`: Array of strings ('executive', 'support-tier1', 'customer-facing', 'approval-required').
         *   `fallbackRoleId`: *Optional* ID of the role to escalate/route to.
         *   `validFrom`, `validTo`: Timestamps for role definition validity.
+    *   **Note:** Title information is stored at the `ContactEntity` level, not on individual roles.
     *   **`RoleAssignment` Schema:** (Connects Entity to Role)
         *   `assignmentId`: Unique ID for this specific assignment instance.
         *   `entityId`: Reference to `ContactEntity.id`.

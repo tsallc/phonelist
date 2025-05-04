@@ -1,0 +1,57 @@
+---
+description: Defines critical data contracts (objectId, header normalization, hashing) for the canonicalizer update logic.
+glob:
+  - lib/schema.ts
+  - lib/parseCsv.ts
+  - lib/updateFromJson.ts
+  - lib/hash.ts
+  - scripts/canonicalize.ts
+  - lib/types.ts
+  - docs/CHANGE-DETECTION-FAILURES.md # Also apply when viewing the failure log
+autoApply: true
+---
+# Canonicalizer Data Contracts & Invariants
+
+This rule outlines critical contracts and invariants for the `phonelist-canonicalizer` script, particularly the `--update-from-csv` logic. Adhering to these is crucial for data integrity and preventing regressions.
+
+## 1. Identity Anchor: `objectId`
+
+*   **Contract:** The Office 365 `objectId` is the **immutable primary key** for `ContactEntity`. It MUST be present and valid.
+*   **Rationale:** Provides a stable, globally unique identifier, unlike mutable fields like `upn`. Essential for reliable merging and diffing.
+*   **Enforcement:**
+    *   Schema ([lib/schema.ts](mdc:lib/schema.ts)): `objectId` is required (`z.string().min(1)`).
+    *   Parser ([lib/parseCsv.ts](mdc:lib/parseCsv.ts)): Fails early if `objectId` is missing/empty in a CSV row.
+    *   Update Logic ([lib/updateFromJson.ts](mdc:lib/updateFromJson.ts)): Uses `objectId` exclusively for matching and indexing.
+    *   CLI ([scripts/canonicalize.ts](mdc:scripts/canonicalize.ts)): Relies solely on `objectId` for the update process.
+
+## 2. CSV Header Normalization
+
+*   **Contract:** CSV headers MUST be normalized consistently before use. Variations in casing, spacing, or invisible characters (BOM, NBSP) are common.
+*   **Rationale:** Prevents silent failures where lookups miss data due to header mismatches.
+*   **Implementation:**
+    *   A `canonicalHeaderMap` defines allowed input variations mapped to canonical lowercase keys (e.g., `"User Principal Name"` -> `"user principal name"`).
+    *   A `normalizeKey` function sanitizes input keys (removes BOM/NBSP, trims, lowercases).
+    *   `canonicalizeHeaderKey` uses the normalized input key to look up the canonical key in the map.
+    *   This logic resides in [lib/parseCsv.ts](mdc:lib/parseCsv.ts).
+
+## 3. Hashing & Change Detection
+
+*   **Contract:** Change detection relies on comparing a deterministic hash of the initial state vs. the updated state.
+*   **Rationale:** Avoids brittle field-by-field comparison issues, especially with nested/complex objects.
+*   **Implementation ([lib/hash.ts](mdc:lib/hash.ts), [scripts/canonicalize.ts](mdc:scripts/canonicalize.ts)):**
+    *   Uses `json-stable-stringify` to ensure consistent object serialization.
+    *   Sorts top-level arrays (`ContactEntities`, `Locations`) by their primary keys (`objectId`, `id`).
+    *   Sorts nested arrays (`contactPoints`, `roles`, `rooms`, `desks`) deterministically before hashing.
+    *   The comparison in `scripts/canonicalize.ts` **MUST** use the `initialComputedHash` (calculated from the loaded data) against the `newHash` (calculated from the updated data). It **MUST NOT** trust or use any `_meta.hash` value present in the loaded input file for comparison.
+    *   Hash assignment (`updatedCanonicalExport._meta.hash = newHash`) happens *after* the comparison.
+
+## 4. Data Coercion
+
+*   **Contract:** Empty strings (`""`) in CSV input for optional fields should generally be treated as `undefined` in the canonical representation.
+*   **Rationale:** Ensures consistency and prevents treating empty strings as valid data points.
+*   **Implementation:** Logic exists within [lib/parseCsv.ts](mdc:lib/parseCsv.ts) to convert empty strings to `undefined` before pushing the final row object.
+
+See also: [docs/CHANGE-DETECTION-FAILURES.md](mdc:docs/CHANGE-DETECTION-FAILURES.md) for historical context on pitfalls.
+
+
+

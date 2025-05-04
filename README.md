@@ -99,20 +99,24 @@ node dist/canon/scripts/canonicalize.js --json path/to/live_data.json --export-c
 *   Validates the JSON (but proceeds with warning on failure).
 *   Generates a CSV file at the `--export-csv` path with columns suitable for O365 import (Display Name, Mobile Phone, UPN, Title, etc.).
 
-**Update Mode (O365 CSV -> Live JSON - *Placeholder Logic Only*):**
+**Update Mode (O365 CSV -> Live JSON):**
 ```bash
 node dist/canon/scripts/canonicalize.js --update-from-csv path/to/new_o365_export.csv
 # OR specifying different input/output JSON files:
-node dist/canon/scripts/canonicalize.js --json path/to/live_data.json --update-from-csv path/to/new_o365_export.csv --out path/to/updated_live_data.json 
+node dist/canon/scripts/canonicalize.js --json path/to/live_data.json --update-from-csv path/to/new_o365_export.csv --out path/to/updated_live_data.json
 ```
-*   **Warning:** The core update logic (`lib/updateFromJson.ts`) is **not yet implemented**. This command currently reads the files but does not modify the target JSON.
 *   Reads the live JSON (`--json`).
-*   Reads the new O365 CSV (`--update-from-csv`).
-*   (Placeholder) Skips actual data merging.
-*   Validates the (unmodified) data.
-*   Compares hashes (will report no changes).
-*   Does **not** write the output JSON (`--out`) unless changes were hypothetically detected.
-*   Use `--dry-run` to simulate without writing, `--fail-on-diff` to exit with error if changes were detected.
+*   Reads the new O365 CSV (`--update-from-csv`), requiring the presence of the `ObjectId` column for matching.
+*   Performs a selective update:
+    *   Matches CSV rows to existing entries using the immutable Office 365 `ObjectId`.
+    *   Merges specific fields (like `DisplayName`, `Department`, `MobilePhone`, `Title`) from the CSV into the canonical data.
+    *   Handles the `Office` field with decoupled logic:
+        *   If the CSV `Office` field contains tags (e.g., `cts:ftl`, `tsa`), these tags dictate the `brand` and `office` structure of the canonical `roles` array, potentially replacing existing roles for that entity.
+        *   The `Title` field from CSV is set directly on the ContactEntity, not in the roles.
+    *   Handles nested structures (`contactPoints`, `roles`) correctly.
+*   Compares a deterministic hash of the original data vs. the potentially updated data to detect changes.
+*   If changes are detected and `--dry-run` is **not** specified, writes the updated data to the output JSON file (`--out`, defaults to the input `--json` file).
+*   Use `--dry-run` to preview changes without writing, `--fail-on-diff` to exit with error 1 if changes are detected (useful for CI).
 
 **Other Options:**
 *   `--verbose` or `-v`: Enable detailed debug logging.
@@ -126,8 +130,10 @@ pnpm test
 # OR run specific test files
 pnpm test lib/tests/validateCanonical.test.ts
 pnpm test scripts/tests/canonicalize.integration.test.ts
+pnpm test test/update.test.ts # Tests for the update logic
 ```
-All tests for implemented features (validation, export) are currently passing.
+All tests for implemented features (validation, export, update) are currently passing.
+**Note:** 2 tests related to the refactored update logic are currently failing and require investigation.
 
 ---
 

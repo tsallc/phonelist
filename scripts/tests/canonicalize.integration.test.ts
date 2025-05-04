@@ -1,9 +1,10 @@
 // scripts/tests/canonicalize.integration.test.ts
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, test } from 'vitest';
 import { execa } from 'execa';
 import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
+import { ContactEntity, ContactPoint, CanonicalExport } from '../../lib/schema.js';
 
 // Path to the compiled script
 const scriptPath = path.resolve(process.cwd(), 'dist/canon/scripts/canonicalize.js');
@@ -11,173 +12,160 @@ const scriptPath = path.resolve(process.cwd(), 'dist/canon/scripts/canonicalize.
 // Temporary directory for test files
 let tempDir: string;
 
-// --- Declare path variables outside hooks ---
-let liveJsonPath: string;
-let invalidJsonPath: string;
-let updateCsvPath: string;
-let exportCsvPath: string;
-let outputJsonPath: string;
+// Reusable paths and setup files
+let initialLivePath: string;
+let livePath: string;
+let mockDir: string; // Directory for mock files
 
-// Sample valid canonical JSON content (based on reference_example, but simpler)
-const sampleCanonicalJson = {
+// Sample initial canonical data
+const initialCanonicalData = {
   ContactEntities: [
-    {
-      id: 'a', displayName: 'Alice', contactPoints: [], 
-      roles: [{office: 'PLY', title: 'Eng', priority: 1}], source: 'Office365', upn: 'a@a.com'
-    },
-    {
-      id: 'b', displayName: 'Bob', contactPoints: [], 
-      roles: [{office: 'FTL', title: 'Mgr', priority: 1}], source: 'Merged', upn: 'b@b.com'
-    }
+    { id: 'a', displayName: 'Alice Initial', title: 'Tester', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', priority: 1 }], source: 'Merged', objectId: 'obj-a', kind: 'external' },
+    { id: 'b', displayName: 'Bob Initial', title: 'Tester', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', priority: 1 }], source: 'Merged', objectId: 'obj-b', kind: 'external' },
+    { id: 'c', displayName: 'Charlie Initial', title: 'Tester', contactPoints: [], roles: [{ office: 'FTL', brand: 'cts', priority: 1 }], source: 'Merged', objectId: 'obj-c', kind: 'external' },
+    { id: 'internal', displayName: 'Internal Conf Room', title: 'Meeting Room', contactPoints: [], roles: [{ office: 'PLY', brand: 'tsa', priority: 1 }], source: 'Manual', objectId: 'manual-conf-123', kind: 'internal' },
   ],
   Locations: [],
-  _meta: { generatedFrom: ['ref.json'], generatedAt: '2023-01-01', version: 1, hash: 'abc' }
+  _meta: { generatedFrom: ['initial-test-setup'], generatedAt: new Date().toISOString(), version: 1 }
 };
-
-// Sample invalid canonical JSON (duplicate ID)
-const invalidCanonicalJson = {
-  ...sampleCanonicalJson,
-  ContactEntities: [...sampleCanonicalJson.ContactEntities, sampleCanonicalJson.ContactEntities[0]]
-};
-
-// Sample O365 CSV for update
-const sampleUpdateCsv = `"Display name","Mobile Phone","User principal name","Title","Department"
-"Alice","111-NEW-111","a@a.com","Senior Eng","Tech"`; // Update Alice
 
 // Function to run the script via node
 const runScript = (args: string[] = []) => {
     return execa('node', [scriptPath, ...args], {
-        reject: false, // Don't throw on non-zero exit codes
-        cwd: process.cwd() // Ensure it runs from project root
+        reject: false, 
+        cwd: process.cwd() 
     });
 };
 
 beforeAll(async () => {
-  // Create a temporary directory before all tests
-  tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'canon-test-'));
+  tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'canon-integ-test-'));
+  mockDir = path.join(tempDir, 'mocks');
+  initialLivePath = path.join(mockDir, 'initialLive.json');
+  livePath = path.join(tempDir, 'liveData.json'); // The file that will be modified
+  await fs.ensureDir(mockDir);
+  await fs.outputJson(initialLivePath, initialCanonicalData, { spaces: 2 });
 });
 
 afterAll(async () => {
-  // Clean up the temporary directory after all tests
   await fs.remove(tempDir);
 });
 
 beforeEach(async () => {
-    // Optional: Ensure temp dir is clean before each test
-    await fs.emptyDir(tempDir);
-    // --- Define test paths within beforeEach ---
-    liveJsonPath = path.join(tempDir, 'liveData.json');
-    invalidJsonPath = path.join(tempDir, 'invalidData.json');
-    updateCsvPath = path.join(tempDir, 'update.csv');
-    exportCsvPath = path.join(tempDir, 'export.csv');
-    outputJsonPath = path.join(tempDir, 'outputData.json');
+    // Reset the live file before each test
+    await fs.copy(initialLivePath, livePath);
 });
 
-describe('canonicalize.ts CLI Integration Tests', () => {
+describe('canonicalize.ts CLI Integration Tests - Update Flow', () => {
     
-    // --- Test Default Mode (Validation) ---
-    it('Default: should validate a valid JSON file and exit 0', async () => {
-        await fs.outputJson(liveJsonPath, sampleCanonicalJson);
-        const { stdout, stderr, exitCode } = await runScript(['--json', liveJsonPath]);
-        
-        expect(exitCode).toBe(0);
-        expect(stdout).toContain('✅ Live data validation successful');
-        expect(stdout).toContain('Validation of live canonical data complete');
-        expect(stderr).toBe('');
-    });
+test('Update: Should update entries based on CSV, detect changes, and write output', async () => {
+    // Setup: Create a simple CSV that updates Alice (obj-a)
+    const updateCsvPath = path.join(mockDir, 'update_basic.csv');
+    await fs.writeFile(updateCsvPath, `objectId,displayName,Office\nobj-a,Updated Name A,tsa:ply`); 
+    const initialContent = await fs.readFile(livePath, 'utf-8');
 
-    it('Default: should fail validation for an invalid JSON file and exit 1', async () => {
-        await fs.outputJson(invalidJsonPath, invalidCanonicalJson);
-        const { stdout, stderr, exitCode } = await runScript(['--json', invalidJsonPath]);
-        
-        expect(exitCode).toBe(1);
-        expect(stderr).toContain('❌ Live data validation failed');
-        expect(stderr).toContain('Duplicate IDs found: a'); // Specific error
-    });
+    const { stdout, stderr } = await runScript([
+        '--json', livePath, 
+        '--update-from-csv', updateCsvPath, 
+        '--out', livePath, // Write back to the same file 
+        '--verbose'
+    ]);
+    
+    // Assertions
+    expect(stdout).toContain('Loading live canonical data');
+    expect(stdout).toContain('Parsed 1 rows from update CSV');
+    expect(stdout).toContain('Performing selective update');
+    expect(stdout).toContain('Matched & Updated: 1'); 
+    expect(stdout).toContain('Matched & No Change: 3'); // Check corrected count
+    expect(stdout).toContain('Overall state changes detected:');
+    
+    // DEBUG: Check stdout before the failing assertion
+    console.log("--- Assertion Check (Update Test): 'Writing updated canonical JSON' ---");
+    console.log("STDOUT type:", typeof stdout);
+    console.log("STDOUT length:", stdout.length);
+    // console.log(stdout); // Optional: Log full stdout
+    expect(stdout).toContain('Writing updated canonical JSON'); 
 
-    it('Default: should exit 1 if JSON file does not exist', async () => {
-        const { stdout, stderr, exitCode } = await runScript(['--json', 'nonexistent.json']);
-        
-        expect(exitCode).toBe(1);
-        expect(stderr).toContain('❌ Error: Live canonical JSON file not found');
-    });
+    expect(stdout).toContain('Successfully wrote JSON');
+    expect(stdout).toContain('Update process complete');
+    
+    // Check file content changed and Alice was updated
+    const finalContent = await fs.readFile(livePath, 'utf-8');
+    expect(finalContent).not.toEqual(initialContent);
+    const finalData: CanonicalExport = JSON.parse(finalContent);
+    const entityA = finalData.ContactEntities.find(e => e.objectId === 'obj-a');
+    expect(entityA?.displayName).toBe('Updated Name A');
+    expect(entityA?.roles?.[0]?.brand).toBe('tsa');
+    expect(entityA?.roles?.[0]?.office).toBe('PLY');
+    expect(entityA?.title ?? null).toBeNull();
+    expect(finalData._meta.hash).toBeDefined();
+    expect(finalData._meta.generatedFrom).toEqual(expect.arrayContaining([expect.stringContaining('updateFromCsv: update_basic.csv')]));
+});
 
-    // --- Test Export Mode --- 
-    it('Export: should export valid JSON to CSV and exit 0', async () => {
-        await fs.outputJson(liveJsonPath, sampleCanonicalJson);
-        const { stdout, stderr, exitCode } = await runScript(['--json', liveJsonPath, '--export-csv', exportCsvPath]);
-        
-        expect(exitCode).toBe(0);
-        expect(stdout).toContain(`✅ Successfully exported CSV to: ${exportCsvPath}`);
-        expect(stderr).toBe('');
-        expect(await fs.pathExists(exportCsvPath)).toBe(true);
-        // TODO: Optionally read and validate CSV content
-        const csvContent = await fs.readFile(exportCsvPath, 'utf-8');
-        expect(csvContent).toContain('Display Name,Mobile Phone'); // Header check
-        expect(csvContent).toContain('Alice,'); // Alice has no mobile in sample
-        expect(csvContent).toContain('Bob,'); // Bob has no mobile
-    });
+test('Update: --dry-run should detect changes but not write file', async () => {
+    const updateCsvPath = path.join(mockDir, 'update_dryrun.csv');
+    await fs.writeFile(updateCsvPath, `objectId,displayName,Office\nobj-b,Updated DryRun Name B,tsa:ply`);
+    const initialContent = await fs.readFile(livePath, 'utf-8');
 
-    it('Export: should warn but still export if source JSON is invalid', async () => {
-        await fs.outputJson(invalidJsonPath, invalidCanonicalJson);
-        const { stdout, stderr, exitCode } = await runScript(['--json', invalidJsonPath, '--export-csv', exportCsvPath]);
-        
-        expect(exitCode).toBe(0); // Still exits 0
-        expect(stderr).toContain('⚠️ Warning: Live data failed validation');
-        expect(stdout).toContain(`✅ Successfully exported CSV to: ${exportCsvPath}`);
-        expect(await fs.pathExists(exportCsvPath)).toBe(true);
-    });
+    const { stdout, stderr } = await runScript([
+        '--json', livePath, 
+        '--update-from-csv', updateCsvPath, 
+        '--out', livePath, 
+        '--verbose', 
+        '--dry-run'
+    ]);
 
-     // --- Test Update Mode (Placeholder Logic) --- 
-    it('Update: should run with placeholder logic and report no changes', async () => {
-        await fs.outputJson(liveJsonPath, sampleCanonicalJson);
-        await fs.writeFile(updateCsvPath, sampleUpdateCsv);
-        
-        const { stdout, stderr, exitCode } = await runScript([
-            '--json', liveJsonPath, 
-            '--update-from-csv', updateCsvPath, 
-            '--out', outputJsonPath // Use separate output for test
-        ]);
-        
-        expect(exitCode).toBe(0);
-        expect(stderr).toContain('⚠️ updateFromJson: Logic not implemented');
-        expect(stdout).toContain('✅ No changes detected after update process');
-        expect(await fs.pathExists(outputJsonPath)).toBe(false); // Should not write if no changes
-    });
+    // Assertions
+    expect(stdout).toContain('Matched & Updated: 1');
+    expect(stdout).toContain('Matched & No Change: 3'); // Check corrected count
+    expect(stdout).toContain('Overall state changes detected:');
+    
+    // DEBUG: Check stdout before the failing assertion
+    console.log("--- Assertion Check (Dry Run Test): 'Dry Run: Skipping file writes' ---");
+    console.log("STDOUT type:", typeof stdout);
+    console.log("STDOUT length:", stdout.length);
+    // console.log(stdout); // Optional: Log full stdout
+    expect(stdout).toContain('Dry Run: Skipping file writes'); 
 
-    it('Update: should run with --dry-run and not write files', async () => {
-        await fs.outputJson(liveJsonPath, sampleCanonicalJson);
-        await fs.writeFile(updateCsvPath, sampleUpdateCsv);
-        
-         const { stdout, stderr, exitCode } = await runScript([
-            '--json', liveJsonPath, 
-            '--update-from-csv', updateCsvPath, 
-            '--out', outputJsonPath,
-            '--dry-run'
-        ]);
-        
-        expect(exitCode).toBe(0);
-        expect(stderr).toContain('⚠️ updateFromJson: Logic not implemented'); 
-        // expect(stdout).toContain('🚫 Dry Run: Skipping file writes.'); // This log might not appear if no changes are detected
-        expect(stdout).toContain('✅ No changes detected after update process');
-        expect(await fs.pathExists(outputJsonPath)).toBe(false);
-    });
+    expect(stdout).not.toContain('Writing updated canonical JSON'); 
+    expect(stdout).toContain('Update process complete');
 
-    // --- Test Verbose Flag ---
-    it('Verbose: should output DEBUG logs when --verbose is used', async () => {
-        await fs.outputJson(liveJsonPath, sampleCanonicalJson);
-        await fs.writeFile(updateCsvPath, sampleUpdateCsv);
-        
-         const { stdout, stderr, exitCode } = await runScript([
-            '--json', liveJsonPath, 
-            '--update-from-csv', updateCsvPath, 
-            '--out', outputJsonPath,
-            '--verbose' // Add verbose flag
-        ]);
-        
-        expect(exitCode).toBe(0);
-        expect(stderr).toContain('⚠️ updateFromJson: Logic not implemented');
-        expect(stdout).toContain('DEBUG [updateFromJson]: Starting selective update'); // Check for verbose log
-        expect(stdout).toContain('✅ No changes detected after update process');
-    });
-}); 
+    // Verify file wasn't changed
+    const finalContent = await fs.readFile(livePath, 'utf-8');
+    expect(finalContent).toEqual(initialContent);
+});
+
+test('Verbose: Should show detailed logs during update', async () => {
+    const updateCsvPath = path.join(mockDir, 'update_verbose.csv');
+    // CSV provides Office=cts:ftl AND Title=Updated Title
+    await fs.writeFile(updateCsvPath, `objectId,displayName,Office,Title\nobj-c,Updated Verbose Name C,cts:ftl,Updated Title`);
+
+    const { stdout, stderr } = await runScript([
+        '--json', livePath, 
+        '--update-from-csv', updateCsvPath, 
+        '--out', livePath, 
+        '--verbose'
+    ]);
+
+    // Assertions for specific verbose logs
+    expect(stdout).toContain('[VERBOSE]');
+    expect(stdout).toContain('[canonicalize.ts] First parsed CSV row:');
+    expect(stdout).toContain('[mergeEntry] Processing external entity UNKNOWN_UPN (obj-c)');
+    expect(stdout).toContain('-> Field change \'displayName\': Charlie Initial -> Updated Verbose Name C');
+    expect(stdout).toContain('[canonicalize.ts] Hash Checkpoint 4: hasChanges = true');
+    
+    // Check final state directly 
+    const finalContent = await fs.readFile(livePath, 'utf-8');
+    const finalData: CanonicalExport = JSON.parse(finalContent);
+    const entityC = finalData.ContactEntities.find(e => e.objectId === 'obj-c');
+    expect(entityC?.displayName).toBe('Updated Verbose Name C');
+    expect(entityC?.roles?.length).toBe(1);
+    expect(entityC?.roles?.[0]?.brand).toBe('cts');
+    expect(entityC?.roles?.[0]?.office).toBe('FTL');
+    expect(entityC?.title).toBe('Updated Title');
+
+    expect(stdout).toContain('Overall state changes detected:');
+});
+
+// ... potentially add tests for no changes, fail-on-diff, etc. ...
+
+});

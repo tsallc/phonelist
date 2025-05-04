@@ -1,6 +1,6 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: true
 ---
 # `phonelist-canonicalizer` Script Guide
@@ -29,10 +29,12 @@ This script acts as a utility for managing the live canonical data file ([src/da
 2.  **Export (`--export-csv`):** `node ...canonicalize.js --export-csv path/to/output.csv [--json path/to/live.json]`
     *   Reads and validates the live JSON.
     *   Generates the specified CSV file suitable for O365 import.
-3.  **Update (`--update-from-csv`) *[Logic Pending]*:** `node ...canonicalize.js --update-from-csv path/to/new.csv [--json path/to/live.json] [--out path/to/updated.json]`
-    *   Reads live JSON and new O365 CSV.
-    *   **Currently:** Uses placeholder logic; does not modify data.
-    *   **Future:** Will selectively update/add entries in the live JSON based on the CSV, preserving merged data.
+3.  **Update (`--update-from-csv`):** `node ...canonicalize.js --update-from-csv path/to/new.csv [--json path/to/live.json] [--out path/to/updated.json]`
+    *   Reads live JSON (`--json`) and new O365 CSV (`--update-from-csv`), matching entries by `ObjectId`.
+    *   Selectively updates specific fields (`DisplayName`, `Department`, `MobilePhone`) from the CSV.
+    *   Applies decoupled logic for `Office` and `Title`: CSV `Office` tags drive role structure, and CSV `Title` applies *only* to those roles.
+    *   Preserves other existing data.
+    *   Compares hashes to detect changes before writing to output (`--out`).
     *   Supports `--dry-run` and `--fail-on-diff`.
 
 Use `--verbose` for debug logs.
