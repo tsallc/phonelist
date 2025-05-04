@@ -109,7 +109,10 @@ node dist/canon/scripts/canonicalize.js --json path/to/live_data.json --update-f
 *   Reads the new O365 CSV (`--update-from-csv`), requiring the presence of the `ObjectId` column for matching.
 *   Performs a selective update:
     *   Matches CSV rows to existing entries using the immutable Office 365 `ObjectId`.
-    *   Merges specific fields (like `DisplayName`, `Department`, `MobilePhone`, `Title`) from the CSV into the canonical data.
+    *   Merges specific fields (like `DisplayName`, `Department`, `MobilePhone`) from the CSV into the canonical data.
+    *   Handles the `Office` and `Title` fields with decoupled logic:
+        *   If the CSV `Office` field contains tags (e.g., `cts:ftl`, `tsa`), these tags dictate the `brand` and `office` structure of the canonical `roles` array, potentially replacing existing roles for that entity.
+        *   The CSV `Title` field, if present, is then applied **only** to the roles generated from the CSV `Office` tags. It does not affect roles preserved via fallback or if the `Office` field is empty.
     *   Handles nested structures (`contactPoints`, `roles`) correctly.
     *   Preserves other existing data in the canonical JSON.
 *   Compares a deterministic hash of the original data vs. the potentially updated data to detect changes.
@@ -131,6 +134,7 @@ pnpm test scripts/tests/canonicalize.integration.test.ts
 pnpm test test/update.test.ts # Tests for the update logic
 ```
 All tests for implemented features (validation, export, update) are currently passing.
+**Note:** 2 tests related to the refactored update logic are currently failing and require investigation.
 
 ---
 

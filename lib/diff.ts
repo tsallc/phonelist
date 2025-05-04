@@ -1,6 +1,6 @@
 import { ContactEntity, CanonicalExport, ContactPoint, Role } from "./schema.js";
 import isEqual from 'lodash/isEqual.js';
-import { rolesMatch } from './updateFromJson.js';
+import { getRoleDiffs } from './updateFromJson.js';
 
 // --- Robust Deep Equality Check ---
 
@@ -116,39 +116,35 @@ export function diffCanonical(
 }
 
 /**
- * Performs a comparison between two objects and returns a record
- * detailing the fields that have different values, using deep equality checks.
- *
- * @param obj1 The first object (e.g., the 'before' state).
- * @param obj2 The second object (e.g., the 'after' state).
- * @returns A record where keys are the differing field names, and values
- *          are objects containing the 'before' and 'after' values.
- *          Returns an empty object if no differences are found.
+ * Simple deep diff between two objects.
+ * Returns an object with keys where values differ, showing { before, after }.
+ * Handles nested objects recursively, but uses custom logic for specific arrays like roles.
  */
-export function diff<T extends Record<string, any>>(
-    obj1: T | Partial<T> | undefined | null,
-    obj2: T | Partial<T> | undefined | null
-): Record<string, { before: any, after: any }> {
-    const differences: Record<string, { before: any, after: any }> = {};
-    const safeObj1 = obj1 || {};
-    const safeObj2 = obj2 || {};
-    const allKeys = new Set([...Object.keys(safeObj1), ...Object.keys(safeObj2)]);
+export function diff(before: Record<string, any>, after: Record<string, any>): Record<string, { before: any; after: any }> {
+    const differences: Record<string, { before: any; after: any }> = {};
+    const allKeys = new Set([...Object.keys(before), ...Object.keys(after)]);
 
     for (const key of allKeys) {
-        const value1 = (safeObj1 as any)[key];
-        const value2 = (safeObj2 as any)[key];
+        const beforeValue = before[key];
+        const afterValue = after[key];
 
-        // Use ternary for comparison and assign directly
-        if (
-            key === 'roles'
-            ? !Array.isArray(value1) || 
-              !Array.isArray(value2) || 
-              !rolesMatch(value1 as Role[] ?? [], value2 as Role[] ?? [])
-            : !isEqual(value1, value2)
-        ) {
-            // If roles differ OR other fields differ using isEqual
-            console.log(`[DIFF DEBUG] Difference DETECTED for key: ${key}. Assigning to differences object.`);
-            differences[key] = { before: value1, after: value2 };
+        // --- Custom Role Comparison using getRoleDiffs ---
+        if (key === 'roles') {
+            // Ensure roles are arrays, even if empty or null/undefined
+            const beforeRoles: Role[] = Array.isArray(beforeValue) ? beforeValue : [];
+            const afterRoles: Role[] = Array.isArray(afterValue) ? afterValue : [];
+
+            const roleDifferences = getRoleDiffs(beforeRoles, afterRoles);
+            if (roleDifferences.length > 0) {
+                differences[key] = { before: beforeValue, after: afterValue }; // Report the original arrays if any diff found
+            }
+            continue; // Skip generic comparison for roles
+        }
+        // --- End Custom Role Comparison ---
+
+        // --- Generic Comparison (including other arrays/objects) ---
+        if (!isEqual(beforeValue, afterValue)) {
+            differences[key] = { before: beforeValue, after: afterValue };
         }
     }
 

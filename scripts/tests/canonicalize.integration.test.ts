@@ -136,6 +136,7 @@ test('Update: --dry-run should detect changes but not write file', async () => {
 
 test('Verbose: Should show detailed logs during update', async () => {
     const updateCsvPath = path.join(mockDir, 'update_verbose.csv');
+    // CSV provides Office=cts:ftl AND Title=Updated Title
     await fs.writeFile(updateCsvPath, `objectId,displayName,Office,Title\nobj-c,Updated Verbose Name C,cts:ftl,Updated Title`);
 
     const { stdout, stderr } = await runScript([
@@ -160,7 +161,7 @@ test('Verbose: Should show detailed logs during update', async () => {
     expect(entityC?.roles?.length).toBe(1);
     expect(entityC?.roles?.[0]?.brand).toBe('cts');
     expect(entityC?.roles?.[0]?.office).toBe('FTL');
-    expect(entityC?.roles?.[0]?.title).toBe('Updated Title');
+    expect(entityC?.roles?.[0]?.title, "Verbose entity C title should be 'Updated Title'").toBe('Updated Title'); 
 
     expect(stdout).toContain('Overall state changes detected:');
 });
