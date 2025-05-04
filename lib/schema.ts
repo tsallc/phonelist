@@ -46,6 +46,11 @@ export const CanonicalMetaSchema = z.object({
 const BaseContactSchema = z.object({
   id: z.string().min(1), // Internal identifier (e.g., slug)
   displayName: z.string().min(1).optional(),
+  /**
+   * The title field is optional and can be null. 
+   * - During hash computation, null and undefined are treated as empty strings.
+   * - In CSV exports, null and undefined are represented as empty cells.
+   */
   title: z.string().nullable().optional(),
   contactPoints: z.array(ContactPointSchema).optional().default([]),
   roles: z.array(RoleSchema).optional().default([]),
