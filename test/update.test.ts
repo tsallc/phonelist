@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, test } from 'vitest';
+import { describe, it, expect, beforeAll, test, afterAll } from 'vitest';
 import fs from 'fs-extra';
 import path from 'path';
 import { parseCsv } from '../lib/parseCsv.js'; // Assuming compiled JS
@@ -53,6 +53,18 @@ beforeAll(async () => {
     console.log(`   - Loaded ${canonicalEntities.length} canonical entities.`);
     console.log(`   - Parsed ${csvRows.length} rows from main test CSV.`);
     console.log(`   - Parsed ${csvRowsReorder.length} rows from reorder test CSV.`);
+});
+
+// Clean up temporary CSV files after all tests complete
+afterAll(async () => {
+    try {
+        // Remove temporary CSV files
+        await fs.remove(testCsvPath);
+        await fs.remove(testReorderCsvPath);
+        console.log('   - Cleaned up temporary CSV test files');
+    } catch (error) {
+        console.error('   - Failed to clean up temporary CSV files:', error);
+    }
 });
 
 // --- Test Suite ---
