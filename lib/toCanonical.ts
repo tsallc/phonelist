@@ -51,7 +51,7 @@ export function rowsToCanonical(rows: RawOfficeCsvRow[], source: string = 'Offic
 
       const roles: Role[] = [];
       if (title) {
-        roles.push({ office: "PLY", title, priority: 1 }); // Still defaulting PLY office
+        roles.push({ office: "PLY", brand: "tsa", title, priority: 1 });
       }
 
       let id = generateSlug(displayName);

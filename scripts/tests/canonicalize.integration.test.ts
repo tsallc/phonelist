@@ -96,6 +96,7 @@ test('Update: Should update entries based on CSV, detect changes, and write outp
     expect(entityA?.displayName).toBe('Updated Name A');
     expect(entityA?.roles?.[0]?.brand).toBe('tsa');
     expect(entityA?.roles?.[0]?.office).toBe('PLY');
+    expect(entityA?.roles?.[0]?.title).toBe('Tester');
     expect(finalData._meta.hash).toBeDefined();
     expect(finalData._meta.generatedFrom).toEqual(expect.arrayContaining([expect.stringContaining('updateFromCsv: update_basic.csv')]));
 });
@@ -148,16 +149,20 @@ test('Verbose: Should show detailed logs during update', async () => {
     expect(stdout).toContain('[VERBOSE]');
     expect(stdout).toContain('[canonicalize.ts] First parsed CSV row:');
     expect(stdout).toContain('[mergeEntry] Processing external entity ID c (ObjID: obj-c)');
-    expect(stdout).toContain("Parsed role from segment 'cts:ftl': { brand: cts, office: FTL, title: Updated Title }");
     expect(stdout).toContain('roles change DETECTED');
-    expect(stdout).toContain('displayName change DETECTED');
+    expect(stdout).toContain('-> Basic field change DETECTED for \'displayName\'');
     expect(stdout).toContain('[canonicalize.ts] Hash Checkpoint 4: hasChanges = true');
     
-    // DEBUG: Check stdout before the failing assertion
-    console.log("--- Assertion Check (Verbose Test): '[Final Check] Condition...' ---");
-    console.log("STDOUT type:", typeof stdout);
-    console.log("STDOUT length:", stdout.length);
-    // console.log(stdout); // Optional: Log full stdout
+    // Check final state directly 
+    const finalContent = await fs.readFile(livePath, 'utf-8');
+    const finalData: CanonicalExport = JSON.parse(finalContent);
+    const entityC = finalData.ContactEntities.find(e => e.objectId === 'obj-c');
+    expect(entityC?.displayName).toBe('Updated Verbose Name C');
+    expect(entityC?.roles?.length).toBe(1);
+    expect(entityC?.roles?.[0]?.brand).toBe('cts');
+    expect(entityC?.roles?.[0]?.office).toBe('FTL');
+    expect(entityC?.roles?.[0]?.title).toBe('Updated Title');
+
     expect(stdout).toContain('Overall state changes detected:');
 });
 

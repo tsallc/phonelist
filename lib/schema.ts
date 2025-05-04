@@ -12,11 +12,15 @@ export const ContactPointSchema = z.object({
   source: z.enum(["Office365", "App.jsx", "ArtifactCode.jsx"]),
 });
 
+// Define the schema for a role
 export const RoleSchema = z.object({
-  office: z.string().nullable(),
-  brand: z.string().nullable(),
-  title: z.string().nullable(),
-  priority: z.number().int().min(1),
+  // Re-add validation for office codes, allowing null
+  office: z.union([z.enum(["PLY", "FTL", "REO", "SGT"]), z.null()]), 
+  brand: z.string().nullable(),      // Added brand field
+  // Note: Title is descriptive metadata. It is NOT typically derived from the O365 'Office' field during updates.
+  // It *can* be updated if the CSV 'Title' field is processed, but this is currently decoupled.
+  title: z.string().nullable(),      // Already nullable
+  priority: z.number().int().min(1)  // Assuming priority is still required
 });
 
 const DeskSchema = z.object({

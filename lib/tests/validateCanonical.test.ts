@@ -8,7 +8,7 @@ const createBaseEntity = (id: string, name: string): ContactEntity => ({
   id: id,
   displayName: name,
   contactPoints: [],
-  roles: [{ office: 'PLY', title: 'Test', priority: 1 }],
+  roles: [{ office: 'PLY', brand: 'tsa', title: 'Test', priority: 1 }],
   source: "Office365",
   upn: `${id}@example.com`,
   objectId: `obj-${id}`, // Assume external for base helper
@@ -31,8 +31,8 @@ const createValidEntity = (id: string, kind: 'external' | 'internal', objectId: 
     kind,
     displayName: `Test ${id}`,
     contactPoints: [],
-    roles: [{ office: 'PLY', brand: 'tsa', title: 'Test', priority: 1 }],
-    source: 'Merged',
+    roles: [{ office: 'PLY' as const, brand: 'tsa', title: 'Test', priority: 1 }],
+    source: 'Merged' as const,
     upn: `${id}@example.com`
   };
   if (kind === 'internal') {
@@ -142,17 +142,18 @@ describe('validateCanonical', () => {
 
   it('should fail validation for invalid enum values (e.g., invalid office)', () => {
     const entity = createBaseEntity('test-1', 'Test User');
-    const invalidRole = { office: 'INVALID_OFFICE', title: 'Bad Role', priority: 1 };
-    // Create a modified entity with the invalid role, ensuring other required fields are present
+    const invalidRole = { office: 'INVALID_OFFICE', brand: null, title: 'Bad Role', priority: 1 };
     const invalidEntity: any = { 
         ...entity, 
         roles: [invalidRole] 
     };
-    const invalidData = createValidData([invalidEntity]); // Pass the array containing the invalid entity
+    const invalidData = createValidData([invalidEntity]);
     const result = validateCanonical(invalidData as any);
     expect(result.success).toBe(false);
-    expect(result.errors?.[0]).toContain('ContactEntities.0.roles.0.office');
-    expect(result.errors?.[0]).toContain('Invalid enum value');
+    const officeError = result.errors?.find(e => e.includes('.roles.0.office'));
+    expect(officeError).toBeDefined();
+    // Check for "Invalid input" message
+    expect(officeError).toContain('Invalid input');
   });
 
    it('should fail validation for malformed _meta object', () => {
