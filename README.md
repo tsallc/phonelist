@@ -14,6 +14,21 @@ This repository houses two main parts:
 *   **`src/data/canonicalContactData.json`**: This is the **LIVE, MUTABLE** source of truth for the application. It contains merged contact data derived historically from Office 365 and older application code (`App.jsx`, `ArtifactCode.jsx`). It should be modified directly or via the `--update-from-csv` feature of the canonicalizer script.
 *   **`src/data/reference_example.json`**: This is a **READ-ONLY, STATIC** copy representing the initial, correctly merged data state. It serves as a reference and was used to initialize `canonicalContactData.json`.
 
+### Data File Management
+
+To ensure the canonical data is accessible in both development and production environments:
+
+* The data file is maintained in `src/data/canonicalContactData.json` (source of truth)
+* A utility script `scripts/copy-data.js` copies this file to `public/data/canonicalContactData.json`
+* This copy operation happens automatically:
+  * Before starting the development server (`pnpm predev`)
+  * During the build process (`pnpm build`)
+  * During hot module reloading via a custom Vite plugin (when file changes)
+* The frontend code loads from the correct path using `import.meta.env.BASE_URL` to dynamically construct URLs
+* The base URL is automatically determined from the `base` setting in `vite.config.js`
+
+This approach ensures any changes to the canonical data file are propagated to the necessary locations and the application always has access to the most current data, both in development and production. The dynamic base URL approach also means the code will work correctly if deployed to a different path or if the repo name changes.
+
 ---
 
 ## 1. React Application (`tsa-phone-list`)

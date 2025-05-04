@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "pnpm run copy:data",
     "dev": "vite",
-    "build": "vite build",
+    "build": "pnpm run copy:data && vite build",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "deploy": "gh-pages -d dist",
@@ -13,7 +14,8 @@
     "build:canon": "tsc --project tsconfig.canon.json",
     "start:canon": "node dist/canon/scripts/canonicalize.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "copy:data": "node scripts/copy-data.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",

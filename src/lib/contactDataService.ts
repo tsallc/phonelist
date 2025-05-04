@@ -75,24 +75,34 @@ export const ENV = {
   isDevelopment: process.env.NODE_ENV === 'development',
   isProduction: process.env.NODE_ENV === 'production',
   isTest: process.env.NODE_ENV === 'test',
+  baseUrl: import.meta.env.BASE_URL || '/', // Get base URL from Vite
   // Add more environment variables as needed
+};
+
+// Helper to create URLs with the correct base path
+const withBase = (path: string) => {
+  // Remove any leading slash from the path
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  // Ensure the base URL has a trailing slash
+  const base = ENV.baseUrl.endsWith('/') ? ENV.baseUrl : `${ENV.baseUrl}/`;
+  return `${base}${cleanPath}`;
 };
 
 // Data source configuration
 export const DATA_SOURCES = {
   // Default source for production - would be an API in a real app
-  production: ['/data/canonicalContactData.json'],
+  production: [withBase('data/canonicalContactData.json')],
   
   // Development paths with fallbacks
   development: [
-    '/data/canonicalContactData.json',       // Standard public path
-    '/src/data/canonicalContactData.json',   // Direct source path
-    '/canonicalContactData.json',            // Root path
-    '../data/canonicalContactData.json'      // Relative path
+    withBase('data/canonicalContactData.json'),       // Standard public path
+    withBase('src/data/canonicalContactData.json'),   // Direct source path
+    withBase('canonicalContactData.json'),            // Root path
+    './data/canonicalContactData.json'                // Relative path (more reliable)
   ],
   
   // Test environment can use fixtures
-  test: ['/test/fixtures/contactData.json'],
+  test: [withBase('test/fixtures/contactData.json')],
 };
 
 // Cache mechanism
