@@ -34,22 +34,22 @@ const buildCanonicalHeaderMap = (): Record<string, keyof RawOfficeCsvRow> => {
     ["display name", ["Display Name", "DisplayName"]],
     ["mobile phone", ["Mobile Phone", "MobilePhone"]],
     ["object id", ["Object ID", "ObjectId"]],
-    ["title", ["Title"]], // Assumes Title is consistent
-    ["department", ["Department"]] // Assumes Department is consistent
+    ["title", ["Title"]], 
+    ["department", ["Department"]]
   ];
 
   for (const [canonicalKey, variations] of mappings) {
+    // Ensure the canonical key itself maps to itself (already normalized)
+    map[canonicalKey] = canonicalKey;
     for (const variation of variations) {
       const normalizedVariation = normalizeKey(variation);
-      if (normalizedVariation) { // Only add if normalized key is non-empty
-        // Also map the already canonical key to itself
-        map[canonicalKey] = canonicalKey;
+      if (normalizedVariation && normalizedVariation !== canonicalKey) { // Avoid redundant self-mapping
         map[normalizedVariation] = canonicalKey; 
+        // console.log(`DEBUG [buildMap]: Added map['${normalizedVariation}'] = '${canonicalKey}'`);
       }
     }
   }
-  // Log the final map once during build for verification (optional)
-  // console.log("Built Canonical Header Map:", map);
+  // console.log("Built Canonical Header Map:", map); // Optional: Log map once
   return map;
 };
 
@@ -61,13 +61,8 @@ const canonicalizeHeaderKey = (originalKey: string | undefined | null): keyof Ra
     if (!normalizedKeyStr) return null;
     // Look up the NORMALIZED key in the map
     const canonicalKey = canonicalHeaderMap[normalizedKeyStr];
-    // if (!canonicalKey) { // Log unmapped headers
-    //     console.warn(`[parseCsv] Unmapped header encountered: raw='${originalKey}', normalized='${normalizedKeyStr}'`);
-    // }
     return canonicalKey || null; 
 };
-
-// REMOVED transformHeaders wrapper function
 
 export async function parseCsv(path: string): Promise<RawOfficeCsvRow[]> {
   return new Promise((resolve, reject) => {
@@ -80,39 +75,30 @@ export async function parseCsv(path: string): Promise<RawOfficeCsvRow[]> {
         
         const canonicalData: Partial<RawOfficeCsvRow> = {}; 
         
-        // --- Log Original Keys and Mapping Attempt --- 
+        // Log Headers and Map Lookup for first row
         if (rowCount === 1) {
-            console.log(`DEBUG [parseCsv.ts] ----- Header Processing for First Row -----`);
+            console.log(`DEBUG [parseCsv.ts] ----- Header Processing -----`);
         }
         for (const originalKey in originalData) {
             if (originalData.hasOwnProperty(originalKey)) {
-                const normalizedOriginalKey = normalizeKey(originalKey);
-                const canonicalKey = canonicalizeHeaderKey(originalKey); // Use the function that internally normalizes
+                const normalizedKey = normalizeKey(originalKey);
+                const canonicalKey = canonicalizeHeaderKey(originalKey);
 
-                if (rowCount === 1) { // Log details only for the first row's headers
+                if (rowCount === 1) { 
                     const rawCodes = [...originalKey].map(c => c.charCodeAt(0));
-                    const trimmedCodes = [...originalKey.trim()].map(c => c.charCodeAt(0)); // Check basic trim
-                    const normalizedCodes = [...normalizedOriginalKey].map(c => c.charCodeAt(0));
-                    const mapHasNormalizedKey = canonicalHeaderMap.hasOwnProperty(normalizedOriginalKey);
+                    const normalizedCodes = [...normalizedKey].map(c => c.charCodeAt(0));
+                    const mapHasNormalizedKey = canonicalHeaderMap.hasOwnProperty(normalizedKey);
                     
                     console.log(`  Original Key: '${originalKey}'`);
                     console.log(`    Raw Codes:      [${rawCodes.join(', ')}]`);
-                    // console.log(`    Trimmed Codes:  [${trimmedCodes.join(', ')}]`); // Optional: See if trim changes anything
-                    console.log(`    Normalized Key: '${normalizedOriginalKey}'`);
+                    console.log(`    Normalized Key: '${normalizedKey}'`);
                     console.log(`    Norm. Codes:    [${normalizedCodes.join(', ')}]`);
-                    console.log(`    Map Has NormKey: ${mapHasNormalizedKey ? '✅' : '❌'}`);
+                    console.log(`    Map Hit:        ${mapHasNormalizedKey ? '✅' : '❌'}`);
                     console.log(`    Mapped To:      '${canonicalKey}'`);
                 }
-                // --- End Log --- 
 
                 if (canonicalKey) { 
-                    const valueToAssign = originalData[originalKey]?.trim();
-                    // --- DEBUG: Log Assignment --- 
-                    if(rowCount === 1) {
-                         console.log(`DEBUG [parseCsv.ts] Assigning to canonicalData['${canonicalKey}'] value: '${valueToAssign}'`);
-                    }
-                    // --- End DEBUG ---
-                    canonicalData[canonicalKey] = valueToAssign; 
+                    canonicalData[canonicalKey] = originalData[originalKey]?.trim(); 
                 }
             }
         }
@@ -121,39 +107,27 @@ export async function parseCsv(path: string): Promise<RawOfficeCsvRow[]> {
              console.log(`DEBUG [parseCsv.ts] Manually Canonicalized data object:`, JSON.stringify(canonicalData, null, 2));
          }
 
-        // Extract data directly from the canonicalData object, converting empty strings to undefined
-        const displayName = canonicalData["display name"] || undefined;
-        const mobilePhone = canonicalData["mobile phone"] || undefined;
+        // Extract data (now uses canonicalData which has correct keys)
         const objectId = canonicalData["object id"] || undefined;
-        const userPrincipalName = canonicalData["user principal name"] || undefined;
-        const title = canonicalData["title"] || undefined; 
-        const department = canonicalData["department"] || undefined;
-
-        // Re-create the object for pushing, ensuring empty strings are undefined
-        const finalObject: RawOfficeCsvRow = {
-          "display name": displayName === "" ? undefined : displayName,
-          "mobile phone": mobilePhone === "" ? undefined : mobilePhone,
-          "object id": objectId === "" ? undefined : objectId,
-          "user principal name": userPrincipalName === "" ? undefined : userPrincipalName,
-          "title": title === "" ? undefined : title,
-          "department": department === "" ? undefined : department,
-        };
-
-        // --- DEBUG: Log extracted values before push ---
-        if (rowCount === 1) { 
-            console.log(`DEBUG [parseCsv.ts] Extracted values: displayName=${finalObject["display name"] }, mobilePhone=${finalObject["mobile phone"] }, objectId=${finalObject["object id"] }, userPrincipalName=${finalObject["user principal name"] }, title=${finalObject["title"] }, department=${finalObject["department"] }`);
-        }
-        // --- End DEBUG ---
-
-        // --- Enforcement: Check for required ObjectId --- 
-        if (!objectId) { // Check if objectId (extracted using canonical key) is missing or empty
-             // Throw an error instead of just warning
-            // Include the row number for better context if possible (rowCount is available)
+        // Enforcement: Check for required ObjectId
+        if (!objectId) {
             return reject(new Error(`Missing or empty required field 'Object ID' in CSV row number ${rowCount}. Original row data: ${JSON.stringify(originalData)}`));
         }
-        // --- End Enforcement ---
 
-        // Push the final object with canonical keys 
+        // Create final object, converting empty strings to undefined
+        const finalObject: RawOfficeCsvRow = {
+          "display name": canonicalData["display name"] === "" ? undefined : canonicalData["display name"],
+          "mobile phone": canonicalData["mobile phone"] === "" ? undefined : canonicalData["mobile phone"],
+          "object id": objectId, // Already checked
+          "user principal name": canonicalData["user principal name"] === "" ? undefined : canonicalData["user principal name"],
+          "title": canonicalData["title"] === "" ? undefined : canonicalData["title"],
+          "department": canonicalData["department"] === "" ? undefined : canonicalData["department"],
+        };
+
+        if (rowCount === 1) { 
+            console.log(`DEBUG [parseCsv.ts] Final object pushed:`, JSON.stringify(finalObject, null, 2));
+        }
+
         results.push(finalObject);
       })
       .on("end", () => resolve(results))

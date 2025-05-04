@@ -10,15 +10,18 @@ import { computeHash } from '../lib/hash.js'; // Assuming compiled JS
 // --- Test Configuration ---
 const canonicalJsonPath = path.resolve('src/data/canonicalContactData.json');
 const testCsvPath = path.resolve('test-update.csv'); // Use the CSV at the root for now
+const testReorderCsvPath = path.resolve('test-reorder.csv'); // New CSV for reorder test
 const expectedUpdates = 4;
-const expectedSkips = 2;
+const expectedSkips = 3;
 
 // --- Test Setup & Data Loading (using beforeAll) ---
 let liveData: CanonicalExport;
 let originalHash: string;
 let canonicalEntities: ContactEntity[];
 let csvRows: Record<string, any>[];
+let csvRowsReorder: Record<string, any>[]; // For reorder test
 let updateResult: { updated: ContactEntity[], changes: ChangeSummary[] };
+let updateResultReorder: { updated: ContactEntity[], changes: ChangeSummary[] };
 let finalCanonicalExport: CanonicalExport;
 let finalHash: string;
 
@@ -37,17 +40,26 @@ beforeAll(async () => {
         console.log(`   - Calculated initial hash: ${originalHash}`);
     }
     canonicalEntities = liveData.ContactEntities;
+    // Parse both CSVs
     csvRows = await parseCsv(testCsvPath);
+    // Create test-reorder.csv content
+    const reorderCsvContent = `UserPrincipalName,DisplayName,ObjectId,MobilePhone\nADonayre@titlesolutionsllc.com,Andrea D Reordered,80e43ee8-9b62-49b7-991d-b8365a0ed5a6,9545344838`; // Use original mobile, different name
+    await fs.writeFile(testReorderCsvPath, reorderCsvContent);
+    csvRowsReorder = await parseCsv(testReorderCsvPath);
+
     if (!(csvRows.length > 0)) throw new Error("Test CSV must contain rows.");
+    if (!(csvRowsReorder.length > 0)) throw new Error("Reorder Test CSV must contain rows.");
     console.log(`   - Loaded ${canonicalEntities.length} canonical entities.`);
-    console.log(`   - Parsed ${csvRows.length} CSV rows.`);
+    console.log(`   - Parsed ${csvRows.length} rows from main test CSV.`);
+    console.log(`   - Parsed ${csvRowsReorder.length} rows from reorder test CSV.`);
 
     // 2. Create ID Mapper (REMOVED - Not needed with objectId)
     
-    // 3. Run Update Function
-    // Pass original entities (updateFromCsv makes its own copy)
+    // 3. Run Update Functions
     updateResult = updateFromCsv(csvRows, canonicalEntities);
-    console.log("   DEBUG: updateResult.changes:", JSON.stringify(updateResult.changes, null, 2));
+    updateResultReorder = updateFromCsv(csvRowsReorder, canonicalEntities);
+    console.log("   DEBUG: updateResult.changes:", JSON.stringify(updateResult.changes.filter(c=>c.type==='update').map(c=>c.key), null, 2)); // Log only updated keys
+    console.log("   DEBUG: updateResultReorder.changes:", JSON.stringify(updateResultReorder.changes.filter(c=>c.type==='update').map(c=>c.key), null, 2)); // Log only updated keys
     
     // 4. Prepare Final State for Hash Comparison
     finalCanonicalExport = {
@@ -67,7 +79,7 @@ beforeAll(async () => {
 // --- Test Suite ---
 describe('Canonical Data Update from CSV', () => {
 
-    it('should correctly identify the number of updates, skips, and no-changes', () => {
+    it('should correctly identify the number of updates, skips, and no-changes for main test', () => {
         const changes = updateResult.changes;
         console.log("   DEBUG [Test 1]: changes array length:", changes.length);
         const updateCount = changes.filter(c => c.type === 'update').length;
@@ -80,7 +92,7 @@ describe('Canonical Data Update from CSV', () => {
         expect(noChangeCount, `Expected 0 no-changes`).toBe(0);
     });
 
-    it('should correctly update fields for a specific user (Andrea Donayre)', () => {
+    it('should correctly update fields for a specific user (Andrea Donayre) in main test', () => {
         const andreaChange = updateResult.changes.find(c => c.key === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6');
         
         expect(andreaChange, "Change record for andrea-donayre should exist").toBeDefined();
@@ -101,7 +113,7 @@ describe('Canonical Data Update from CSV', () => {
         expect(afterMobile?.value, "Andrea after mobile value").toBe('954-555-1212');
     });
     
-    it('should correctly remove fields (Brian Tiller Title)', () => {
+    it('should correctly remove fields (Brian Tiller Title) in main test', () => {
         const brianChange = updateResult.changes.find(c => c.key === 'a200fce3-d32a-4c06-861a-780850009fe1');
         expect(brianChange, "Change record for brian-tiller should exist").toBeDefined();
         const changeRecord = brianChange!;
@@ -114,10 +126,26 @@ describe('Canonical Data Update from CSV', () => {
         expect(brianDiff.roles.after?.length, "Brian after roles length").toBe(0); // Title removed -> role removed
     });
 
-    it('should result in an overall hash change', () => {
+    it('should result in an overall hash change for main test', () => {
         console.log(`   - Original Hash: ${originalHash}`);
         console.log(`   - Final Hash:    ${finalHash}`);
         expect(finalHash, "Final hash should not equal original hash").not.toBe(originalHash);
+    });
+
+    it('should NOT detect changes if only contactPoint order differs', () => {
+        // Use updateResultReorder
+        const changes = updateResultReorder.changes;
+        const andreaReorderChange = changes.find(c => c.key === '80e43ee8-9b62-49b7-991d-b8365a0ed5a6');
+        
+        expect(andreaReorderChange, "Change record for reordered Andrea should exist").toBeDefined();
+        // It should be logged as 'no_change' because only displayName changed, contactPoints (value) did not
+        expect(andreaReorderChange!.type).toBe('update'); // Expect UPDATE because displayName changed
+        
+        const andreaReorderDiff = diff(andreaReorderChange!.before, andreaReorderChange!.after);
+        // Assert NO difference is detected for contactPoints despite potential order change in source/merge
+        expect(andreaReorderDiff.contactPoints, "Difference in 'contactPoints' NOT expected due to order change").toBeUndefined();
+        // Assert displayName DID change
+        expect(andreaReorderDiff.displayName, "Difference in 'displayName' expected").toBeDefined();
     });
 
 });

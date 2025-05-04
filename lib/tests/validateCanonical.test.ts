@@ -96,4 +96,24 @@ describe('validateCanonical', () => {
     expect(result.success).toBe(false);
     expect(result.errors?.length).toBeGreaterThan(0);
   });
+
+  it('should fail validation for missing required fields (objectId)', () => {
+    const invalidData = {
+      ContactEntities: [
+        { 
+            id: 'test', 
+            displayName: 'Valid Name', 
+            // objectId is missing 
+            roles: [], 
+            contactPoints: [],
+            source: "Office365"
+        }
+      ],
+      Locations: [],
+      _meta: { generatedFrom: [], generatedAt: 'now', version: 1 },
+    };
+    const result = validateCanonical(invalidData as any);
+    expect(result.success).toBe(false);
+    expect(result.errors).toEqual(['ContactEntities.0.objectId - Required']); // Updated expected error
+  });
 }); 

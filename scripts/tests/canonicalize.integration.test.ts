@@ -42,13 +42,13 @@ const invalidCanonicalJson = {
   ...sampleCanonicalJson,
   ContactEntities: [
       ...sampleCanonicalJson.ContactEntities,
-      { ...sampleCanonicalJson.ContactEntities[0], id: 'a-dup' }
+      { id: 'a-dup', displayName: 'Alice Dupe', contactPoints: [], roles: [], source: 'Office365', upn: 'a@a.com', objectId: 'obj-a' }
   ]
 };
 
 // Sample O365 CSV for update (MUST include ObjectId)
 const sampleUpdateCsv = `"Display name","Mobile Phone","User principal name","Title","Department","Object ID"
-"Alice","111-NEW-111","a@a.com","Senior Eng","Tech","obj-a"`; // Update Alice
+"Alice","111-NEW-111","a@a.com","Senior Eng","Tech","obj-a"`;
 
 // Function to run the script via node
 const runScript = (args: string[] = []) => {
@@ -92,7 +92,7 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         expect(stderr).toBe('');
     });
 
-    it('Default: should fail validation for an invalid JSON file and exit 1', async () => {
+    it('Default: should fail validation for an invalid JSON file (duplicate objectId) and exit 1', async () => {
         await fs.outputJson(invalidJsonPath, invalidCanonicalJson);
         const { stdout, stderr, exitCode } = await runScript(['--json', invalidJsonPath]);
         
@@ -154,6 +154,7 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         expect(stdout).toContain(`💾 Writing updated canonical JSON to: ${outputJsonPath}`);
         expect(stdout).toContain(`📝 Writing detailed update change log to:`);
         expect(stdout).toContain('✨ Update process complete.');
+        expect(stdout).not.toContain('✅ No changes detected'); 
         expect(await fs.pathExists(outputJsonPath)).toBe(true); 
         
         const outputData: CanonicalExport = await fs.readJson(outputJsonPath);
@@ -184,6 +185,7 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         expect(stdout).toContain('❗️ Overall state changes detected:');
         expect(stdout).toContain('🚫 Dry Run: Skipping file writes.'); 
         expect(stdout).toContain('✨ Update process complete.');
+        expect(stdout).not.toContain('✅ No changes detected');
         expect(await fs.pathExists(outputJsonPath)).toBe(false); 
     });
 
@@ -202,7 +204,7 @@ describe('canonicalize.ts CLI Integration Tests', () => {
         
         expect(exitCode).toBe(0);
         expect(stderr).toBe('');
-        expect(stdout).toContain('DEBUG [canonicalize.ts] Mapping CSV UPN');
+        expect(stdout).toContain('DEBUG [canonicalize.ts] First parsed CSV row:');
         expect(stdout).toContain('DEBUG [updateFromCsv loop] First csvRow object:');
         expect(stdout).toContain('DEBUG [mergeEntry] Final result for ID');
         expect(stdout).toContain('DEBUG [updateFromCsv] Changes detected for objectId');

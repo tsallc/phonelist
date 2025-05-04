@@ -58,6 +58,12 @@ async function main() {
         console.error(`❌ Error parsing live canonical JSON file: ${err.message}`);
         process.exit(1);
     }
+    // --- DEBUG: Compute and log initial hash ---
+    const initialComputedHash = computeHash(liveData.ContactEntities, liveData.Locations, "Initial");
+    console.log(`   DEBUG [canonicalize.ts] Computed initial hash: ${initialComputedHash}`);
+    const metaHash = liveData._meta?.hash;
+    console.log(`   DEBUG [canonicalize.ts] Hash from _meta:       ${metaHash}`);
+    // --- End DEBUG ---
 
     // --- Validate the loaded live data --- 
     console.log(`🛡️  Validating structure of loaded live data...`);
@@ -139,8 +145,9 @@ async function main() {
         console.log(`✅ Updated data validation successful.`);
 
         console.log(`🧮 Computing hash of updated data...`);
-        const newHash = computeHash(updatedCanonicalExport.ContactEntities, updatedCanonicalExport.Locations);
-        updatedCanonicalExport._meta.hash = newHash; // Update hash in the object
+        // Pass label to computeHash
+        const newHash = computeHash(updatedCanonicalExport.ContactEntities, updatedCanonicalExport.Locations, "Updated");
+        updatedCanonicalExport._meta.hash = newHash; 
         // Update other meta fields if necessary
         updatedCanonicalExport._meta.generatedFrom = [...new Set([...liveData._meta.generatedFrom, `updateFromCsv: ${path.basename(opts.updateFromCsv)}`])];
         updatedCanonicalExport._meta.generatedAt = new Date().toISOString();
@@ -148,8 +155,8 @@ async function main() {
 
         console.log(`🔄 Comparing updated data with original live version...`);
         const diffResult = diffCanonical(liveData, updatedCanonicalExport); 
-        const originalHashForCompare = liveData._meta?.hash; // Use potentially existing hash
-        console.log(`   DEBUG [canonicalize.ts] Comparing Hashes: Original='${originalHashForCompare}' New='${newHash}'`); // Added log
+        const originalHashForCompare = liveData._meta?.hash ?? initialComputedHash; // Use computed if meta hash missing
+        console.log(`   DEBUG [canonicalize.ts] Comparing Hashes: Meta/Initial='${originalHashForCompare}' New='${newHash}'`);
         const hasChanges = originalHashForCompare !== newHash;
 
         // --- Change Reporting --- 

@@ -118,20 +118,24 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
 
     // --- Handle Nested Structures using helpers, tracking changes --- 
 
-    // MobilePhone (check canonical key "mobile phone")
+    // MobilePhone → contactPoints.type === 'mobile'
     if (incoming.hasOwnProperty('mobile phone')) { 
         const mobileValue = incoming['mobile phone'] || null;
         const originalContactPoints = existing.contactPoints || [];
         const newContactPoints = updateContactPoint(updated.contactPoints, 'mobile', mobileValue);
         
-        if (!isEqual(originalContactPoints, newContactPoints)) {
-             console.log(`DEBUG [mergeEntry] contactPoints change detected.`);
+        // Compare sorted versions to ignore order
+        const originalSorted = originalContactPoints.slice().sort(compareContactPoints);
+        const newSorted = newContactPoints.slice().sort(compareContactPoints);
+
+        if (!isEqual(originalSorted, newSorted)) { // Compare sorted arrays
+             console.log(`DEBUG [mergeEntry] contactPoints change detected (order ignored).`);
              updated.contactPoints = newContactPoints; 
              changed = true;
         }
     }
 
-    // Title (check canonical key "title")
+    // Title → roles 
     if (incoming.hasOwnProperty('title')) { 
         const titleValue = incoming['title'] || null; 
         const primaryOffice = existing.roles?.[0]?.office; 
@@ -140,8 +144,12 @@ function mergeEntry(existing: Readonly<ContactEntity>, incoming: Record<string, 
              const originalRoles = existing.roles || []; 
              const newRoles = updateRole(updated.roles, primaryOffice, titleValue);
              
-             if (!isEqual(originalRoles, newRoles)) {
-                  console.log(`DEBUG [mergeEntry] roles change detected.`);
+             // Compare sorted versions to ignore order
+             const originalSortedRoles = originalRoles.slice().sort(compareRoles);
+             const newSortedRoles = newRoles.slice().sort(compareRoles);
+
+             if (!isEqual(originalSortedRoles, newSortedRoles)) { // Compare sorted arrays
+                  console.log(`DEBUG [mergeEntry] roles change detected (order ignored).`);
                   updated.roles = newRoles; 
                   changed = true;
              }
